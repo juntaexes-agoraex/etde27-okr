@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rincón ÁgoraEx — Participa</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#eef4f2;min-height:100vh;display:flex;justify-content:center}
+    .app{width:100%;max-width:480px;background:#fff;min-height:100vh;display:flex;flex-direction:column;box-shadow:0 0 40px rgba(0,0,0,.08)}
+    .header{background:#0F6E56;color:#fff;padding:16px 20px;display:flex;align-items:center;gap:12px;flex-shrink:0}
+    .hlogo{width:36px;height:36px;background:rgba(255,255,255,.2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;flex-shrink:0}
+    .htitle{font-size:15px;font-weight:600;line-height:1.2}
+    .hsub{font-size:11px;opacity:.8;margin-top:2px}
+    .back{background:none;border:none;color:#fff;font-size:24px;cursor:pointer;padding:0;margin-right:2px;line-height:1;flex-shrink:0}
+    .screen{display:none;flex:1;flex-direction:column}
+    .screen.active{display:flex}
+    .content{padding:24px 20px;flex:1;display:flex;flex-direction:column}
+    .prog-wrap{display:flex;gap:6px;padding:10px 20px;background:#f8fdfb;border-bottom:1px solid #e0ede8;flex-shrink:0}
+    .pseg{height:4px;flex:1;border-radius:2px;background:#d8eae4;transition:background .3s}
+    .pseg.on{background:#1D9E75}
+    h2.ptitle{font-size:20px;font-weight:700;color:#0F6E56;margin-bottom:6px}
+    .psub{font-size:14px;color:#5a7a71;margin-bottom:24px;line-height:1.5}
+    .qlabel{font-size:14px;font-weight:600;color:#172e28;margin-bottom:4px}
+    .qhint{font-size:12px;color:#7a9b92;margin-bottom:10px;line-height:1.4}
+    .qblock{margin-bottom:2px}
+    input[type=text],input[type=email],select,textarea{width:100%;border:1.5px solid #c8e4dc;border-radius:10px;padding:12px 14px;font-size:14px;color:#172e28;background:#fff;outline:none;font-family:inherit;transition:border-color .2s;margin-bottom:18px}
+    input[type=text]:focus,input[type=email]:focus,select:focus,textarea:focus{border-color:#1D9E75}
+    textarea{resize:vertical;min-height:90px}
+    select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23789b93' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px;cursor:pointer}
+    .cbrow{display:flex;gap:12px;align-items:flex-start;background:#f0f9f6;border-radius:10px;padding:14px;margin-bottom:20px}
+    .cbrow input{width:18px;height:18px;flex-shrink:0;accent-color:#0F6E56;margin-top:1px;cursor:pointer}
+    .cbrow span{font-size:12px;color:#5a7a71;line-height:1.5}
+    .rgroup{display:flex;flex-direction:column;gap:8px;margin-bottom:18px}
+    .ropt{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1.5px solid #c8e4dc;border-radius:10px;cursor:pointer;transition:all .15s;background:#fff}
+    .ropt:hover{border-color:#1D9E75;background:#f5fdf9}
+    .ropt input{accent-color:#0F6E56;width:18px;height:18px;flex-shrink:0;cursor:pointer}
+    .ropt span{font-size:14px;color:#172e28}
+    .ropt input:checked ~ span{color:#0F6E56;font-weight:500}
+    .ckgroup{display:flex;flex-direction:column;gap:8px;margin-bottom:18px}
+    .ckopt{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1.5px solid #c8e4dc;border-radius:10px;cursor:pointer;background:#fff;transition:all .15s}
+    .ckopt:hover{border-color:#1D9E75;background:#f5fdf9}
+    .ckopt input{accent-color:#0F6E56;width:18px;height:18px;flex-shrink:0;cursor:pointer}
+    .ckopt span{font-size:14px;color:#172e28}
+    .stars{display:flex;gap:8px;margin-bottom:18px}
+    .sbtn{width:52px;height:48px;border:1.5px solid #c8e4dc;border-radius:10px;background:#fff;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:1px;transition:all .15s;color:#172e28;font-family:inherit}
+    .sbtn.on{border-color:#1D9E75;background:#f0faf6;color:#0F6E56;font-weight:600}
+    .sem-wrap{display:flex;gap:8px;margin-bottom:8px}
+    .sembtn{flex:1;padding:10px 6px;border:2px solid #c8e4dc;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;text-align:center;background:#fff;transition:all .15s;font-family:inherit}
+    .sembtn.verde{color:#1a6b3a}.sembtn.amarillo{color:#7a5a00}.sembtn.rojo{color:#8b1a1a}
+    .sembtn.on.verde{background:#d4edda;border-color:#28a745}
+    .sembtn.on.amarillo{background:#fff3cd;border-color:#ffc107}
+    .sembtn.on.rojo{background:#f8d7da;border-color:#dc3545}
+    .sblock{background:#f8fcfa;border:1px solid #d0e8e0;border-radius:10px;padding:14px;margin-bottom:14px}
+    .sname{font-size:13px;font-weight:600;color:#172e28;margin-bottom:10px}
+    .snota{width:100%;border:1px solid #c8e4dc;border-radius:8px;padding:9px 11px;font-size:13px;font-family:inherit;resize:none;min-height:56px;margin-top:8px;outline:none}
+    .snota:focus{border-color:#1D9E75}
+    .rklist{display:flex;flex-direction:column;gap:8px;margin-bottom:18px}
+    .rkitem{display:flex;align-items:center;gap:12px;padding:10px 14px;border:1.5px solid #c8e4dc;border-radius:10px;background:#fff}
+    .rkitem span{font-size:13px;color:#172e28;flex:1;line-height:1.3}
+    .rkitem select{width:64px;margin:0;padding:6px 8px;font-size:13px;border:1px solid #c8e4dc;border-radius:8px;background:none}
+    .dgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .dcard{border:1.5px solid #c8e4dc;border-radius:14px;padding:16px;cursor:pointer;transition:all .2s;background:#fff;position:relative;user-select:none}
+    .dcard:hover{border-color:#1D9E75;background:#f5fdf9;transform:translateY(-2px)}
+    .dcard.done{background:#f0faf6;border-color:#1D9E75}
+    .dcard.done::after{content:'✓';position:absolute;top:8px;right:10px;font-size:16px;color:#1D9E75;font-weight:700}
+    .dicon{font-size:28px;margin-bottom:8px;line-height:1}
+    .dname{font-size:12px;font-weight:600;color:#172e28;margin-bottom:3px;line-height:1.35}
+    .dtime{font-size:11px;color:#7a9b92;margin-bottom:4px}
+    .dtag{display:inline-block;background:#e1f5ee;color:#0F6E56;font-size:10px;padding:2px 8px;border-radius:20px;font-weight:600}
+    .btn1{width:100%;padding:14px;background:#0F6E56;color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;margin-top:8px;transition:background .2s;font-family:inherit}
+    .btn1:hover{background:#0a5a46}
+    .btn2{width:100%;padding:13px;background:transparent;color:#0F6E56;border:1.5px solid #0F6E56;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;margin-top:10px;font-family:inherit}
+    .qrbox{width:140px;height:140px;border:3px solid #1D9E75;border-radius:18px;display:flex;align-items:center;justify-content:center;margin:0 auto 24px;background:#f0faf6;font-size:76px}
+    .shield{display:flex;align-items:center;gap:8px;color:#7a9b92;font-size:12px;justify-content:center;margin-top:20px}
+    .chkcirc{width:80px;height:80px;border-radius:50%;background:#e1f5ee;display:flex;align-items:center;justify-content:center;font-size:40px;margin:0 auto 20px}
+    .statsbox{background:#f0f9f6;border-radius:14px;padding:18px 20px;margin:20px 0;text-align:center;border:1px solid #d0eae0}
+    .statsn{font-size:36px;font-weight:700;color:#0F6E56;line-height:1}
+    .statsl{font-size:13px;color:#5a7a71;margin-top:4px}
+    .ccnt{font-size:11px;color:#7a9b92;text-align:right;margin-top:-14px;margin-bottom:14px}
+    .req{color:#c0392b}
+    .divider{height:1px;background:#e8f5f0;margin:8px 0 20px}
+    .slabel{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#7a9b92;margin-bottom:14px}
+    .wcenter{display:flex;flex-direction:column;align-items:center;text-align:center;flex:1;justify-content:center}
+    .step{display:flex;flex-direction:column;flex:1}
+    .mt-auto{margin-top:auto}
+    .url-badge{font-size:14px;font-weight:600;color:#0F6E56;background:#e1f5ee;padding:6px 14px;border-radius:20px;margin-bottom:28px;display:inline-block}
+    @media(max-width:380px){.dgrid{grid-template-columns:1fr 1fr}.dname{font-size:11px}}
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ============================================================ -->
+  <!-- WELCOME                                                       -->
+  <!-- ============================================================ -->
+  <div class="screen active" id="sc-welcome">
+    <div class="header">
+      <div class="hlogo">A</div>
+      <div><div class="htitle">Rincón ÁgoraEx</div><div class="hsub">Congreso Potencial Digital 2026 · Cáceres</div></div>
+    </div>
+    <div class="content wcenter">
+      <div class="qrbox">📱</div>
+      <h2 class="ptitle">Participa ahora</h2>
+      <p class="psub">Escanea el código QR del stand o accede a esta página para unirte a las dinámicas del Rincón ÁgoraEx.</p>
+      <div class="url-badge">junta-ex.es/agoraex</div>
+      <button class="btn1" onclick="goTo('register')">Comenzar →</button>
+      <div class="shield">🔒 Datos protegidos · Anónimo · RGPD</div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- REGISTRO                                                      -->
+  <!-- ============================================================ -->
+  <div class="screen" id="sc-register">
+    <div class="header">
+      <button class="back" onclick="goTo('welcome')" aria-label="Volver">‹</button>
+      <div><div class="htitle">Registro rápido</div><div class="hsub">Solo necesitamos un dato para empezar</div></div>
+    </div>
+    <div class="content">
+      <div class="qblock"><div class="qlabel">Nombre <span class="req">*</span></div><div class="qhint">Con el que quieras que te llamemos</div></div>
+      <input type="text" id="reg-name" placeholder="Tu nombre">
+      <div class="qblock"><div class="qlabel">Correo electrónico <span style="font-size:12px;color:#7a9b92;font-weight:400">(opcional)</span></div><div class="qhint">Si quieres recibir el informe de resultados del congreso</div></div>
+      <input type="email" id="reg-email" placeholder="nombre@ejemplo.com">
+      <div class="qblock"><div class="qlabel">Municipio <span style="font-size:12px;color:#7a9b92;font-weight:400">(opcional)</span></div></div>
+      <input type="text" id="reg-municipio" placeholder="Tu municipio en Extremadura">
+      <div class="cbrow">
+        <input type="checkbox" id="reg-privacy">
+        <span>Acepto la <strong>política de privacidad</strong> de la Junta de Extremadura para el tratamiento de mis datos con fines de participación ciudadana en ÁgoraEx.</span>
+      </div>
+      <button class="btn1" onclick="submitRegister()">Ver las dinámicas →</button>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- DINÁMICAS                                                     -->
+  <!-- ============================================================ -->
+  <div class="screen" id="sc-dynamics">
+    <div class="header">
+      <div class="hlogo" id="user-initial">A</div>
+      <div><div class="htitle" id="user-greeting">Elige una dinámica</div><div class="hsub">8 actividades · Puedes participar en más de una</div></div>
+    </div>
+    <div class="content">
+      <div class="slabel">Dinámicas disponibles</div>
+      <div class="dgrid">
+        <div class="dcard" id="card-d1" onclick="goToForm('d1')">
+          <div class="dicon">🏛️</div>
+          <div class="dname">Diseña tu administración ideal</div>
+          <div class="dtime">20–30 min · Mixto</div>
+          <div class="dtag">D1</div>
+        </div>
+        <div class="dcard" id="card-d2" onclick="goToForm('d2')">
+          <div class="dicon">🔧</div>
+          <div class="dname">Mejora un servicio público</div>
+          <div class="dtime">30–45 min · Ciudadanía</div>
+          <div class="dtag">D2</div>
+        </div>
+        <div class="dcard" id="card-d3" onclick="goToForm('d3')">
+          <div class="dicon">💬</div>
+          <div class="dname">Focus group experiencia ciudadana</div>
+          <div class="dtime">45–60 min · Ciudadanía</div>
+          <div class="dtag">D3</div>
+        </div>
+        <div class="dcard" id="card-d4" onclick="goToForm('d4')">
+          <div class="dicon">🗣️</div>
+          <div class="dname">Mesa redonda participativa</div>
+          <div class="dtime">45–60 min · Profesional</div>
+          <div class="dtag">D4</div>
+        </div>
+        <div class="dcard" id="card-d5" onclick="goToForm('d5')">
+          <div class="dicon">🚦</div>
+          <div class="dname">Semáforo de servicios públicos</div>
+          <div class="dtime">5–10 min · Todos</div>
+          <div class="dtag">D5 · Permanente</div>
+        </div>
+        <div class="dcard" id="card-d6" onclick="goToForm('d6')">
+          <div class="dicon">🎯</div>
+          <div class="dname">Priorización de retos</div>
+          <div class="dtime">20–30 min · Técnicos</div>
+          <div class="dtag">D6</div>
+        </div>
+        <div class="dcard" id="card-d7" onclick="goToForm('d7')">
+          <div class="dicon">💡</div>
+          <div class="dname">Ideatón exprés</div>
+          <div class="dtime">45–60 min · Mixto</div>
+          <div class="dtag">D7</div>
+        </div>
+        <div class="dcard" id="card-d8" onclick="goToForm('d8')">
+          <div class="dicon">🎤</div>
+          <div class="dname">Microcharlas ÁgoraEx</div>
+          <div class="dtime">15–20 min · Todos</div>
+          <div class="dtag">D8</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- D1: DISEÑA TU ADMINISTRACIÓN IDEAL                           -->
+  <!-- ============================================================ -->
+  <div class="screen" id="sc-d1">
+    <div class="header">
+      <button class="back" onclick="goTo('dynamics')" aria-label="Volver">‹</button>
+      <div><div class="htitle">D1 · Diseña tu administración ideal</div><div class="hsub">Co-diseño participativo · 20–30 min · Mixto</div></div>
+    </div>
+    <div class="prog-wrap" id="prog-d1"></div>
+    <div class="content step" id="step-d1-1">
+      <div class="slabel">Paso 1 de 3 — Mantener</div>
+      <div class="qblock"><div class="qlabel">¿Qué mantendría de la administración digital actual? <span class="req">*</span></div><div class="qhint">Lo que funciona bien y no querrías perder</div></div>
+      <textarea id="d1-mantener" placeholder="Ej: La posibilidad de hacer la declaración de la renta online, el acceso 24h a ciertos trámites, recibir notificaciones por correo..." oninput="chcnt(this,'cnt-d1m')"></textarea>
+      <div class="ccnt" id="cnt-d1m">0 caracteres</div>
+      <div class="mt-auto">
+        <button class="btn1" onclick="nxStep('d1',1,2)">Siguiente →</button>
+      </div>
+    </div>
+    <div class="content step" id="step-d1-2" style="display:none">
+      <div class="slabel">Paso 2 de 3 — Mejorar</div>
+      <div class="qblock"><div class="qlabel">¿Qué mejoraría o simplificaría? <span class="req">*</span></div><div class="qhint">Procesos, webs o trámites que podrían ser más fáciles</div></div>
+      <textarea id="d1-mejorar" placeholder="Ej: Que no haga falta instalar 4 programas para firmar un documento, que las webs funcionen bien en móvil..." oninput="chcnt(this,'cnt-d1mj')"></textarea>
+      <div class="ccnt" id="cnt-d1mj">0 caracteres</div>
+      <div class="mt-auto">
+        <button class="btn1" onclick="nxStep('d1',2,3)">Siguiente →</button>
+        <button class="btn2" onclick="nxStep('d1',2,1,1)">‹ Anterior</button>
+      </div>
+    </div>
+    <div class="content step" id="step-d1-3" style="display:none">
+      <div class="slabel">Paso 3 de 3 — Añadir</div>
+      <div class="qblock"><div class="qlabel">¿Qué añadiría de nuevo que no existe todavía? <span class="req">*</span></div><div class="qhint">Algo que marcaría la diferencia para la ciudadanía</div></div>
+      <textarea id="d1-anadir" placeholder="Ej: Un asistente virtual que te guíe en trámites complicados, alertas proactivas de ayudas disponibles..." oninput="chcnt(this,'cnt-d1a')"></textarea>
+      <div class="ccnt" id="cnt-d1a">0 caracteres</div>
+      <div class="divider"></div>
+      <div class="qlabel" style="margin-bottom:10px">¿Cuál de tus tres ideas es más urgente?</div>
+      <div class="rgroup">
+        <label class="ropt"><input type="radio" name="d1-urg" value="mantener"> <span>Lo que mantendría</span></label>
+        <label class="ropt"><input type="radio" name="d1-urg" value="mejorar"> <span>Lo que mejoraría</span></label>
+        <label class="ropt"><input type="radio" name="d1-urg" value="anadir"> <span>Lo que añadiría</span></label>
+      </div>
+      <div class="mt-auto">
+        <button class="btn1" onclick="submitForm('d1')">Enviar aportación →</button>
+        <button class="btn2" onclick="nxStep('d1',3,2,1)">‹ Anterior</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- D2: MEJORA UN SERVICIO PÚBLICO                               -->
+  <!-- ============================================================ -->
+  <div class="screen" id="sc-d2">
+    <div class="header">
+      <button class="back" onclick="goTo('dynamics')" aria-label="Volver">‹</button>
+      <div><div class="htitle">D2 · Mejora un servicio público</div><div class="hsub">Ciudadanía y empleados JEx · 30–45 min</div></div>
+    </div>
+    <div class="prog-wrap" id="prog-d2"></div>
+    <div class="content step" id="step-d2-1">
+      <div class="slabel">Paso 1 de 3</div>
+      <div class="qblock"><div class="qlabel">¿Sobre qué servicio público quieres trabajar? <span class="req">*</span></div><div class="qhint">Elige el que más te haya afectado</div></div>
+      <select id="d2-srv">
+        <option value="">Selecciona un servicio...</option>
+        <option>Cita previa online (sanidad, ITV, etc.)</option>
+        <option>Sede Electrónica de la Junta de Extremadura</option>
+        <option>Portal de empleo público (OPE, bolsas de trabajo)</option>
+        <option>Solicitud de ayudas y subvenciones online</option>
+        <option>Certificado digital / Cl@ve PIN</option>
+        <option>Notificaciones electrónicas</option>
+        <option>Padrón municipal y empadronamiento</option>
+        <option>Otro servicio</option>
+      </select>
+      <div class="qlabel" style="margin-bottom:10px">¿Cuál es el principal problema? <span class="req">*</span></div>
+      <div class="rgroup">
+        <label class="ropt"><input type="radio" name="d2-prob" value="nofunciona"> <span>No funciona o da errores constantemente</span></label>
+        <label class="ropt"><input type="radio" name="d2-prob" value="dificil"> <span>Es difícil de usar o poco intuitivo</span></label>
+        <label class="ropt"><input type="radio" name="d2-prob" value="lento"> <span>Es muy lento o tarda demasiado</span></label>
+        <label class="ropt"><input type="radio" name="d2-prob" value="info"> <span>La información es confusa o incompleta</span></label>
+        <label class="ropt"><input type="radio" name="d2-prob" value="nodisponible"> <span>El servicio no está disponible online todavía</span></label>
+      </div>
+      <div class="mt-auto"><button class="btn1" onclick="nxStep('d2',1,2)">Siguiente →</button></div>
+    </div>
+    <div class="content step" id="step-d2-2" style="display:none">
+      <div class="slabel">Paso 2 de 3</div>
+      <div class="qblock"><div class="qlabel">Describe tu propuesta de mejora <span class="req">*</span></div><div class="qhint">Cuanto más concreto, más útil. Puedes inspirarte en algo que funcione en otro sitio.</div></div>
+      <textarea id="d2-propuesta" placeholder="Ej: Rediseñar el formulario de cita previa para que tenga menos pasos, con confirmación por SMS y opción de cancelar fácilmente desde el móvil..." oninput="chcnt(this,'cnt-d2p')"></textarea>
+      <div class="ccnt" id="cnt-d2p">0 caracteres</div>
+      <div class="mt-auto">
+        <button class="btn1" onclick="nxStep('d2',2,3)">Siguiente →</button>
+        <button class="btn2" onclick="nxStep('d2',2,1,1)">‹ Anterior</button>
+      </div>
+    </div>
+    <div class="content step" id="step-d2-3" style="display:none">
+      <div class="slabel">Paso 3 de 3</div>
+      <div class="qlabel" style="margin-bottom:10px">¿A cuántas personas beneficiaría esta mejora?</div>
+      <div class="rgroup">
+        <label class="ropt"><input type="radio" name="d2-imp" value="yo"> <span>Principalmente a mí</span></label>
+        <label class="ropt"><input type="radio" name="d2-imp" value="entorno"> <span>A mí y a mi entorno cercano</span></label>
+        <label class="ropt"><input type="radio" name="d2-imp" value="muchos"> <span>A muchas personas de Extremadura</span></label>
+        <label class="ropt"><input type="radio" name="d2-imp" value="todos"> <span>A prácticamente toda la ciudadanía</span></label>
+      </div>
+      <div class="qblock"><div class="qlabel">¿Conoces algún ejemplo que lo haga bien? <span style="font-weight:400;color:#7a9b92">(opcional)</span></div><div class="qhint">Otra comunidad, app, país...</div></div>
+      <input type="text" id="d2-ej" placeholder="Ej: La app de cita previa de la Seguridad Social, el sistema de Estonia...">
+      <div class="mt-auto">
+        <button class="btn1" onclick="submitForm('d2')">Enviar propuesta →</button>
+        <button class="btn2" onclick="nxStep('d2',3,2,1)">‹ Anterior</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- D3: FOCUS GROUP EXPERIENCIA CIUDADANA                        -->
+  <!-- ============================================================ -->
+  <div class="screen" id="sc-d3">
+    <div class="header">
+      <button class="back" onclick="goTo('dynamics')" aria-label="Volver">‹</button>
+      <div><div class="htitle">D3 · Focus group experiencia</div><div class="hsub">Ciudadanía · 45–60 min</div></div>
+    </div>
+    <div class="prog-wrap" id="prog-d3"></div>
+    <div class="content step" id="step-d3-1">
+      <div class="slabel">Paso 1 de 3</div>
+      <div class="qlabel" style="margin-bottom:10px">¿Cuándo fue la última vez que usaste un servicio digital de la administración? <span class="req">*</span></div>
+      <div class="rgroup">
+        <label class="ropt"><input type="radio" name="d3-cdo" value="semana"> <span>Esta misma semana</span></label>
+        <label class="ropt"><input type="radio" name="d3-cdo" value="mes"> <span>Este mes</span></label>
+        <label class="ropt"><input type="radio" name="d3-cdo" value="trimestre"> <span>Hace 1 a 3 meses</span></label>
+        <label class="ropt"><input type="radio" name="d3-cdo" value="mas"> <span>Hace más de 3 meses</span></label>
+        <label class="ropt"><input type="radio" name="d3-cdo" value="nunca"> <span>Nunca lo he intentado</span></label>
+      </div>
+      <div class="qblock"><div class="qlabel">¿De qué servicio se trataba? <span style="font-weight:400;color:#7a9b92">(opcional)</span></div></div>
+      <input type="text" id="d3-srv" placeholder="Ej: Cita previa del médico, declaración de la renta, trámite en la Sede Electrónica...">
+      <div class="mt-auto"><button class="btn1" onclick="nxStep('d3',1,2)">Siguiente →</button></div>
+    </div>
+    <div class="content step" id="step-d3-2" style="display:none">
+      <div class="slabel">Paso 2 de 3</div>
+      <div class="qblock"><div class="qlabel">Cuéntanos cómo fue esa experiencia <span class="req">*</span></div><div class="qhint">Sé tan detallado/a como quieras. Todo nos ayuda a mejorar.</div></div>
+      <textarea id="d3-exp" placeholder="¿Qué intentabas hacer? ¿Te resultó fácil o difícil? ¿Conseguiste lo que necesitabas? ¿Qué pasó exactamente?" oninput="chcnt(this,'cnt-d3e')"></textarea>
+      <div class="ccnt" id="cnt-d3e">0 caracteres</div>
+      <div class="qlabel" style="margin-bottom:10px">¿Cómo valorarías esa experiencia?</div>
+      <div class="stars" id="stars-d3" role="group" aria-label="Valoración de 1 a 5 estrellas"></div>
+      <div class="mt-auto">
+        <button class="btn1" onclick="nxStep('d3',2,3)">Siguiente →</button>
+        <button class="btn2" onclick="nxStep('d3',2,1,1)">‹ Anterior</button>
+      </div>
+    </div>
+    <div class="content step" id="step-d3-3" style="display:none">
+      <div class="slabel">Paso 3 de 3</div>
+      <div class="qblock"><div class="qlabel">¿Qué hubiera mejorado esa experiencia? <span style="font-weight:400;color:#7a9b92">(opcional)</span></div></div>
+      <textarea id="d3-mej" placeholder="Ej: Instrucciones más claras, menos pasos, que funcione bien en móvil, atención telefónica de apoyo..." oninput="chcnt(this,'cnt-d3m')"></textarea>
+      <div class="ccnt" id="cnt-d3m">0 caracteres</div>
+      <div class="qlabel" style="margin-bottom:10px">¿Pediste ayuda a alguien para completar el trámite?</div>
+      <div class="rgroup">
+        <label class="ropt"><input type="radio" name="d3-ay" value="no"> <span>No, lo hice solo/a sin problema</span></label>
+        <label class="ropt"><input type="radio" name="d3-ay" value="familiar"> <span>Sí, pedí ayuda a un familiar o amigo/a</span></label>
+        <label class="ropt"><input type="radio" name="d3-ay" value="gestoria"> <span>Sí, lo hizo una gestoría o asesoría</span></label>
+        <label class="ropt"><input type="radio" name="d3-ay" value="oficina"> <span>Acabé yendo en persona a la oficina</span></label>
+        <label class="ropt"><input type="radio" name="d3-ay" value="nolopude"> <span>No pude completarlo</span></label>
+      </div>
+      <div class="mt-auto">
+        <button class="btn1" onclick="submitForm('d3')">Enviar experiencia →</button>
+        <button class="btn2" onclick="nxStep('d3',3,2,1)">‹ Anterior</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- D4: MESA REDONDA PARTICIPATIVA                               -->
+  <!-- ============================================================ -->
+  <div class="screen" id="sc-d4">
+    <div class="header">
+      <button class="back" onclick="goTo('dynamics')" aria-label="Volver">‹</button>
+      <div><div class="htitle">D4 · Mesa redonda participativa</div><div class="hsub">Perfil profesional · 45–60 min</div></div>
+    </div>
+    <div class="prog-wrap" id="prog-d4"></div>
+    <div class="content step" id="step-d4-1">
+      <div class="slabel">Paso 1 de 3</div>
+      <div class="qblock"><div class="qlabel">¿Cuál es tu perfil profesional? <span class="req">*</span></div></div>
+      <select id="d4-perfil">
+        <option value="">Selecciona tu perfil...</option>
+        <option>Funcionario/a de la Junta de Extremadura</option>
+        <option>Personal de administración local (ayuntamiento, diputación)</option>
+        <option>Profesional del sector privado</option>
+        <option>Investigador/a o académico/a</option>
+        <option>Emprendedor/a o autónomo/a</option>
+        <option>Técnico/a de innovación o TIC</option>
+        <option>Representante de entidad social u ONG</option>
+        <option>Otro perfil</option>
+      </select>
+      <div class="qblock"><div class="qlabel">¿Cuál es el mayor reto de la transformación digital en tu ámbito? <span class="req">*</span></div></div>
+      <textarea id="d4-reto" placeholder="Describe el reto más importante que identificas desde tu posición..." oninput="chcnt(this,'cnt-d4r')"></textarea>
+      <div class="ccnt" id="cnt-d4r">0 caracteres</div>
+      <div class="mt-auto"><button class="btn1" onclick="nxStep('d4',1,2)">Siguiente →</button></div>
+    </div>
+    <div class="content step" id="step-d4-2" style="display:none">
+      <div class="slabel">Paso 2 de 3</div>
+      <div class="qblock"><div class="qlabel">¿Qué buena práctica conoces que merezca replicarse? <span class="req">*</span></div><div class="qhint">Puede ser de otra comunidad autónoma, otro país o del sector privado</div></div>
+      <textarea id="d4-practica" placeholder="Ej: El sistema de identidad digital de Estonia, la ventanilla única de Barcelona, la app de atención ciudadana de..." oninput="chcnt(this,'cnt-d4p')"></textarea>
+      <div class="ccnt" id="cnt-d4p">0 caracteres</div>
+      <div class="mt-auto">
+        <button class="btn1" onclick="nxStep('d4',2,3)">Siguiente →</button>
+        <button class="btn2" onclick="nxStep('d4',2,1,1)">‹ Anterior</button>
+      </div>
+    </div>
+    <div class="content step" id="step-d4-3" style="display:none">
+      <div class="slabel">Paso 3 de 3</div>
+      <div class="qblock"><div class="qlabel">¿Qué propondrías para avanzar en los próximos 12 meses? <span class="req">*</span></div><div class="qhint">Una medida concreta y alcanzable</div></div>
+      <textarea id="d4-prop" placeholder="Una acción específica que crees que marcaría la diferencia..." oninput="chcnt(this,'cnt-d4pr')"></textarea>
+      <div class="ccnt" id="cnt-d4pr">0 caracteres</div>
+      <div class="qlabel" style="margin-bottom:10px">¿Estarías dispuesto/a a participar en un grupo de trabajo?</div>
+      <div class="rgroup">
+        <label class="ropt"><input type="radio" name="d4-col" value="si"> <span>Sí, con mucho gusto</span></label>
+        <label class="ropt"><input type="radio" name="d4-col" value="quizas"> <span>Quizás, dependería de la dedicación</span></label>
+        <label class="ropt"><input type="radio" name="d4-col" value="no"> <span>No, por ahora no</span></label>
+      </div>
+      <div class="mt-auto">
+        <button class="btn1" onclick="submitForm('d4')">Enviar aportación →</button>
+        <button class="btn2" onclick="nxStep('d4',3,2,1)">‹ Anterior</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- D5: SEMÁFORO DE SERVICIOS PÚBLICOS                          -->
+  <!-- ============================================================ -->
+  <div class="screen" id="sc-d5">
+    <div class="header">
+      <button class="back" onclick="goTo('dynamics')" aria-label="Volver">‹</button>
+      <div><div class="htitle">D5 · Semáforo de servicios</div><div class="hsub">5–10 min · Permanente durante el congreso</div></div>
+    </div>
+    <div class="content">
+      <p class="psub" style="margin-bottom:20px">Para cada servicio, elige un color de semáforo y escribe una palabra o frase corta que explique tu elección.</p>
+      <div class="sblock">
+        <div class="sname">🏥 Cita previa online (sanidad, ITV, etc.)</div>
+        <div class="sem-wrap">
+          <button class="sembtn verde" onclick="setSem('s1','verde',this)">🟢 Bien</button>
+          <button class="sembtn amarillo" onclick="setSem('s1','amarillo',this)">🟡 Mejorable</button>
+          <button class="sembtn rojo" onclick="setSem('s1','rojo',this)">🔴 Mal</button>
+        </div>
+        <input type="hidden" id="d5-s1v">
+        <textarea class="snota" id="d5-s1n" placeholder="¿Por qué? (una frase es suficiente)"></textarea>
+      </div>
+      <div class="sblock">
+        <div class="sname">💻 Sede Electrónica de la Junta de Extremadura</div>
+        <div class="sem-wrap">
+          <button class="sembtn verde" onclick="setSem('s2','verde',this)">🟢 Bien</button>
+          <button class="sembtn amarillo" onclick="setSem('s2','amarillo',this)">🟡 Mejorable</button>
+          <button class="sembtn rojo" onclick="setSem('s2','rojo',this)">🔴 Mal</button>
+        </div>
+        <input type="hidden" id="d5-s2v">
+        <textarea class="snota" id="d5-s2n" placeholder="¿Por qué? (una frase es suficiente)"></textarea>
+      </div>
+      <div class="sblock">
+        <div class="sname">📋 Solicitud de ayudas y subvenciones online</div>
+        <div class="sem-wrap">
+          <button class="sembtn verde" onclick="setSem('s3','verde',this)">🟢 Bien</button>
+          <button class="sembtn amarillo" onclick="setSem('s3','amarillo',this)">🟡 Mejorable</button>
+          <button class="sembtn rojo" onclick="setSem('s3','rojo',this)">🔴 Mal</button>
+        </div>
+        <input type="hidden" id="d5-s3v">
+        <textarea class="snota" id="d5-s3n" placeholder="¿Por qué? (una frase es suficiente)"></textarea>
+      </div>
+      <button class="btn1" onclick="submitForm('d5')">Enviar valoración →</button>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- D6: PRIORIZACIÓN DE RETOS                                    -->
+  <!-- ============================================================ -->
+  <div class="screen" id="sc-d6">
+    <div class="header">
+      <button class="back" onclick="goTo('dynamics')" aria-label="Volver">‹</button>
+      <div><div class="htitle">D6 · Priorización de retos</div><div class="hsub">Perfil técnico · 20–30 min</div></div>
+    </div>
+    <div class="prog-wrap" id="prog-d6"></div>
+    <div class="content step" id="step-d6-1">
+      <div class="slabel">Paso 1 de 2</div>
+      <div class="qblock"><div class="qlabel">¿Cuál es tu área técnica? <span class="req">*</span></div></div>
+      <select id="d6-area">
+        <option value="">Selecciona tu área...</option>
+        <option>Desarrollo de software / aplicaciones</option>
+        <option>Infraestructura, sistemas y redes</option>
+        <option>Ciberseguridad</option>
+        <option>Datos, IA y analítica</option>
+        <option>UX / Diseño de servicios digitales</option>
+        <option>Gestión de proyectos TIC</option>
+        <option>Transformación digital organizativa</option>
+        <option>Otro</option>
+      </select>
+      <div class="qblock"><div class="qlabel">Ordena estos retos de 1 (más urgente) a 5 (menos urgente) <span class="req">*</span></div><div class="qhint">Asigna un número diferente a cada reto</div></div>
+      <div class="rklist">
+        <div class="rkitem"><span>Modernizar sistemas heredados (legacy)</span><select id="rk1"><option value="">-</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></div>
+        <div class="rkitem"><span>Garantizar ciberseguridad y privacidad</span><select id="rk2"><option value="">-</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></div>
+        <div class="rkitem"><span>Mejorar usabilidad de servicios digitales</span><select id="rk3"><option value="">-</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></div>
+        <div class="rkitem"><span>Fomentar datos abiertos e interoperabilidad</span><select id="rk4"><option value="">-</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></div>
+        <div class="rkitem"><span>Reducir la brecha digital ciudadana</span><select id="rk5"><option value="">-</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></div>
+      </div>
+      <div class="mt-auto"><button class="btn1" onclick="nxStep('d6',1,2)">Siguiente →</button></div>
+    </div>
+    <div class="content step" id="step-d6-2" style="display:none">
+      <div class="slabel">Paso 2 de 2</div>
+      <div class="qblock"><div class="qlabel">¿Qué reto técnico añadirías tú? <span style="font-weight:400;color:#7a9b92">(opcional)</span></div></div>
+      <textarea id="d6-extra" placeholder="Un reto urgente que no está en la lista..." oninput="chcnt(this,'cnt-d6r')"></textarea>
+      <div class="ccnt" id="cnt-d6r">0 caracteres</div>
+      <div class="qlabel" style="margin-bottom:10px">¿Con qué recursos cuentas actualmente para afrontar la transformación digital?</div>
+      <div class="ckgroup">
+        <label class="ckopt"><input type="checkbox" id="d6-rp"> <span>Presupuesto específico TIC</span></label>
+        <label class="ckopt"><input type="checkbox" id="d6-re"> <span>Equipo técnico dedicado</span></label>
+        <label class="ckopt"><input type="checkbox" id="d6-rm"> <span>Metodología y procesos definidos</span></label>
+        <label class="ckopt"><input type="checkbox" id="d6-rl"> <span>Liderazgo político claro</span></label>
+        <label class="ckopt"><input type="checkbox" id="d6-rn"> <span>Ninguno de los anteriores</span></label>
+      </div>
+      <div class="mt-auto">
+        <button class="btn1" onclick="submitForm('d6')">Enviar priorización →</button>
+        <button class="btn2" onclick="nxStep('d6',2,1,1)">‹ Anterior</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- D7: IDEATÓN EXPRÉS                                           -->
+  <!-- ============================================================ -->
+  <div class="screen" id="sc-d7">
+    <div class="header">
+      <button class="back" onclick="goTo('dynamics')" aria-label="Volver">‹</button>
+      <div><div class="htitle">D7 · Ideatón exprés</div><div class="hsub">Mixto · 45–60 min</div></div>
+    </div>
+    <div class="prog-wrap" id="prog-d7"></div>
+    <div class="content step" id="step-d7-1">
+      <div class="slabel">Paso 1 de 2</div>
+      <div class="qblock"><div class="qlabel">¿Sobre qué reto quieres aportar ideas? <span class="req">*</span></div></div>
+      <select id="d7-reto">
+        <option value="">Selecciona un reto...</option>
+        <option>Simplificar trámites administrativos</option>
+        <option>Mejorar la comunicación digital con la ciudadanía</option>
+        <option>Reducir la brecha digital</option>
+        <option>Abrir datos públicos para la ciudadanía</option>
+        <option>Modernizar la atención al ciudadano</option>
+        <option>Digitalizar servicios sociales y de salud</option>
+        <option>Otro reto</option>
+      </select>
+      <div class="qblock"><div class="qlabel">Tu idea en una frase <span class="req">*</span></div><div class="qhint">Máximo 140 caracteres. Que se entienda de un vistazo.</div></div>
+      <input type="text" id="d7-idea" placeholder="Ej: Un chatbot de WhatsApp que guíe paso a paso en cualquier trámite administrativo" maxlength="140" oninput="chcnt(this,'cnt-d7i')">
+      <div class="ccnt" id="cnt-d7i">0 / 140</div>
+      <div class="mt-auto"><button class="btn1" onclick="nxStep('d7',1,2)">Siguiente →</button></div>
+    </div>
+    <div class="content step" id="step-d7-2" style="display:none">
+      <div class="slabel">Paso 2 de 2</div>
+      <div class="qlabel" style="margin-bottom:10px">¿Qué necesitaría esta idea para hacerse realidad? <span style="font-weight:400;color:#7a9b92">(opcional)</span></div>
+      <div class="ckgroup">
+        <label class="ckopt"><input type="checkbox" id="d7-np"> <span>Más presupuesto</span></label>
+        <label class="ckopt"><input type="checkbox" id="d7-nn"> <span>Nueva normativa o marco legal</span></label>
+        <label class="ckopt"><input type="checkbox" id="d7-nt"> <span>Tecnología adecuada</span></label>
+        <label class="ckopt"><input type="checkbox" id="d7-nv"> <span>Voluntad política</span></label>
+        <label class="ckopt"><input type="checkbox" id="d7-nc"> <span>Participación y colaboración ciudadana</span></label>
+        <label class="ckopt"><input type="checkbox" id="d7-nf"> <span>Formación de empleados públicos</span></label>
+      </div>
+      <div class="qlabel" style="margin-bottom:10px">¿Quién debería liderarla? <span class="req">*</span></div>
+      <div class="rgroup">
+        <label class="ropt"><input type="radio" name="d7-lid" value="junta"> <span>Junta de Extremadura</span></label>
+        <label class="ropt"><input type="radio" name="d7-lid" value="ayto"> <span>Ayuntamientos</span></label>
+        <label class="ropt"><input type="radio" name="d7-lid" value="ciudadania"> <span>Ciudadanía organizada</span></label>
+        <label class="ropt"><input type="radio" name="d7-lid" value="empresa"> <span>Empresa privada</span></label>
+        <label class="ropt"><input type="radio" name="d7-lid" value="alianza"> <span>Alianza pública-privada-ciudadana</span></label>
+      </div>
+      <div class="mt-auto">
+        <button class="btn1" onclick="submitForm('d7')">Enviar idea →</button>
+        <button class="btn2" onclick="nxStep('d7',2,1,1)">‹ Anterior</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- D8: MICROCHARLAS ÁGORAEX                                     -->
+  <!-- ============================================================ -->
+  <div class="screen" id="sc-d8">
+    <div class="header">
+      <button class="back" onclick="goTo('dynamics')" aria-label="Volver">‹</button>
+      <div><div class="htitle">D8 · Microcharlas ÁgoraEx</div><div class="hsub">Todos los perfiles · 15–20 min</div></div>
+    </div>
+    <div class="prog-wrap" id="prog-d8"></div>
+    <div class="content step" id="step-d8-1">
+      <div class="slabel">Paso 1 de 2</div>
+      <div class="qblock"><div class="qlabel">¿A qué microcharla has asistido? <span class="req">*</span></div></div>
+      <select id="d8-charla">
+        <option value="">Selecciona la microcharla...</option>
+        <option>Inteligencia artificial al servicio del ciudadano</option>
+        <option>Ciberseguridad para no expertos</option>
+        <option>Cómo Estonia digitalizó su administración</option>
+        <option>Datos abiertos: qué son y para qué sirven</option>
+        <option>El futuro del empleado público digital</option>
+        <option>Extremadura digital: logros y retos</option>
+        <option>Otra microcharla</option>
+      </select>
+      <div class="qblock"><div class="qlabel">¿Cuál es la idea principal que te llevas? <span class="req">*</span></div></div>
+      <textarea id="d8-idea" placeholder="En pocas palabras, ¿qué es lo más importante que has aprendido o escuchado hoy?" oninput="chcnt(this,'cnt-d8i')"></textarea>
+      <div class="ccnt" id="cnt-d8i">0 caracteres</div>
+      <div class="qlabel" style="margin-bottom:10px">Valoración general de la charla</div>
+      <div class="stars" id="stars-d8" role="group" aria-label="Valoración de 1 a 5 estrellas"></div>
+      <div class="mt-auto"><button class="btn1" onclick="nxStep('d8',1,2)">Siguiente →</button></div>
+    </div>
+    <div class="content step" id="step-d8-2" style="display:none">
+      <div class="slabel">Paso 2 de 2</div>
+      <div class="qblock"><div class="qlabel">¿Algo te ha sorprendido o cambiado tu perspectiva? <span style="font-weight:400;color:#7a9b92">(opcional)</span></div></div>
+      <textarea id="d8-sorpr" placeholder="Algo que no sabías, que te ha hecho reflexionar, o que vas a compartir con otros..." oninput="chcnt(this,'cnt-d8s')"></textarea>
+      <div class="ccnt" id="cnt-d8s">0 caracteres</div>
+      <div class="qlabel" style="margin-bottom:10px">¿Quieres que te informemos de futuros eventos de ÁgoraEx?</div>
+      <div class="rgroup">
+        <label class="ropt"><input type="radio" name="d8-inf" value="si" onclick="document.getElementById('d8-eb').style.display='block'"> <span>Sí, apúntame</span></label>
+        <label class="ropt"><input type="radio" name="d8-inf" value="no" onclick="document.getElementById('d8-eb').style.display='none'"> <span>No, gracias</span></label>
+      </div>
+      <div id="d8-eb" style="display:none">
+        <div class="qlabel" style="margin-bottom:6px">Tu correo electrónico</div>
+        <input type="email" id="d8-email" placeholder="nombre@ejemplo.com">
+      </div>
+      <div class="mt-auto">
+        <button class="btn1" onclick="submitForm('d8')">Enviar valoración →</button>
+        <button class="btn2" onclick="nxStep('d8',2,1,1)">‹ Anterior</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- GRACIAS                                                       -->
+  <!-- ============================================================ -->
+  <div class="screen" id="sc-thanks">
+    <div class="header">
+      <div class="hlogo" id="ty-init">A</div>
+      <div><div class="htitle">Participación registrada</div><div class="hsub">Rincón ÁgoraEx · Congreso Potencial Digital 2026</div></div>
+    </div>
+    <div class="content wcenter">
+      <div class="chkcirc">✅</div>
+      <h2 class="ptitle" id="ty-name">¡Gracias!</h2>
+      <p class="psub">Tu aportación ha quedado registrada y contribuirá a mejorar la administración digital de Extremadura.</p>
+      <div class="statsbox">
+        <div class="statsn" id="ty-count">1</div>
+        <div class="statsl">dinámica<span id="ty-pl"></span> completada<span id="ty-pl2"></span> en este congreso</div>
+        <div style="margin-top:8px;font-size:12px;color:#7a9b92">¿Te animas a participar en otra?</div>
+      </div>
+      <button class="btn1" onclick="goTo('dynamics')">Participar en otra dinámica</button>
+      <div class="shield">🔒 Tus datos están protegidos por la Junta de Extremadura</div>
+    </div>
+  </div>
+
+</div><!-- .app -->
+
+<script>
+var S={name:'',done:[],ratings:{}};
+var STEPS={d1:3,d2:3,d3:3,d4:3,d5:1,d6:2,d7:2,d8:2};
+
+function goTo(id){
+  document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active')});
+  var el=document.getElementById('sc-'+id);
+  if(el){el.classList.add('active');window.scrollTo(0,0)}
+}
+
+function goToForm(d){
+  goTo(d);
+  mkProg(d,1);
+  showStep(d,1);
+}
+
+function showStep(d,n){
+  var total=STEPS[d]||1;
+  for(var i=1;i<=total;i++){
+    var el=document.getElementById('step-'+d+'-'+i);
+    if(el)el.style.display=(i===n)?'flex':'none';
+  }
+  mkProg(d,n);
+}
+
+function mkProg(d,cur){
+  var wrap=document.getElementById('prog-'+d);
+  if(!wrap)return;
+  var total=STEPS[d]||1;
+  var h='';
+  for(var i=1;i<=total;i++)h+='<div class="pseg'+(cur&&i<=cur?' on':'')+'"></div>';
+  wrap.innerHTML=h;
+}
+
+function nxStep(d,from,to,back){
+  if(!back&&!validate(d,from))return;
+  showStep(d,to);
+  window.scrollTo(0,0);
+}
+
+function validate(d,step){
+  var alert2=function(msg){alert(msg);return false};
+  if(d==='d1'&&step===1&&!val('d1-mantener').trim())return alert2('Por favor, escribe qué mantendrías.');
+  if(d==='d1'&&step===2&&!val('d1-mejorar').trim())return alert2('Por favor, escribe qué mejorarías.');
+  if(d==='d1'&&step===3&&!val('d1-anadir').trim())return alert2('Por favor, escribe qué añadirías.');
+  if(d==='d2'&&step===1){
+    if(!val('d2-srv'))return alert2('Por favor, selecciona un servicio.');
+    if(!document.querySelector('input[name="d2-prob"]:checked'))return alert2('Por favor, selecciona el problema principal.');
+  }
+  if(d==='d2'&&step===2&&!val('d2-propuesta').trim())return alert2('Por favor, describe tu propuesta.');
+  if(d==='d3'&&step===1&&!document.querySelector('input[name="d3-cdo"]:checked'))return alert2('Por favor, selecciona una opción.');
+  if(d==='d3'&&step===2&&!val('d3-exp').trim())return alert2('Por favor, cuéntanos tu experiencia.');
+  if(d==='d4'&&step===1){
+    if(!val('d4-perfil'))return alert2('Por favor, selecciona tu perfil.');
+    if(!val('d4-reto').trim())return alert2('Por favor, describe el reto.');
+  }
+  if(d==='d4'&&step===2&&!val('d4-practica').trim())return alert2('Por favor, describe la buena práctica.');
+  if(d==='d4'&&step===3&&!val('d4-prop').trim())return alert2('Por favor, escribe tu propuesta.');
+  if(d==='d6'&&step===1&&!val('d6-area'))return alert2('Por favor, selecciona tu área.');
+  if(d==='d7'&&step===1){
+    if(!val('d7-reto'))return alert2('Por favor, selecciona un reto.');
+    if(!val('d7-idea').trim())return alert2('Por favor, escribe tu idea.');
+  }
+  if(d==='d7'&&step===2&&!document.querySelector('input[name="d7-lid"]:checked'))return alert2('Por favor, indica quién debería liderar la idea.');
+  if(d==='d8'&&step===1){
+    if(!val('d8-charla'))return alert2('Por favor, selecciona la microcharla.');
+    if(!val('d8-idea').trim())return alert2('Por favor, escribe la idea principal.');
+  }
+  return true;
+}
+
+function val(id){var e=document.getElementById(id);return e?e.value:''}
+
+function submitForm(d){
+  if(!S.done.includes(d))S.done.push(d);
+  var card=document.getElementById('card-'+d);
+  if(card)card.classList.add('done');
+  var n=S.done.length;
+  document.getElementById('ty-count').textContent=n;
+  document.getElementById('ty-pl').textContent=n>1?'s':'';
+  document.getElementById('ty-pl2').textContent=n>1?'s':'';
+  saveData();
+  goTo('thanks');
+}
+
+function submitRegister(){
+  var name=document.getElementById('reg-name').value.trim();
+  if(!name){alert('Por favor, escribe tu nombre.');return}
+  if(!document.getElementById('reg-privacy').checked){alert('Por favor, acepta la política de privacidad.');return}
+  S.name=name;
+  S.email=document.getElementById('reg-email').value.trim();
+  S.municipio=document.getElementById('reg-municipio').value.trim();
+  var ini=name.charAt(0).toUpperCase();
+  document.getElementById('user-initial').textContent=ini;
+  document.getElementById('ty-init').textContent=ini;
+  document.getElementById('user-greeting').textContent='Hola, '+name.split(' ')[0];
+  document.getElementById('ty-name').textContent='¡Gracias, '+name.split(' ')[0]+'!';
+  saveData();
+  goTo('dynamics');
+}
+
+function setSem(srv,color,btn){
+  btn.closest('.sem-wrap').querySelectorAll('.sembtn').forEach(function(b){b.classList.remove('on')});
+  btn.classList.add('on');
+  document.getElementById('d5-'+srv+'v').value=color;
+}
+
+function buildStars(cid,key){
+  var c=document.getElementById(cid);
+  if(!c)return;
+  var labels=['Muy mala','Mala','Regular','Buena','Excelente'];
+  for(var i=1;i<=5;i++){
+    (function(v){
+      var b=document.createElement('button');
+      b.className='sbtn';
+      b.setAttribute('aria-label',labels[v-1]);
+      b.innerHTML=v+'<br><small>★</small>';
+      b.onclick=function(){
+        S.ratings[key]=v;
+        c.querySelectorAll('.sbtn').forEach(function(btn,idx){btn.classList.toggle('on',idx<v)});
+      };
+      c.appendChild(b);
+    })(i);
+  }
+}
+buildStars('stars-d3','d3');
+buildStars('stars-d8','d8');
+
+function chcnt(el,cid){
+  var c=document.getElementById(cid);
+  if(!c)return;
+  var mx=el.maxLength>0?el.maxLength:null;
+  c.textContent=mx?(el.value.length+' / '+mx):(el.value.length+' caracteres');
+}
+
+function saveData(){
+  try{localStorage.setItem('agx_state',JSON.stringify(S))}catch(e){}
+}
+
+function loadData(){
+  try{
+    var raw=localStorage.getItem('agx_state');
+    if(!raw)return;
+    S=JSON.parse(raw);
+    if(S.name){
+      var ini=S.name.charAt(0).toUpperCase();
+      document.getElementById('user-initial').textContent=ini;
+      document.getElementById('ty-init').textContent=ini;
+      document.getElementById('user-greeting').textContent='Hola, '+S.name.split(' ')[0];
+      document.getElementById('ty-name').textContent='¡Gracias, '+S.name.split(' ')[0]+'!';
+    }
+    S.done.forEach(function(d){
+      var c=document.getElementById('card-'+d);
+      if(c)c.classList.add('done');
+    });
+  }catch(e){}
+}
+loadData();
+</script>
+</body>
+</html>

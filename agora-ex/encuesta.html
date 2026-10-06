@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Encuesta Ciudadana · Rincón ÁgoraEx</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { height: 100%; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background: #EAECF6;
+  min-height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+#app {
+  width: 100%;
+  max-width: 480px;
+  min-height: 100vh;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 0 40px rgba(30,16,77,0.12);
+}
+.screen { display: none; flex-direction: column; min-height: 100vh; }
+.screen.active { display: flex; }
+
+/* ===== LOGO SVG ===== */
+.logo-wrap { display: flex; align-items: center; gap: 9px; }
+.logo-text { font-size: 20px; font-weight: 800; letter-spacing: -0.4px; }
+.logo-agora-light { color: #205CF2; }
+.logo-ex-teal { color: #5ADAA4; }
+.logo-agora-dark { color: #fff; }
+
+/* ===== PROGRESS BAR ===== */
+.pb-row {
+  display: flex;
+  gap: 3px;
+  padding: 12px 0 0;
+}
+.pb-seg {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255,255,255,0.22);
+  transition: background 0.3s;
+}
+.pb-seg.done { background: #5ADAA4; }
+.pb-seg.current { background: #205CF2; }
+.pb-seg.light-pending { background: #E0E5F5; }
+
+/* ===== FOOTER ===== */
+.inst-footer {
+  padding: 14px 20px 22px;
+  border-top: 1px solid #EEF0F8;
+}
+.inst-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+.inst-sep { width: 1px; height: 28px; background: #D5DAF0; }
+.inst-junta {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 10px;
+  color: #555;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  line-height: 1.4;
+}
+.inst-eu-label { font-size: 10px; color: #555; line-height: 1.4; }
+
+/* ===== BUTTONS ===== */
+.btn-primary {
+  width: 100%;
+  padding: 14px;
+  background: #205CF2;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.18s, transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-primary:active { transform: scale(0.98); background: #1a4fd8; }
+.btn-ghost {
+  padding: 13px 18px;
+  background: transparent;
+  color: #555;
+  border: 0.5px solid #C8CDE8;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.18s;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-ghost:active { background: #F4F6FB; }
+.nav-row { display: flex; gap: 10px; }
+.nav-row .btn-ghost { flex: 1; }
+.nav-row .btn-primary { flex: 2; }
+
+/* ===== INPUTS ===== */
+.field-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1E104D;
+  margin-bottom: 6px;
+}
+.field-input {
+  width: 100%;
+  background: #F4F6FB;
+  border: 0.5px solid #D5DAF0;
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 15px;
+  color: #1E104D;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.18s, background 0.18s;
+}
+.field-input:focus { border-color: #205CF2; background: #fff; }
+.field-group { margin-bottom: 16px; }
+
+/* ===== CHECKBOX ===== */
+.cb-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px;
+  background: #F4F6FB;
+  border: 0.5px solid #D5DAF0;
+  border-radius: 10px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.cb-custom {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  border: 1.5px solid #C8CDE8;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+  transition: all 0.18s;
+}
+.cb-row.checked .cb-custom { background: #205CF2; border-color: #205CF2; }
+.cb-row.checked .cb-custom::after { content: '✓'; color: #fff; font-size: 13px; line-height: 1; font-weight: 700; }
+.cb-text { font-size: 13px; color: #444; line-height: 1.45; }
+.err-msg { font-size: 12px; color: #d63031; margin-top: 6px; display: none; }
+.err-msg.show { display: block; }
+
+/* ===== YES/NO ===== */
+.yn-row { display: flex; gap: 12px; margin-top: 20px; }
+.yn-btn {
+  flex: 1;
+  height: 64px;
+  border-radius: 12px;
+  font-size: 20px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  border: 1.5px solid #D5DAF0;
+  background: #F9FAFD;
+  color: #666;
+  transition: all 0.18s;
+  -webkit-tap-highlight-color: transparent;
+}
+.yn-btn[data-v="yes"].sel { border-color: #5ADAA4; background: #EAFAF5; color: #097A51; }
+.yn-btn[data-v="no"].sel { border-color: #205CF2; background: #EBF0FE; color: #205CF2; }
+
+/* ===== MULTI-OPT ===== */
+.opt-list { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+.opt-btn {
+  padding: 15px 16px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+  border: 0.5px solid #D5DAF0;
+  background: #F9FAFD;
+  color: #333;
+  transition: all 0.18s;
+  -webkit-tap-highlight-color: transparent;
+}
+.opt-btn.sel { border-color: #5ADAA4; border-width: 1.5px; background: #EAFAF5; color: #097A51; }
+
+/* ===== SUB-QUESTION (Q2) ===== */
+.sub-q {
+  display: none;
+  margin-top: 20px;
+  padding: 16px;
+  background: #F4F6FB;
+  border-radius: 12px;
+  border-left: 3px solid #5ADAA4;
+}
+.sub-q.on { display: block; }
+.sub-q-title { font-size: 14px; font-weight: 600; color: #1E104D; margin-bottom: 12px; }
+.radio-opt {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 0.5px solid #D5DAF0;
+  background: #fff;
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: #333;
+  transition: all 0.18s;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.radio-opt:last-child { margin-bottom: 0; }
+.radio-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1.5px solid #C8CDE8;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.18s;
+}
+.radio-opt.sel .radio-dot { border-color: #5ADAA4; background: #5ADAA4; }
+.radio-opt.sel .radio-dot::after { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #fff; }
+.radio-opt.sel { border-color: #5ADAA4; background: #EAFAF5; }
+
+/* ===== TEXT + COUNTER ===== */
+.text-input-wrap { margin-top: 20px; }
+.q-text-input {
+  width: 100%;
+  background: #F4F6FB;
+  border: 0.5px solid #D5DAF0;
+  border-radius: 10px;
+  padding: 14px;
+  font-size: 18px;
+  color: #1E104D;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.18s, background 0.18s;
+}
+.q-text-input:focus { border-color: #205CF2; background: #fff; }
+.char-counter { text-align: right; font-size: 12px; color: #aaa; margin-top: 6px; }
+
+/* ===== WELCOME SCREEN ===== */
+#sc-welcome .w-header {
+  padding: 18px 20px 16px;
+  border-bottom: 1px solid #EEF0F8;
+}
+#sc-welcome .w-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 24px 24px;
+  gap: 18px;
+  text-align: center;
+}
+.w-headline {
+  font-size: 22px;
+  font-weight: 800;
+  color: #1E104D;
+  line-height: 1.3;
+  max-width: 320px;
+}
+.qr-card {
+  padding: 16px;
+  border: 1px solid #E0E5F5;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 2px 16px rgba(30,16,77,0.08);
+}
+.qr-hint { font-size: 13px; color: #888; margin-top: 8px; }
+.qr-placeholder {
+  width: 160px; height: 160px;
+  border: 2px dashed #C5CCE8;
+  border-radius: 12px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 10px;
+  background: #F8F9FE;
+}
+.qr-ph-label { font-size: 12px; color: #A0AACC; font-weight: 500; letter-spacing: 0.03em; }
+.url-chip {
+  background: #F4F6FB;
+  border: 0.5px solid #D5DAF0;
+  border-radius: 20px;
+  padding: 7px 16px;
+  font-size: 12px;
+  color: #205CF2;
+  font-weight: 600;
+}
+.w-meta { font-size: 13px; color: #AAB0CC; }
+#sc-welcome .w-cta { padding: 0 20px 24px; }
+
+/* ===== REGISTRO SCREEN ===== */
+#sc-registro .rg-header {
+  background: #205CF2;
+  padding: 20px 20px 0;
+}
+#sc-registro .rg-logo-row { display: flex; align-items: center; gap: 9px; }
+#sc-registro .rg-title { color: #fff; font-size: 18px; font-weight: 700; margin-top: 8px; }
+#sc-registro .rg-subtitle { color: rgba(255,255,255,0.72); font-size: 13px; margin-top: 2px; margin-bottom: 4px; }
+#sc-registro .body { flex: 1; padding: 24px 20px 16px; }
+#sc-registro .footer-cta { padding: 0 20px 16px; }
+
+/* ===== QUESTION SCREENS ===== */
+.q-header {
+  background: #1E104D;
+  padding: 16px 20px 0;
+}
+.q-header-top {
+  display: flex;
+  align-items: center;
+}
+.q-back {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 10px 2px 0;
+  font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+.q-header-title {
+  flex: 1;
+  text-align: center;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+}
+.q-counter { color: #5ADAA4; font-size: 13px; font-weight: 700; min-width: 38px; text-align: right; }
+.q-body { flex: 1; padding: 26px 20px 16px; overflow-y: auto; }
+.q-text { font-size: 20px; font-weight: 700; color: #1E104D; line-height: 1.35; }
+.q-hint { font-size: 13px; color: #9098B8; margin-top: 6px; }
+.q-footer { padding: 12px 20px 22px; }
+
+/* ===== GRACIAS SCREEN ===== */
+#sc-gracias .g-header {
+  padding: 18px 20px 16px;
+  border-bottom: 1px solid #EEF0F8;
+}
+#sc-gracias .g-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px 24px;
+  gap: 16px;
+  text-align: center;
+}
+.check-circle {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: #5ADAA4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 28px rgba(90,218,164,0.38);
+}
+.g-title { font-size: 28px; font-weight: 800; color: #1E104D; }
+.g-msg { font-size: 15px; color: #555; line-height: 1.55; max-width: 300px; }
+.g-count {
+  background: #F4F6FB;
+  border: 0.5px solid #D5DAF0;
+  border-radius: 20px;
+  padding: 8px 20px;
+  font-size: 13px;
+  color: #205CF2;
+  font-weight: 600;
+}
+#sc-gracias .g-cta { padding: 0 20px 8px; }
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ===================== WELCOME ===================== -->
+<div id="sc-welcome" class="screen">
+  <div class="w-header">
+    <div class="logo-wrap">
+      <svg width="38" height="38" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <line x1="22" y1="22" x2="31" y2="13" stroke="#205CF2" stroke-width="1.2"/>
+        <line x1="22" y1="22" x2="31" y2="31" stroke="#205CF2" stroke-width="1.2"/>
+        <line x1="22" y1="22" x2="13" y2="31" stroke="#205CF2" stroke-width="1.2"/>
+        <line x1="22" y1="22" x2="13" y2="13" stroke="#205CF2" stroke-width="1.2"/>
+        <line x1="22" y1="22" x2="22" y2="8" stroke="#205CF2" stroke-width="1.2"/>
+        <line x1="22" y1="22" x2="36" y2="22" stroke="#205CF2" stroke-width="1.2"/>
+        <line x1="22" y1="22" x2="22" y2="36" stroke="#205CF2" stroke-width="1.2"/>
+        <line x1="22" y1="22" x2="8" y2="22" stroke="#205CF2" stroke-width="1.2"/>
+        <line x1="31" y1="13" x2="37" y2="7" stroke="#5ADAA4" stroke-width="1.2" opacity="0.7"/>
+        <line x1="31" y1="31" x2="37" y2="37" stroke="#5ADAA4" stroke-width="1.2" opacity="0.7"/>
+        <line x1="13" y1="31" x2="7" y2="37" stroke="#5ADAA4" stroke-width="1.2" opacity="0.7"/>
+        <line x1="13" y1="13" x2="7" y2="7" stroke="#5ADAA4" stroke-width="1.2" opacity="0.7"/>
+        <circle cx="37" cy="7" r="2.5" fill="#5ADAA4" opacity="0.75"/>
+        <circle cx="37" cy="37" r="2.5" fill="#5ADAA4" opacity="0.75"/>
+        <circle cx="7" cy="37" r="2.5" fill="#5ADAA4" opacity="0.75"/>
+        <circle cx="7" cy="7" r="2.5" fill="#5ADAA4" opacity="0.75"/>
+        <circle cx="31" cy="13" r="5" fill="#5ADAA4"/>
+        <circle cx="31" cy="31" r="5" fill="#5ADAA4"/>
+        <circle cx="13" cy="31" r="5" fill="#5ADAA4"/>
+        <circle cx="13" cy="13" r="5" fill="#5ADAA4"/>
+        <circle cx="22" cy="8" r="3" fill="#205CF2"/>
+        <circle cx="36" cy="22" r="3" fill="#205CF2"/>
+        <circle cx="22" cy="36" r="3" fill="#205CF2"/>
+        <circle cx="8" cy="22" r="3" fill="#205CF2"/>
+        <rect x="18" y="18" width="8" height="8" rx="1.5" fill="#205CF2"/>
+      </svg>
+      <div class="logo-text"><span class="logo-agora-light">Ágora</span><span class="logo-ex-teal">EX</span></div>
+    </div>
+  </div>
+  <div class="w-body">
+    <div class="w-headline">¿Cómo es tu relación con la administración digital?</div>
+    <div class="qr-card">
+      <div class="qr-placeholder">
+        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="4" y="4" width="16" height="16" rx="2" stroke="#C5CCE8" stroke-width="2" fill="none"/>
+          <rect x="8" y="8" width="8" height="8" rx="1" fill="#C5CCE8"/>
+          <rect x="28" y="4" width="16" height="16" rx="2" stroke="#C5CCE8" stroke-width="2" fill="none"/>
+          <rect x="32" y="8" width="8" height="8" rx="1" fill="#C5CCE8"/>
+          <rect x="4" y="28" width="16" height="16" rx="2" stroke="#C5CCE8" stroke-width="2" fill="none"/>
+          <rect x="8" y="32" width="8" height="8" rx="1" fill="#C5CCE8"/>
+          <rect x="28" y="28" width="4" height="4" fill="#C5CCE8"/>
+          <rect x="36" y="28" width="4" height="4" fill="#C5CCE8"/>
+          <rect x="28" y="36" width="4" height="4" fill="#C5CCE8"/>
+          <rect x="36" y="36" width="4" height="4" fill="#C5CCE8"/>
+          <rect x="28" y="20" width="4" height="4" fill="#C5CCE8"/>
+          <rect x="20" y="4" width="4" height="4" fill="#C5CCE8"/>
+          <rect x="20" y="12" width="4" height="4" fill="#C5CCE8"/>
+          <rect x="20" y="28" width="4" height="4" fill="#C5CCE8"/>
+          <rect x="20" y="36" width="4" height="4" fill="#C5CCE8"/>
+        </svg>
+        <div class="qr-ph-label">Código QR</div>
+      </div>
+      <div class="qr-hint">Escanea y participa</div>
+    </div>
+    <div class="url-chip">junta-ex.es/agoraex</div>
+    <div class="w-meta">10 preguntas · 3 minutos</div>
+  </div>
+  <div class="w-cta">
+    <button class="btn-primary" onclick="goTo('registro')">Comenzar encuesta →</button>
+  </div>
+  <div class="inst-footer">
+    <div class="inst-row">
+      <svg id="eu-welcome" viewBox="0 0 60 40" width="60" height="40" xmlns="http://www.w3.org/2000/svg">
+        <rect width="60" height="40" rx="3" fill="#003399"/>
+      </svg>
+      <span class="inst-eu-label">Cofinanciado por<br>la Unión Europea</span>
+      <div class="inst-sep"></div>
+      <div class="inst-junta">Junta de<br>Extremadura</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== REGISTRO ===================== -->
+<div id="sc-registro" class="screen">
+  <div class="rg-header">
+    <div class="rg-logo-row">
+      <svg width="32" height="32" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <line x1="22" y1="22" x2="31" y2="13" stroke="#fff" stroke-width="1.2"/>
+        <line x1="22" y1="22" x2="31" y2="31" stroke="#fff" stroke-width="1.2"/>
+        <line x1="22" y1="22" x2="13" y2="31" stroke="#fff" stroke-width="1.2"/>
+        <line x1="22" y1="22" x2="13" y2="13" stroke="#fff" stroke-width="1.2"/>
+        <line x1="22" y1="22" x2="22" y2="8" stroke="#fff" stroke-width="1.2"/>
+        <line x1="22" y1="22" x2="36" y2="22" stroke="#fff" stroke-width="1.2"/>
+        <line x1="22" y1="22" x2="22" y2="36" stroke="#fff" stroke-width="1.2"/>
+        <line x1="22" y1="22" x2="8" y2="22" stroke="#fff" stroke-width="1.2"/>
+        <line x1="31" y1="13" x2="37" y2="7" stroke="#5ADAA4" stroke-width="1.2" opacity="0.7"/>
+        <line x1="31" y1="31" x2="37" y2="37" stroke="#5ADAA4" stroke-width="1.2" opacity="0.7"/>
+        <line x1="13" y1="31" x2="7" y2="37" stroke="#5ADAA4" stroke-width="1.2" opacity="0.7"/>
+        <line x1="13" y1="13" x2="7" y2="7" stroke="#5ADAA4" stroke-width="1.2" opacity="0.7"/>
+        <circle cx="37" cy="7" r="2.5" fill="#5ADAA4" opacity="0.75"/>
+        <circle cx="37" cy="37" r="2.5" fill="#5ADAA4" opacity="0.75"/>
+        <circle cx="7" cy="37" r="2.5" fill="#5ADAA4" opacity="0.75"/>
+        <circle cx="7" cy="7" r="2.5" fill="#5ADAA4" opacity="0.75"/>
+        <circle cx="31" cy="13" r="5" fill="#5ADAA4"/>
+        <circle cx="31" cy="31" r="5" fill="#5ADAA4"/>
+        <circle cx="13" cy="31" r="5" fill="#5ADAA4"/>
+        <circle cx="13" cy="13" r="5" fill="#5ADAA4"/>
+        <circle cx="22" cy="8" r="3" fill="#fff"/>
+        <circle cx="36" cy="22" r="3" fill="#fff"/>
+        <circle cx="22" cy="36" r="3" fill="#fff"/>
+        <circle cx="8" cy="22" r="3" fill="#fff"/>
+        <rect x="18" y="18" width="8" height="8" rx="1.5" fill="#fff"/>
+      </svg>
+      <div class="logo-text"><span class="logo-agora-dark">Ágora</span><span class="logo-ex-teal">EX</span></div>
+    </div>
+    <div class="rg-title">Antes de empezar</div>
+    <div class="rg-subtitle">Respuestas anónimas</div>
+    <div class="pb-row" id="pb-registro">
+      <div class="pb-seg"></div><div class="pb-seg"></div><div class="pb-seg"></div>
+      <div class="pb-seg"></div><div class="pb-seg"></div><div class="pb-seg"></div>
+      <div class="pb-seg"></div><div class="pb-seg"></div><div class="pb-seg"></div>
+      <div class="pb-seg"></div>
+    </div>
+    <div style="height:14px;"></div>
+  </div>
+  <div class="body" style="flex:1; padding:24px 20px 16px; overflow-y:auto;">
+    <div class="field-group">
+      <label class="field-label" for="reg-name">Nombre</label>
+      <input type="text" id="reg-name" class="field-input" placeholder="Tu nombre (opcional)" autocomplete="off"/>
+    </div>
+    <div class="field-group">
+      <label class="field-label" for="reg-email">Email</label>
+      <input type="email" id="reg-email" class="field-input" placeholder="tu@email.es" autocomplete="off"/>
+    </div>
+    <div class="field-group">
+      <div class="cb-row" id="privacy-row" onclick="togglePrivacy()">
+        <div class="cb-custom" id="privacy-box"></div>
+        <span class="cb-text">Acepto el tratamiento anónimo de mis respuestas conforme a la RGPD</span>
+      </div>
+      <div class="err-msg" id="privacy-err">Debes aceptar para continuar</div>
+    </div>
+  </div>
+  <div class="footer-cta">
+    <button class="btn-primary" onclick="startSurvey()">Comenzar →</button>
+  </div>
+  <div class="inst-footer">
+    <div class="inst-row">
+      <svg id="eu-registro" viewBox="0 0 60 40" width="54" height="36" xmlns="http://www.w3.org/2000/svg">
+        <rect width="60" height="40" rx="3" fill="#003399"/>
+      </svg>
+      <span class="inst-eu-label">Cofinanciado por<br>la Unión Europea</span>
+      <div class="inst-sep"></div>
+      <div class="inst-junta">Junta de<br>Extremadura</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== Q1 ===================== -->
+<div id="sc-q1" class="screen">
+  <div class="q-header">
+    <div class="q-header-top">
+      <button class="q-back" onclick="goBack(1)">&#8249;</button>
+      <span class="q-header-title">Encuesta ciudadana</span>
+      <span class="q-counter">P1/10</span>
+    </div>
+    <div class="pb-row" id="pb-q1"></div>
+    <div style="height:14px;"></div>
+  </div>
+  <div class="q-body">
+    <div class="q-text">¿Vives en un municipio de menos de 10.000 habitantes?</div>
+    <div class="yn-row">
+      <button class="yn-btn" data-v="yes" onclick="pickYN(1,'yes',this)">Sí</button>
+      <button class="yn-btn" data-v="no" onclick="pickYN(1,'no',this)">No</button>
+    </div>
+  </div>
+  <div class="q-footer">
+    <div class="nav-row">
+      <button class="btn-ghost" onclick="goBack(1)">&#8249; Anterior</button>
+      <button class="btn-primary" onclick="advQ(1,2)">Siguiente →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== Q2 ===================== -->
+<div id="sc-q2" class="screen">
+  <div class="q-header">
+    <div class="q-header-top">
+      <button class="q-back" onclick="goBack(2)">&#8249;</button>
+      <span class="q-header-title">Encuesta ciudadana</span>
+      <span class="q-counter">P2/10</span>
+    </div>
+    <div class="pb-row" id="pb-q2"></div>
+    <div style="height:14px;"></div>
+  </div>
+  <div class="q-body">
+    <div class="q-text">En el último año, ¿has ido en persona a una oficina de la administración?</div>
+    <div class="yn-row">
+      <button class="yn-btn" data-v="yes" onclick="pickYN(2,'yes',this)">Sí</button>
+      <button class="yn-btn" data-v="no" onclick="pickYN(2,'no',this)">No</button>
+    </div>
+    <div class="sub-q" id="q2-sub">
+      <div class="sub-q-title">¿Por qué fuiste en persona?</div>
+      <div class="radio-opt" onclick="pickRadio(this,'q2sub','r1')">
+        <div class="radio-dot"></div>
+        <span>No sabía que podía hacerlo online</span>
+      </div>
+      <div class="radio-opt" onclick="pickRadio(this,'q2sub','r2')">
+        <div class="radio-dot"></div>
+        <span>Lo intenté online y no pude</span>
+      </div>
+      <div class="radio-opt" onclick="pickRadio(this,'q2sub','r3')">
+        <div class="radio-dot"></div>
+        <span>Prefiero ir en persona aunque pudiera hacerlo online</span>
+      </div>
+      <div class="radio-opt" onclick="pickRadio(this,'q2sub','r4')">
+        <div class="radio-dot"></div>
+        <span>Me dijeron que tenía que ir obligatoriamente</span>
+      </div>
+    </div>
+  </div>
+  <div class="q-footer">
+    <div class="nav-row">
+      <button class="btn-ghost" onclick="goBack(2)">&#8249; Anterior</button>
+      <button class="btn-primary" onclick="advQ(2,3)">Siguiente →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== Q3 ===================== -->
+<div id="sc-q3" class="screen">
+  <div class="q-header">
+    <div class="q-header-top">
+      <button class="q-back" onclick="goBack(3)">&#8249;</button>
+      <span class="q-header-title">Encuesta ciudadana</span>
+      <span class="q-counter">P3/10</span>
+    </div>
+    <div class="pb-row" id="pb-q3"></div>
+    <div style="height:14px;"></div>
+  </div>
+  <div class="q-body">
+    <div class="q-text">¿Tienes Cl@ve, certificado digital o el chip del DNI electrónico activado?</div>
+    <div class="opt-list">
+      <button class="opt-btn" onclick="pickOpt(3,'si',this)">Sí</button>
+      <button class="opt-btn" onclick="pickOpt(3,'no',this)">No</button>
+      <button class="opt-btn" onclick="pickOpt(3,'noSabe',this)">No sé qué es eso</button>
+    </div>
+  </div>
+  <div class="q-footer">
+    <div class="nav-row">
+      <button class="btn-ghost" onclick="goBack(3)">&#8249; Anterior</button>
+      <button class="btn-primary" onclick="advQ(3,4)">Siguiente →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== Q4 ===================== -->
+<div id="sc-q4" class="screen">
+  <div class="q-header">
+    <div class="q-header-top">
+      <button class="q-back" onclick="goBack(4)">&#8249;</button>
+      <span class="q-header-title">Encuesta ciudadana</span>
+      <span class="q-counter">P4/10</span>
+    </div>
+    <div class="pb-row" id="pb-q4"></div>
+    <div style="height:14px;"></div>
+  </div>
+  <div class="q-body">
+    <div class="q-text">¿Has pedido alguna vez ayuda a un familiar, amigo o gestoría para hacer un trámite que querías hacer tú solo/a?</div>
+    <div class="yn-row">
+      <button class="yn-btn" data-v="yes" onclick="pickYN(4,'yes',this)">Sí</button>
+      <button class="yn-btn" data-v="no" onclick="pickYN(4,'no',this)">No</button>
+    </div>
+  </div>
+  <div class="q-footer">
+    <div class="nav-row">
+      <button class="btn-ghost" onclick="goBack(4)">&#8249; Anterior</button>
+      <button class="btn-primary" onclick="advQ(4,5)">Siguiente →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== Q5 ===================== -->
+<div id="sc-q5" class="screen">
+  <div class="q-header">
+    <div class="q-header-top">
+      <button class="q-back" onclick="goBack(5)">&#8249;</button>
+      <span class="q-header-title">Encuesta ciudadana</span>
+      <span class="q-counter">P5/10</span>
+    </div>
+    <div class="pb-row" id="pb-q5"></div>
+    <div style="height:14px;"></div>
+  </div>
+  <div class="q-body">
+    <div class="q-text">¿Has dejado alguna vez un trámite online a medias porque no sabías cómo seguir?</div>
+    <div class="yn-row">
+      <button class="yn-btn" data-v="yes" onclick="pickYN(5,'yes',this)">Sí</button>
+      <button class="yn-btn" data-v="no" onclick="pickYN(5,'no',this)">No</button>
+    </div>
+  </div>
+  <div class="q-footer">
+    <div class="nav-row">
+      <button class="btn-ghost" onclick="goBack(5)">&#8249; Anterior</button>
+      <button class="btn-primary" onclick="advQ(5,6)">Siguiente →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== Q6 ===================== -->
+<div id="sc-q6" class="screen">
+  <div class="q-header">
+    <div class="q-header-top">
+      <button class="q-back" onclick="goBack(6)">&#8249;</button>
+      <span class="q-header-title">Encuesta ciudadana</span>
+      <span class="q-counter">P6/10</span>
+    </div>
+    <div class="pb-row" id="pb-q6"></div>
+    <div style="height:14px;"></div>
+  </div>
+  <div class="q-body">
+    <div class="q-text">¿Confías en que la administración protege bien tus datos cuando haces algo online?</div>
+    <div class="yn-row">
+      <button class="yn-btn" data-v="yes" onclick="pickYN(6,'yes',this)">Sí</button>
+      <button class="yn-btn" data-v="no" onclick="pickYN(6,'no',this)">No</button>
+    </div>
+  </div>
+  <div class="q-footer">
+    <div class="nav-row">
+      <button class="btn-ghost" onclick="goBack(6)">&#8249; Anterior</button>
+      <button class="btn-primary" onclick="advQ(6,7)">Siguiente →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== Q7 ===================== -->
+<div id="sc-q7" class="screen">
+  <div class="q-header">
+    <div class="q-header-top">
+      <button class="q-back" onclick="goBack(7)">&#8249;</button>
+      <span class="q-header-title">Encuesta ciudadana</span>
+      <span class="q-counter">P7/10</span>
+    </div>
+    <div class="pb-row" id="pb-q7"></div>
+    <div style="height:14px;"></div>
+  </div>
+  <div class="q-body">
+    <div class="q-text">¿Le recomendarías a alguien cercano hacer sus trámites con la administración online en lugar de ir en persona?</div>
+    <div class="yn-row">
+      <button class="yn-btn" data-v="yes" onclick="pickYN(7,'yes',this)">Sí</button>
+      <button class="yn-btn" data-v="no" onclick="pickYN(7,'no',this)">No</button>
+    </div>
+  </div>
+  <div class="q-footer">
+    <div class="nav-row">
+      <button class="btn-ghost" onclick="goBack(7)">&#8249; Anterior</button>
+      <button class="btn-primary" onclick="advQ(7,8)">Siguiente →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== Q8 ===================== -->
+<div id="sc-q8" class="screen">
+  <div class="q-header">
+    <div class="q-header-top">
+      <button class="q-back" onclick="goBack(8)">&#8249;</button>
+      <span class="q-header-title">Encuesta ciudadana</span>
+      <span class="q-counter">P8/10</span>
+    </div>
+    <div class="pb-row" id="pb-q8"></div>
+    <div style="height:14px;"></div>
+  </div>
+  <div class="q-body">
+    <div class="q-text">¿Has completado alguna vez un trámite con la administración 100% online, desde el principio hasta el final, sin ir a ninguna oficina ni llamar a nadie?</div>
+    <div class="yn-row">
+      <button class="yn-btn" data-v="yes" onclick="pickYN(8,'yes',this)">Sí</button>
+      <button class="yn-btn" data-v="no" onclick="pickYN(8,'no',this)">No</button>
+    </div>
+  </div>
+  <div class="q-footer">
+    <div class="nav-row">
+      <button class="btn-ghost" onclick="goBack(8)">&#8249; Anterior</button>
+      <button class="btn-primary" onclick="advQ(8,9)">Siguiente →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== Q9 ===================== -->
+<div id="sc-q9" class="screen">
+  <div class="q-header">
+    <div class="q-header-top">
+      <button class="q-back" onclick="goBack(9)">&#8249;</button>
+      <span class="q-header-title">Encuesta ciudadana</span>
+      <span class="q-counter">P9/10</span>
+    </div>
+    <div class="pb-row" id="pb-q9"></div>
+    <div style="height:14px;"></div>
+  </div>
+  <div class="q-body">
+    <div class="q-text">¿Usas el móvil para hacer gestiones online?</div>
+    <div class="q-hint">Ej: banco, compras, citas médicas</div>
+    <div class="opt-list">
+      <button class="opt-btn" onclick="pickOpt(9,'si',this)">Sí</button>
+      <button class="opt-btn" onclick="pickOpt(9,'no',this)">No</button>
+      <button class="opt-btn" onclick="pickOpt(9,'ordenador',this)">Prefiero el ordenador</button>
+      <button class="opt-btn" onclick="pickOpt(9,'noSuelo',this)">No suelo hacer gestiones online</button>
+    </div>
+  </div>
+  <div class="q-footer">
+    <div class="nav-row">
+      <button class="btn-ghost" onclick="goBack(9)">&#8249; Anterior</button>
+      <button class="btn-primary" onclick="advQ(9,10)">Siguiente →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== Q10 ===================== -->
+<div id="sc-q10" class="screen">
+  <div class="q-header">
+    <div class="q-header-top">
+      <button class="q-back" onclick="goBack(10)">&#8249;</button>
+      <span class="q-header-title">Encuesta ciudadana</span>
+      <span class="q-counter">P10/10</span>
+    </div>
+    <div class="pb-row" id="pb-q10"></div>
+    <div style="height:14px;"></div>
+  </div>
+  <div class="q-body">
+    <div class="q-text">En una palabra, ¿cómo describirías tu experiencia con la administración pública?</div>
+    <div class="text-input-wrap">
+      <input type="text" class="q-text-input" id="q10-inp" maxlength="20" placeholder="Escribe aquí..." oninput="onQ10Input()"/>
+      <div class="char-counter"><span id="q10-cnt">0</span>/20</div>
+    </div>
+  </div>
+  <div class="q-footer">
+    <div class="nav-row">
+      <button class="btn-ghost" onclick="goBack(10)">&#8249; Anterior</button>
+      <button class="btn-primary" style="background:#5ADAA4;color:#097A51;" onclick="submitSurvey()">Enviar →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== GRACIAS ===================== -->
+<div id="sc-gracias" class="screen">
+  <div class="g-header">
+    <div class="logo-wrap">
+      <svg width="38" height="38" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <line x1="22" y1="22" x2="31" y2="13" stroke="#205CF2" stroke-width="1.2"/>
+        <line x1="22" y1="22" x2="31" y2="31" stroke="#205CF2" stroke-width="1.2"/>
+        <line x1="22" y1="22" x2="13" y2="31" stroke="#205CF2" stroke-width="1.2"/>
+        <line x1="22" y1="22" x2="13" y2="13" stroke="#205CF2" stroke-width="1.2"/>
+        <line x1="22" y1="22" x2="22" y2="8" stroke="#205CF2" stroke-width="1.2"/>
+        <line x1="22" y1="22" x2="36" y2="22" stroke="#205CF2" stroke-width="1.2"/>
+        <line x1="22" y1="22" x2="22" y2="36" stroke="#205CF2" stroke-width="1.2"/>
+        <line x1="22" y1="22" x2="8" y2="22" stroke="#205CF2" stroke-width="1.2"/>
+        <line x1="31" y1="13" x2="37" y2="7" stroke="#5ADAA4" stroke-width="1.2" opacity="0.7"/>
+        <line x1="31" y1="31" x2="37" y2="37" stroke="#5ADAA4" stroke-width="1.2" opacity="0.7"/>
+        <line x1="13" y1="31" x2="7" y2="37" stroke="#5ADAA4" stroke-width="1.2" opacity="0.7"/>
+        <line x1="13" y1="13" x2="7" y2="7" stroke="#5ADAA4" stroke-width="1.2" opacity="0.7"/>
+        <circle cx="37" cy="7" r="2.5" fill="#5ADAA4" opacity="0.75"/>
+        <circle cx="37" cy="37" r="2.5" fill="#5ADAA4" opacity="0.75"/>
+        <circle cx="7" cy="37" r="2.5" fill="#5ADAA4" opacity="0.75"/>
+        <circle cx="7" cy="7" r="2.5" fill="#5ADAA4" opacity="0.75"/>
+        <circle cx="31" cy="13" r="5" fill="#5ADAA4"/>
+        <circle cx="31" cy="31" r="5" fill="#5ADAA4"/>
+        <circle cx="13" cy="31" r="5" fill="#5ADAA4"/>
+        <circle cx="13" cy="13" r="5" fill="#5ADAA4"/>
+        <circle cx="22" cy="8" r="3" fill="#205CF2"/>
+        <circle cx="36" cy="22" r="3" fill="#205CF2"/>
+        <circle cx="22" cy="36" r="3" fill="#205CF2"/>
+        <circle cx="8" cy="22" r="3" fill="#205CF2"/>
+        <rect x="18" y="18" width="8" height="8" rx="1.5" fill="#205CF2"/>
+      </svg>
+      <div class="logo-text"><span class="logo-agora-light">Ágora</span><span class="logo-ex-teal">EX</span></div>
+    </div>
+  </div>
+  <div class="g-body">
+    <div class="check-circle">
+      <svg width="42" height="42" viewBox="0 0 42 42" fill="none">
+        <path d="M11 21L18 28L31 14" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <div class="g-title" id="g-title">¡Gracias!</div>
+    <div class="g-msg">Tu aportación ha quedado registrada y contribuirá a mejorar la administración digital de Extremadura.</div>
+    <div class="g-count" id="g-count">1 respuesta registrada</div>
+  </div>
+  <div class="g-cta">
+    <button class="btn-primary" onclick="restart()">Volver al inicio</button>
+  </div>
+  <div class="inst-footer">
+    <div class="inst-row">
+      <svg id="eu-gracias" viewBox="0 0 60 40" width="54" height="36" xmlns="http://www.w3.org/2000/svg">
+        <rect width="60" height="40" rx="3" fill="#003399"/>
+      </svg>
+      <span class="inst-eu-label">Cofinanciado por<br>la Unión Europea</span>
+      <div class="inst-sep"></div>
+      <div class="inst-junta">Junta de<br>Extremadura</div>
+    </div>
+  </div>
+</div>
+
+</div>
+<script>
+var S = { name: '', email: '', answers: {}, timestamp: null };
+
+function goTo(id) {
+  var all = document.querySelectorAll('.screen');
+  for (var i = 0; i < all.length; i++) all[i].classList.remove('active');
+  var t = document.getElementById('sc-' + id);
+  if (t) { t.classList.add('active'); t.scrollTop = 0; }
+  var n = parseInt(id.replace('q', ''));
+  if (!isNaN(n)) renderPB(n);
+}
+
+function renderPB(current) {
+  var pb = document.getElementById('pb-q' + current);
+  if (!pb) return;
+  pb.innerHTML = '';
+  for (var i = 1; i <= 10; i++) {
+    var d = document.createElement('div');
+    d.className = 'pb-seg' + (i < current ? ' done' : i === current ? ' current' : '');
+    pb.appendChild(d);
+  }
+}
+
+function goBack(n) {
+  if (n <= 1) goTo('registro');
+  else goTo('q' + (n - 1));
+}
+
+function advQ(cur, nxt) {
+  goTo('q' + nxt);
+}
+
+function pickYN(qn, val, btn) {
+  var row = btn.closest('.yn-row');
+  var btns = row.querySelectorAll('.yn-btn');
+  for (var i = 0; i < btns.length; i++) btns[i].classList.remove('sel');
+  btn.classList.add('sel');
+  S.answers['q' + qn] = val;
+  if (qn === 2) {
+    var sub = document.getElementById('q2-sub');
+    if (val === 'yes') sub.classList.add('on');
+    else { sub.classList.remove('on'); delete S.answers['q2sub']; }
+  }
+}
+
+function pickOpt(qn, val, btn) {
+  var list = btn.closest('.opt-list');
+  var btns = list.querySelectorAll('.opt-btn');
+  for (var i = 0; i < btns.length; i++) btns[i].classList.remove('sel');
+  btn.classList.add('sel');
+  S.answers['q' + qn] = val;
+}
+
+function pickRadio(el, key, val) {
+  var sub = el.closest('.sub-q');
+  var opts = sub.querySelectorAll('.radio-opt');
+  for (var i = 0; i < opts.length; i++) opts[i].classList.remove('sel');
+  el.classList.add('sel');
+  S.answers[key] = val;
+}
+
+function onQ10Input() {
+  var inp = document.getElementById('q10-inp');
+  document.getElementById('q10-cnt').textContent = inp.value.length;
+  S.answers['q10'] = inp.value;
+}
+
+function togglePrivacy() {
+  var row = document.getElementById('privacy-row');
+  row.classList.toggle('checked');
+}
+
+function startSurvey() {
+  var row = document.getElementById('privacy-row');
+  var err = document.getElementById('privacy-err');
+  if (!row.classList.contains('checked')) {
+    err.classList.add('show');
+    return;
+  }
+  err.classList.remove('show');
+  S.name = document.getElementById('reg-name').value.trim();
+  S.email = document.getElementById('reg-email').value.trim();
+  S.answers = {};
+  goTo('q1');
+}
+
+function submitSurvey() {
+  var inp = document.getElementById('q10-inp');
+  if (inp) S.answers['q10'] = inp.value.trim();
+  saveResponse();
+  var n = getCount();
+  var gt = document.getElementById('g-title');
+  gt.textContent = S.name ? ('¡Gracias, ' + S.name + '!') : '¡Gracias!';
+  var gc = document.getElementById('g-count');
+  gc.textContent = n + (n === 1 ? ' respuesta registrada' : ' respuestas registradas');
+  goTo('gracias');
+}
+
+function saveResponse() {
+  S.timestamp = new Date().toISOString();
+  var arr = JSON.parse(localStorage.getItem('agx_responses') || '[]');
+  arr.push(JSON.parse(JSON.stringify(S)));
+  localStorage.setItem('agx_responses', JSON.stringify(arr));
+}
+
+function getCount() {
+  return JSON.parse(localStorage.getItem('agx_responses') || '[]').length;
+}
+
+function restart() {
+  S = { name: '', email: '', answers: {}, timestamp: null };
+  document.getElementById('reg-name').value = '';
+  document.getElementById('reg-email').value = '';
+  document.getElementById('privacy-row').classList.remove('checked');
+  document.getElementById('privacy-err').classList.remove('show');
+  document.getElementById('q10-inp').value = '';
+  document.getElementById('q10-cnt').textContent = '0';
+  var sels = document.querySelectorAll('.sel');
+  for (var i = 0; i < sels.length; i++) sels[i].classList.remove('sel');
+  document.getElementById('q2-sub').classList.remove('on');
+  goTo('welcome');
+}
+
+function starPoints(cx, cy, R, r) {
+  var pts = [];
+  for (var i = 0; i < 10; i++) {
+    var a = -Math.PI / 2 + i * Math.PI / 5;
+    var rad = (i % 2 === 0) ? R : r;
+    pts.push((cx + rad * Math.cos(a)).toFixed(2) + ',' + (cy + rad * Math.sin(a)).toFixed(2));
+  }
+  return pts.join(' ');
+}
+
+function buildEUFlag(svgId) {
+  var svg = document.getElementById(svgId);
+  if (!svg) return;
+  var g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+  g.setAttribute('fill', '#FFCC00');
+  for (var k = 0; k < 12; k++) {
+    var a = -Math.PI / 2 + k * Math.PI / 6;
+    var poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+    poly.setAttribute('points', starPoints(30 + 13 * Math.cos(a), 20 + 13 * Math.sin(a), 2.8, 1.1));
+    g.appendChild(poly);
+  }
+  svg.appendChild(g);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  buildEUFlag('eu-welcome');
+  buildEUFlag('eu-registro');
+  buildEUFlag('eu-gracias');
+  goTo('welcome');
+});
+</script>
+</body>
+</html>

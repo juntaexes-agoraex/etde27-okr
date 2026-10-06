@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nube de palabras · Rincón ÁgoraEx</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif}
+body{display:flex;flex-direction:column}
+#header{
+  flex-shrink:0;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 32px;height:80px;
+  background:#fff;
+  border-top:4px solid #205CF2;
+  border-bottom:1px solid #E5E8F5;
+}
+#header-left{display:flex;align-items:center;gap:12px}
+#logo-text{display:flex;flex-direction:column;justify-content:center}
+#logo-name{font-size:22px;font-weight:800;line-height:1;letter-spacing:-0.5px}
+#logo-name span.agora{color:#205CF2}
+#logo-name span.ex{color:#5ADAA4}
+#logo-sub{font-size:11px;color:#6B7280;margin-top:3px;letter-spacing:0.02em}
+#header-center{text-align:center}
+#header-center p{font-size:13px;color:#9CA3AF;letter-spacing:0.04em}
+#header-right{display:flex;align-items:center;gap:10px}
+.live-dot{
+  width:12px;height:12px;border-radius:50%;background:#5ADAA4;
+  animation:pulse 2s ease-in-out infinite;
+  flex-shrink:0;
+}
+@keyframes pulse{
+  0%,100%{transform:scale(1);opacity:1}
+  50%{transform:scale(1.3);opacity:0.7}
+}
+#counter{font-size:16px;font-weight:700;color:#1E104D}
+#counter span{font-weight:400;color:#6B7280;font-size:14px;margin-left:4px}
+#body{
+  flex:1;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:32px 48px;
+  overflow:hidden;
+}
+#question-label{
+  font-size:18px;font-weight:600;color:#6B7280;
+  text-align:center;margin-bottom:8px;
+  letter-spacing:0.01em;
+}
+#question-text{
+  font-size:26px;font-weight:700;color:#1E104D;
+  text-align:center;margin-bottom:40px;
+  line-height:1.3;
+}
+#cloud-container{
+  display:flex;flex-wrap:wrap;align-items:center;justify-content:center;
+  gap:8px 16px;
+  width:100%;
+  max-height:calc(100% - 160px);
+  overflow:hidden;
+}
+.word{
+  display:inline-block;
+  font-weight:700;
+  line-height:1.2;
+  padding:4px 8px;
+  transition:font-size 0.3s ease;
+  cursor:default;
+  user-select:none;
+  animation:fadeIn 0.5s ease forwards;
+  opacity:0;
+}
+@keyframes fadeIn{
+  from{opacity:0;transform:scale(0.85)}
+  to{opacity:1;transform:scale(1)}
+}
+#footer{
+  flex-shrink:0;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 32px;height:56px;
+  background:#fff;
+  border-top:1px solid #E5E8F5;
+}
+#footer-left{display:flex;align-items:center;gap:16px}
+#eu-label{font-size:11px;color:#6B7280;line-height:1.3}
+.footer-divider{width:1px;height:28px;background:#E5E8F5}
+#junta-label{
+  font-size:12px;font-weight:700;color:#1E104D;
+  letter-spacing:0.12em;
+  font-family:Georgia,'Times New Roman',serif;
+  text-transform:uppercase;
+}
+#timestamp{font-size:12px;color:#9CA3AF}
+</style>
+</head>
+<body>
+
+<div id="header">
+  <div id="header-left">
+    <svg width="44" height="44" viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg">
+      <line x1="22" y1="22" x2="31" y2="13" stroke="#205CF2" stroke-width="1.2"/>
+      <line x1="22" y1="22" x2="31" y2="31" stroke="#205CF2" stroke-width="1.2"/>
+      <line x1="22" y1="22" x2="13" y2="31" stroke="#205CF2" stroke-width="1.2"/>
+      <line x1="22" y1="22" x2="13" y2="13" stroke="#205CF2" stroke-width="1.2"/>
+      <line x1="22" y1="22" x2="22" y2="8" stroke="#205CF2" stroke-width="1.2"/>
+      <line x1="22" y1="22" x2="36" y2="22" stroke="#205CF2" stroke-width="1.2"/>
+      <line x1="22" y1="22" x2="22" y2="36" stroke="#205CF2" stroke-width="1.2"/>
+      <line x1="22" y1="22" x2="8" y2="22" stroke="#205CF2" stroke-width="1.2"/>
+      <line x1="31" y1="13" x2="37" y2="7" stroke="#5ADAA4" stroke-width="1.2" opacity="0.7"/>
+      <line x1="31" y1="31" x2="37" y2="37" stroke="#5ADAA4" stroke-width="1.2" opacity="0.7"/>
+      <line x1="13" y1="31" x2="7" y2="37" stroke="#5ADAA4" stroke-width="1.2" opacity="0.7"/>
+      <line x1="13" y1="13" x2="7" y2="7" stroke="#5ADAA4" stroke-width="1.2" opacity="0.7"/>
+      <circle cx="37" cy="7" r="2.5" fill="#5ADAA4" opacity="0.75"/>
+      <circle cx="37" cy="37" r="2.5" fill="#5ADAA4" opacity="0.75"/>
+      <circle cx="7" cy="37" r="2.5" fill="#5ADAA4" opacity="0.75"/>
+      <circle cx="7" cy="7" r="2.5" fill="#5ADAA4" opacity="0.75"/>
+      <circle cx="31" cy="13" r="5" fill="#5ADAA4"/>
+      <circle cx="31" cy="31" r="5" fill="#5ADAA4"/>
+      <circle cx="13" cy="31" r="5" fill="#5ADAA4"/>
+      <circle cx="13" cy="13" r="5" fill="#5ADAA4"/>
+      <circle cx="22" cy="8" r="3" fill="#205CF2"/>
+      <circle cx="36" cy="22" r="3" fill="#205CF2"/>
+      <circle cx="22" cy="36" r="3" fill="#205CF2"/>
+      <circle cx="8" cy="22" r="3" fill="#205CF2"/>
+      <rect x="18" y="18" width="8" height="8" rx="1.5" fill="#205CF2"/>
+    </svg>
+    <div id="logo-text">
+      <div id="logo-name"><span class="agora">Ágora</span><span class="ex">EX</span></div>
+      <div id="logo-sub">Congreso Potencial Digital 2026 · Cáceres</div>
+    </div>
+  </div>
+  <div id="header-center">
+    <p>Rincón ÁgoraEx · Pantalla en vivo</p>
+  </div>
+  <div id="header-right">
+    <div class="live-dot"></div>
+    <div id="counter">0<span>respuestas</span></div>
+  </div>
+</div>
+
+<div id="body">
+  <div id="question-label">Pregunta 10</div>
+  <div id="question-text">En una palabra, ¿cómo describirías tu experiencia<br>con la administración pública?</div>
+  <div id="cloud-container"></div>
+</div>
+
+<div id="footer">
+  <div id="footer-left">
+    <svg id="eu-flag" width="60" height="40" viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg">
+      <rect width="60" height="40" fill="#003399"/>
+    </svg>
+    <div id="eu-label">Cofinanciado por<br>la Unión Europea</div>
+    <div class="footer-divider"></div>
+    <div id="junta-label">Junta de Extremadura</div>
+  </div>
+  <div id="timestamp">Última actualización: --:--:--</div>
+</div>
+
+<script>
+var DEMO={lenta:45,complicada:32,mejorable:28,"difícil":24,confusa:20,"burocrática":18,"útil":12,frustrante:10,inaccesible:8,necesaria:6,cara:4,"lío":3};
+
+function starPoints(cx,cy,R,r){
+  var pts=[];
+  for(var i=0;i<10;i++){
+    var a=-Math.PI/2+i*Math.PI/5;
+    var rad=(i%2===0)?R:r;
+    pts.push((cx+rad*Math.cos(a)).toFixed(2)+','+(cy+rad*Math.sin(a)).toFixed(2));
+  }
+  return pts.join(' ');
+}
+
+function buildEUFlag(svgId){
+  var svg=document.getElementById(svgId);
+  if(!svg)return;
+  var g=document.createElementNS('http://www.w3.org/2000/svg','g');
+  g.setAttribute('fill','#FFCC00');
+  for(var k=0;k<12;k++){
+    var a=-Math.PI/2+k*Math.PI/6;
+    var poly=document.createElementNS('http://www.w3.org/2000/svg','polygon');
+    poly.setAttribute('points',starPoints(30+13*Math.cos(a),20+13*Math.sin(a),2.8,1.1));
+    g.appendChild(poly);
+  }
+  svg.appendChild(g);
+}
+
+function getWords(){
+  var responses=JSON.parse(localStorage.getItem('agx_responses')||'[]');
+  var words={};
+  responses.forEach(function(r){
+    if(r.answers&&r.answers.q10){
+      var w=r.answers.q10.trim().toLowerCase();
+      if(w)words[w]=(words[w]||0)+1;
+    }
+  });
+  return words;
+}
+
+function getWordColor(rank,total){
+  var pct=rank/total;
+  if(pct<0.2)return'#1E104D';
+  if(pct<0.5)return'#205CF2';
+  return'#5ADAA4';
+}
+
+var _prevWords={};
+
+function renderCloud(){
+  var raw=getWords();
+  var isDemo=Object.keys(raw).length===0;
+  var words=isDemo?DEMO:raw;
+
+  var entries=Object.entries(words).sort(function(a,b){return b[1]-a[1];});
+  var maxCount=entries.length>0?entries[0][1]:1;
+  var total=entries.length;
+
+  var container=document.getElementById('cloud-container');
+
+  var existing={};
+  var els=container.querySelectorAll('.word');
+  els.forEach(function(el){existing[el.dataset.word]=el;});
+
+  var toRemove=Object.assign({},existing);
+
+  entries.forEach(function(entry,idx){
+    var word=entry[0];
+    var count=entry[1];
+    var size=Math.max(18,Math.min(96,18+(count/maxCount)*78));
+    var color=getWordColor(idx,total);
+
+    if(existing[word]){
+      var el=existing[word];
+      el.style.fontSize=size+'px';
+      el.style.color=color;
+      delete toRemove[word];
+    } else {
+      var el=document.createElement('span');
+      el.className='word';
+      el.dataset.word=word;
+      el.textContent=word;
+      el.style.fontSize=size+'px';
+      el.style.color=color;
+      el.style.animationDelay=(idx*0.04)+'s';
+      container.appendChild(el);
+    }
+  });
+
+  Object.keys(toRemove).forEach(function(w){
+    var el=toRemove[w];
+    if(el&&el.parentNode)el.parentNode.removeChild(el);
+  });
+
+  var responses=JSON.parse(localStorage.getItem('agx_responses')||'[]');
+  var n=isDemo?0:responses.length;
+  document.getElementById('counter').innerHTML=n+'<span> respuestas</span>';
+}
+
+function updateTimestamp(){
+  var now=new Date();
+  var hh=String(now.getHours()).padStart(2,'0');
+  var mm=String(now.getMinutes()).padStart(2,'0');
+  var ss=String(now.getSeconds()).padStart(2,'0');
+  document.getElementById('timestamp').textContent='Última actualización: '+hh+':'+mm+':'+ss;
+}
+
+buildEUFlag('eu-flag');
+renderCloud();
+updateTimestamp();
+
+setInterval(function(){
+  renderCloud();
+  updateTimestamp();
+},5000);
+</script>
+</body>
+</html>

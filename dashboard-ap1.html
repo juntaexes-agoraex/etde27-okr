@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1280">
+<title>AP1 · Administración Pública — ÁgoraEX</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f0f4ff;--card:#ffffff;--border:rgba(32,92,242,.13);
+  --blue:#205cf2;--blue-l:#3b6ef0;--teal:#5adaa4;--teal-l:#3dc78e;
+  --amber:#e08f00;--rose:#e0294f;--cyan:#0598b8;--lime:#5f9900;
+  --text:#0d1b3e;--muted:#6b82a8;--muted-l:#8a9fc4;
+}
+body{
+  background:var(--bg);color:var(--text);
+  font-family:'Inter',system-ui,-apple-system,sans-serif;
+  font-feature-settings:'tnum';
+  height:100vh;overflow:hidden;font-size:14px
+}
+body::before{
+  content:'';position:fixed;inset:0;
+  background-image:radial-gradient(rgba(32,92,242,.06) 1px,transparent 1px);
+  background-size:32px 32px;pointer-events:none;z-index:0
+}
+
+/* ── HEADER ─────────────────────────── */
+#hdr{
+  position:fixed;top:0;left:0;right:0;height:66px;z-index:300;
+  background:rgba(255,255,255,.98);border-bottom:1px solid var(--border);
+  backdrop-filter:blur(16px);display:flex;align-items:center;gap:16px;padding:0 28px;
+  box-shadow:0 2px 12px rgba(32,92,242,.08)
+}
+.logo-svg-wrap{height:42px;display:flex;align-items:center;flex-shrink:0}
+.hdr-sep{width:1px;height:38px;background:var(--border);flex-shrink:0;margin:0 6px}
+.hdr-kpis{display:flex;gap:28px;flex:1}
+.hdr-kpi{display:flex;flex-direction:column}
+.hdr-kpi-v{font-size:22px;font-weight:800;line-height:1;letter-spacing:-1px}
+.hdr-kpi-l{font-size:10px;color:var(--muted-l);text-transform:uppercase;letter-spacing:.8px;margin-top:2px}
+.hvc{color:var(--blue-l)}.htc{color:var(--teal)}.hac{color:var(--amber)}
+.hdr-right{margin-left:auto;text-align:right;flex-shrink:0}
+.hdr-ev{font-size:11px;color:var(--muted-l);text-transform:uppercase;letter-spacing:1.2px}
+.hdr-dt{font-size:13px;color:var(--text);font-weight:600}
+.live{
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(244,63,94,.1);border:1px solid rgba(244,63,94,.3);
+  color:#fb7185;font-size:10px;font-weight:700;text-transform:uppercase;
+  letter-spacing:1.5px;padding:4px 11px;border-radius:100px;flex-shrink:0
+}
+.live-dot{
+  width:6px;height:6px;border-radius:50%;background:#f43f5e;
+  animation:blink 1.5s ease-in-out infinite
+}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+
+/* ── MAIN GRID ───────────────────────── */
+#grid{
+  position:fixed;inset:66px 0 0 0;z-index:1;
+  display:grid;
+  grid-template-columns:repeat(12,1fr);
+  grid-template-rows:1fr 1fr 168px;
+  gap:14px;
+  padding:18px 28px 18px;
+  overflow:hidden
+}
+
+/* ── CARDS ───────────────────────────── */
+.card{
+  background:var(--card);border:1px solid var(--border);border-radius:14px;
+  padding:16px 20px;display:flex;flex-direction:column;
+  position:relative;overflow:hidden;
+  box-shadow:0 1px 4px rgba(32,92,242,.06);
+  min-height:0
+}
+.card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  border-radius:14px 14px 0 0
+}
+.c-q1::before{background:linear-gradient(90deg,var(--blue),var(--blue-l))}
+.c-q2::before{background:linear-gradient(90deg,var(--teal-l),var(--teal))}
+.c-q3::before{background:linear-gradient(90deg,var(--amber),#f0a800)}
+.c-q4::before{background:linear-gradient(90deg,var(--cyan),#0ab8d8)}
+.c-q5::before{background:linear-gradient(90deg,var(--rose),#f05575)}
+.c-q6::before{background:linear-gradient(90deg,var(--lime),#7ab300)}
+.c-q7::before{background:linear-gradient(90deg,var(--blue),var(--teal))}
+
+/* column spans */
+.c-q1{grid-column:span 3}
+.c-q2{grid-column:span 3}
+.c-q3{grid-column:span 6}
+
+/* P3 — ranking + donut split layout */
+.p3-body{display:grid;grid-template-columns:3fr 2fr;gap:20px;flex:1;min-height:0}
+.p3-divider{width:1px;background:var(--border);flex-shrink:0;display:none}
+.p3-rank{display:flex;flex-direction:column;gap:0;flex:1;min-height:0;justify-content:space-around}
+.p3-bar-item{display:flex;flex-direction:column;gap:5px}
+.p3-bar-meta{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.p3-rank-num{font-size:10px;font-weight:900;color:var(--muted-l);flex-shrink:0;min-width:16px}
+.p3-bar-lbl{font-size:13px;font-weight:700;color:var(--text);flex:1;line-height:1.2}
+.p3-bar-pct{font-size:18px;font-weight:900;color:var(--amber);flex-shrink:0;letter-spacing:-.5px}
+.p3-bar-pct.muted{color:var(--muted-l);font-size:15px}
+.p3-track{height:8px;background:rgba(0,0,0,.06);border-radius:6px;overflow:hidden}
+.p3-fill{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--amber),#f0a800)}
+.p3-fill.muted{background:var(--muted-l);opacity:.6}
+.p3-right{display:flex;flex-direction:column;gap:0;border-left:1px solid var(--border);padding-left:20px;min-height:0}
+.p3-donut-eyebrow{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1.6px;color:var(--muted-l);margin-bottom:10px;flex-shrink:0}
+.p3-donut-wrap{display:flex;align-items:center;gap:12px;flex:1;min-height:0}
+.p3-donut-legend{display:flex;flex-direction:column;gap:8px}
+.c-q4{grid-column:span 4}
+.c-q5{grid-column:span 4}
+.c-q6{grid-column:span 4}
+.c-q7{grid-column:span 12}
+
+/* ── CARD PARTS ──────────────────────── */
+.c-eyebrow{
+  display:flex;align-items:center;gap:8px;
+  font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1.6px;
+  color:var(--muted-l);margin-bottom:12px;flex-shrink:0
+}
+.c-eyebrow-sub{
+  font-size:9px;color:var(--muted-l);font-weight:600;letter-spacing:0;
+  text-transform:none;margin-left:auto;flex-shrink:0
+}
+.c-eyebrow-num{
+  background:var(--bg);border:1px solid var(--border);
+  color:var(--muted);font-size:8.5px;font-weight:900;
+  padding:2px 7px;border-radius:100px;letter-spacing:.3px;flex-shrink:0
+}
+.c-hero{
+  font-size:80px;font-weight:900;letter-spacing:-5px;line-height:.86;
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+  display:block;flex-shrink:0;margin-bottom:8px
+}
+.hero-blue{background-image:linear-gradient(145deg,var(--blue) 30%,var(--teal))}
+.hero-teal{background-image:linear-gradient(145deg,var(--teal-l) 30%,var(--teal))}
+.hero-rose{background-image:linear-gradient(145deg,var(--rose),#f05575)}
+.c-hero-lbl{font-size:13px;font-weight:700;color:var(--text);line-height:1.4;margin-bottom:10px;flex-shrink:0}
+.c-rule{height:1px;background:var(--border);margin:10px 0;flex-shrink:0}
+.c-sub{font-size:10px;color:var(--muted-l);font-weight:500;line-height:1.7;flex:1}
+.c-note{font-size:9px;color:var(--muted-l);font-weight:600;font-style:italic;margin-top:auto;padding-top:8px;flex-shrink:0}
+
+/* pills */
+.pill-row{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px}
+.pill{font-size:9.5px;font-weight:700;padding:3px 9px;border-radius:100px;white-space:nowrap}
+.pill-blue{background:rgba(32,92,242,.1);color:var(--blue)}
+.pill-teal{background:rgba(61,199,142,.18);color:var(--teal-l)}
+.pill-muted{background:rgba(107,130,168,.1);color:var(--muted)}
+
+/* bar charts */
+.bar-list{display:flex;flex-direction:column;gap:9px;flex:1;min-height:0}
+.bar-item{display:flex;flex-direction:column;gap:3px;flex-shrink:0}
+.bar-meta{display:flex;justify-content:space-between;align-items:baseline}
+.bar-label{font-size:11px;font-weight:700;color:var(--text)}
+.bar-pct{font-size:11px;font-weight:900}
+.bar-track{height:5px;background:rgba(0,0,0,.06);border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px}
+.bf-blue{background:linear-gradient(90deg,var(--blue),var(--blue-l))}
+.bf-amber{background:linear-gradient(90deg,var(--amber),#f0a800)}
+.bf-lime{background:linear-gradient(90deg,var(--lime),#7ab300)}
+.bf-muted{background:var(--muted-l)}
+
+/* donut */
+.donut-wrap{display:flex;align-items:center;gap:16px;flex:1;min-height:0}
+.donut-legend{display:flex;flex-direction:column;gap:7px;flex:1}
+.legend-item{display:flex;align-items:center;gap:8px}
+.legend-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.legend-txt{font-size:10px;font-weight:600;color:var(--text);flex:1}
+.legend-pct{font-size:11px;font-weight:900;color:var(--muted);flex-shrink:0}
+
+/* Q7 distribution strip */
+.dist-wrap{display:flex;flex-direction:column;gap:12px;flex:1;min-height:0}
+.dist-track{height:22px;border-radius:8px;overflow:hidden;display:flex;flex-shrink:0}
+.dist-seg{
+  height:100%;display:flex;align-items:center;justify-content:center;
+  font-size:9.5px;font-weight:800;color:white;
+  white-space:nowrap;overflow:hidden;padding:0 8px
+}
+.dist-legend-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;flex:1}
+.dist-li{display:flex;align-items:flex-start;gap:8px}
+.dist-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0;margin-top:3px}
+.dist-body{display:flex;flex-direction:column;gap:1px}
+.dist-pct{font-size:20px;font-weight:900;line-height:1;letter-spacing:-1px}
+.dist-lbl{font-size:10px;color:var(--muted-l);font-weight:600;line-height:1.45}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ HEADER ═══════════════ -->
+<header id="hdr">
+  <div class="logo-svg-wrap">
+    <svg viewBox="88 409 762 225" height="42" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+      <defs>
+        <linearGradient id="lg1" x1="92.9" y1="514.7" x2="320.4" y2="514.7" gradientUnits="userSpaceOnUse">
+          <stop offset=".5" stop-color="#205cf2"/><stop offset=".9" stop-color="#5adaa4"/>
+        </linearGradient>
+      </defs>
+      <path fill="url(#lg1)" d="M266.3,552c-3.2-.5-6.2,0-8.9,1.1-3.9,1.7-8.4.9-11.4-2l-5.4-5.2c-4.4-4.3-6.8-10.1-6.8-16.2v-24.7c0-4.4,1.8-8.6,4.9-11.6l13.9-13.6c2.3-2.2,5.4-3.4,8.5-2.9,1.8.3,3.7.3,5.7-.1,6.6-1.3,11.7-6.7,12.7-13.3,1.6-10.9-7.7-20.1-18.7-18.3-6.8,1.1-12.3,6.8-13.2,13.7-.3,2.4,0,4.8.6,6.9,1.2,4,0,8.3-3,11.2l-6.9,6.8c-3.6,3.5-8.4,5.4-13.3,5.4h-33.7c-5.7,0-11.2-2.2-15.3-6.2l-8.6-8.4c-2.7-2.6-4-6.4-3.2-10.1.4-1.8.5-3.7.2-5.7-1-6.9-6.4-12.5-13.3-13.6-11-1.7-20.3,7.6-18.5,18.6,1.1,6.9,6.8,12.4,13.8,13.3,2,.3,4,.1,5.8-.3,3.5-.8,7.2,0,9.8,2.5l8.8,8.5c5,4.9,7.9,11.6,7.9,18.7v25.4c0,6.4-2.6,12.6-7.2,17l-3.8,3.7c-3,2.9-7.5,3.5-11,1.4-3-1.7-6.5-2.6-10.3-2.1-7,.9-12.7,6.5-13.7,13.5-1.7,11.5,8.7,21,20.4,17.9,7-1.9,11.6-8.5,11.6-15.7h0c0-1.4.5-2.6,1.5-3.5l14.5-14.2c3.8-3.7,9-5.8,14.3-5.8h27c4.3,0,8.3,1.7,11.4,4.6l10.2,10c2.5,2.4,4,5.7,4,9.1s.1,2.3.4,3.4c1.4,6.5,6.8,11.6,13.4,12.5,10.9,1.5,20-7.8,18.2-18.7-1.1-6.7-6.6-12-13.3-13.1ZM206.4,459.1c8.6,0,15.5-6.9,15.5-15.5s-6.9-15.5-15.5-15.5-15.5,6.9-15.5,15.5,6.9,15.5,15.5,15.5ZM281.1,532c8.6,0,15.5-6.9,15.5-15.5s-6.9-15.5-15.5-15.5-15.5,6.9-15.5,15.5,6.9,15.5,15.5,15.5ZM136.5,532c8.6,0,15.5-6.9,15.5-15.5s-6.9-15.5-15.5-15.5-15.5,6.9-15.5,15.5,6.9,15.5,15.5,15.5ZM210.9,606.4c8.6,0,15.5-6.9,15.5-15.5s-6.9-15.5-15.5-15.5-15.5,6.9-15.5,15.5,6.9,15.5,15.5,15.5ZM111.5,479.1c0,5.1-4.2,9.3-9.3,9.3s-9.3-4.2-9.3-9.3,4.2-9.3,9.3-9.3,9.3,4.2,9.3,9.3ZM177.3,409c0,5.1-4.2,9.3-9.3,9.3s-9.3-4.2-9.3-9.3,4.2-9.3,9.3-9.3,9.3,4.2,9.3,9.3ZM242.4,421.9c5.1,0,9.3-4.2,9.3-9.3s-4.2-9.3-9.3-9.3-9.3,4.2-9.3,9.3,4.2,9.3,9.3,9.3ZM319,474.1c0,5.1-4.2,9.3-9.3,9.3s-9.3-4.2-9.3-9.3,4.2-9.3,9.3-9.3,9.3,4.2,9.3,9.3ZM320.4,560.5c0,5.1-4.2,9.3-9.3,9.3s-9.3-4.2-9.3-9.3,4.2-9.3,9.3-9.3,9.3,4.2,9.3,9.3ZM260.9,620.4c0,5.1-4.2,9.3-9.3,9.3s-9.3-4.2-9.3-9.3,4.2-9.3,9.3-9.3,9.3,4.2,9.3,9.3ZM180.2,617.4c0,5.1-4.2,9.3-9.3,9.3s-9.3-4.2-9.3-9.3,4.2-9.3,9.3-9.3,9.3,4.2,9.3,9.3ZM112.5,551.1c0,5.1-4.2,9.3-9.3,9.3s-9.3-4.2-9.3-9.3,4.2-9.3,9.3-9.3,9.3,4.2,9.3,9.3Z"/>
+      <path fill="#205cf2" d="M405.3,483.2h-3.9l-27.5,75h-9.6l30.5-83.4h17.1l30.4,83.4h-9.6l-27.3-75ZM379.1,528h48.6v8.3h-48.6v-8.3ZM414.5,446.4v8.5l-24.8,13.7v-7.1l24.8-15Z"/>
+      <path fill="#205cf2" d="M493.3,498.7h8.2v48.6c0,7.3-1.6,13.6-4.9,18.8-3.3,5.2-8,9.2-14.2,11.9-6.2,2.7-13.7,4.1-22.6,4.1l-1.4-8.2c11.2-.2,19.7-2.5,25.5-7,5.8-4.5,8.7-11,8.7-19.6v-1.3l1,.2c-1.8,3.5-4.6,6.5-8.2,9-3.7,2.5-8.4,3.8-14.2,3.9-5.5,0-10.3-1.3-14.4-3.8-4.1-2.5-7.3-6.1-9.5-10.7-2.3-4.6-3.4-10-3.4-16.2s1.1-11.6,3.4-16.1c2.3-4.6,5.4-8.1,9.5-10.7,4.1-2.5,8.9-3.8,14.4-3.8s6.7.5,9.5,1.6c2.8,1.1,5.2,2.5,7.1,4.3,2,1.8,3.6,3.8,4.9,6l.6-11.1ZM453.5,528.5c0,6.8,1.8,12.2,5.3,16.3,3.5,4,8.3,6,14.4,6s6.9-.9,9.9-2.6c2.9-1.7,5.3-4.3,7-7.6,1.7-3.3,2.6-7.3,2.6-12s-.9-8.7-2.6-12c-1.7-3.3-4-5.8-7-7.6-2.9-1.8-6.2-2.7-9.9-2.7-6,0-10.7,2-14.3,6.1-3.6,4-5.4,9.4-5.4,16.2Z"/>
+      <path fill="#205cf2" d="M540.7,559.1c-5.6,0-10.7-1.2-15.1-3.7-4.4-2.5-7.9-6-10.5-10.5-2.5-4.6-3.8-10-3.8-16.3s1.3-11.8,3.9-16.4c2.6-4.6,6.1-8.1,10.6-10.6,4.5-2.5,9.5-3.7,15.2-3.7s10.7,1.2,15.2,3.7c4.5,2.5,8,6,10.6,10.5,2.6,4.6,3.9,10,3.9,16.3s-1.3,11.8-3.9,16.4c-2.6,4.6-6.2,8.1-10.7,10.6-4.5,2.5-9.6,3.7-15.2,3.7ZM540.6,550.6c3.5,0,6.8-.8,9.9-2.3,3.1-1.5,5.6-4,7.6-7.3,1.9-3.3,2.9-7.5,2.9-12.6s-1-9.4-2.9-12.6c-1.9-3.3-4.4-5.7-7.4-7.2-3.1-1.5-6.3-2.3-9.8-2.3s-6.7.8-9.8,2.3c-3,1.5-5.5,4-7.3,7.3-1.9,3.3-2.8,7.5-2.8,12.6s.9,9.4,2.7,12.6c1.8,3.3,4.2,5.7,7.2,7.2,3,1.5,6.2,2.3,9.7,2.3Z"/>
+      <path fill="#205cf2" d="M580.5,498.7h8.2l.5,8.7c1.6-2.1,3.5-4,5.8-5.5,2.3-1.5,4.8-2.6,7.5-3.2,2.7-.6,5.7-.6,8.8,0v8.9c-3.3-.6-6.3-.6-9,0-2.7.6-4.9,1.8-6.8,3.6-1.9,1.7-3.4,4-4.4,6.6-1,2.7-1.5,5.7-1.5,9.2v31.2h-8.9v-59.5Z"/>
+      <path fill="#205cf2" d="M655.9,558.3l-.7-10.7c-1.7,3.7-4.1,6.5-7.4,8.5-3.3,2-7.4,3-12.4,3s-7.9-.7-11-2c-3-1.3-5.3-3.3-7-5.8-1.6-2.5-2.4-5.5-2.4-8.9,0-5,1.9-9.1,5.6-12.3,3.7-3.2,9.1-5.2,16.2-5.9l18.3-2v-4.8c0-3.3-1.2-6-3.7-8-2.5-2-5.8-3-10-3s-7.6,1-10.3,2.9c-2.7,1.9-4.6,4.6-5.7,8.2l-8.1-2.9c1.6-5.2,4.5-9.3,8.8-12.3,4.2-2.9,9.4-4.4,15.5-4.4s12.6,1.8,16.5,5.4c3.9,3.6,5.9,8.5,5.9,14.7v40.3h-8.2ZM655.2,529.8l-18.5,2.1c-4,.5-7,1.6-9.1,3.3-2.1,1.7-3.1,4-3.1,6.7s1,5,3,6.7,4.9,2.5,8.8,2.5,7.9-.9,10.7-2.6c2.8-1.7,4.8-4.1,6.1-7.1,1.3-3,2-6.2,2-9.7v-1.9Z"/>
+      <path fill="#5adaa4" d="M706.3,494.2h40.2c3.1,0,5.6-2.5,5.6-5.6v-14.5h-43.7c-11.1,0-20.1,9-20.1,20.1v18.2c0-18.2,18.1-18.2,18.1-18.2Z"/>
+      <path fill="#5adaa4" d="M847.3,474.1h-20.7c-2.3,0-4.4,1.1-5.7,2.9l-16.1,22.3-18.2-25.2h-24.3l30.3,42.1-13,18c-1.8,2.5-4.7,4-7.8,4h-57.6s-.4,0-1.1,0c-2.9-.4-5.2-2.9-5.2-5.9s2.3-5.5,5.2-5.9c.7,0,1.1,0,1.1,0h20.5c3.1,0,5.6-2.5,5.6-5.6v-14.5h-25.7c-12.4,0-23,8.5-25.7,20.1h0s0,0,0,0c-.5,1.9-.7,4-.7,6,0,1.8.2,3.5.5,5.1h0c.3,1.2.6,2.4,1,3.6h0c.4,1.1.9,2.2,1.4,3.2h0l.6,1h0l.7,1.1h0c4.7,6.9,12.6,11.4,21.5,11.4h48.1s19.2,0,19.2,0c3.2,0,6.1-1.5,8-4.1l15.2-21.1,18.2,25.2h24.3l-30.3-42.1,30.3-42.1Z"/>
+    </svg>
+  </div>
+  <div class="hdr-sep"></div>
+  <div class="hdr-kpis">
+    <!-- ← CAMBIA CON DATOS REALES -->
+    <div class="hdr-kpi"><span class="hdr-kpi-v hvc">186</span><span class="hdr-kpi-l">Encuestados</span></div>
+    <div class="hdr-kpi"><span class="hdr-kpi-v htc">7</span><span class="hdr-kpi-l">Preguntas · AP1</span></div>
+    <div class="hdr-kpi"><span class="hdr-kpi-v hac">84%</span><span class="hdr-kpi-l">Participación</span></div>
+  </div>
+  <div class="hdr-right">
+    <div class="hdr-ev">Administración Pública Ideal · ÁgoraEX</div>
+    <div class="hdr-dt">Extremadura · Potencial Digital 2026</div>
+  </div>
+  <div class="live"><span class="live-dot"></span>En directo</div>
+</header>
+
+<!-- ═══════════════ GRID ═══════════════ -->
+<main id="grid">
+
+  <!-- ── P1: ¿Qué hace funcionar un servicio? ── -->
+  <div class="card c-q1">
+    <div class="c-eyebrow">
+      <span class="c-eyebrow-num">P1</span>
+      ¿Qué hace que un trámite funcione / aporte valor de verdad?
+    </div>
+    <div class="bar-list">
+      <div class="bar-item">
+        <div class="bar-meta">
+          <span class="bar-label">Rapidez y sencillez</span>
+          <span class="bar-pct" style="color:var(--blue)">72%</span>
+        </div>
+        <div class="bar-track"><div class="bar-fill bf-blue" style="width:72%"></div></div>
+      </div>
+      <div class="bar-item">
+        <div class="bar-meta">
+          <span class="bar-label">Sin repetir datos ni documentos</span>
+          <span class="bar-pct" style="color:var(--blue)">58%</span>
+        </div>
+        <div class="bar-track"><div class="bar-fill bf-blue" style="width:58%;opacity:.8"></div></div>
+      </div>
+      <div class="bar-item">
+        <div class="bar-meta">
+          <span class="bar-label">Trato cercano y apoyo humano</span>
+          <span class="bar-pct" style="color:var(--blue)">34%</span>
+        </div>
+        <div class="bar-track"><div class="bar-fill bf-blue" style="width:34%;opacity:.6"></div></div>
+      </div>
+      <div class="bar-item">
+        <div class="bar-meta">
+          <span class="bar-label">Apoyo offline disponible</span>
+          <span class="bar-pct" style="color:var(--blue)">29%</span>
+        </div>
+        <div class="bar-track"><div class="bar-fill bf-blue" style="width:29%;opacity:.45"></div></div>
+      </div>
+    </div>
+    <div class="c-note">Multirrespuesta · % sobre total de encuestados</div>
+  </div>
+
+  <!-- ── P2: ¿Anticipación? ── -->
+  <div class="card c-q2">
+    <div class="c-eyebrow">
+      <span class="c-eyebrow-num">P2</span>
+      ¿La Admin debería anticiparse a tus necesidades?
+    </div>
+    <span class="c-hero hero-teal">84%</span>
+    <div class="c-hero-lbl">quieren que la Administración se anticipe activamente</div>
+    <div class="c-rule"></div>
+    <div class="pill-row">
+      <span class="pill pill-blue">51% Sí, automáticamente</span>
+      <span class="pill pill-teal">33% Sí, con mi autorización</span>
+      <span class="pill pill-muted">10% No lo tengo claro</span>
+      <span class="pill pill-muted">6% Prefiero pedirlo yo</span>
+    </div>
+  </div>
+
+  <!-- ── P3: ¿Tareas a la IA? ── -->
+  <div class="card c-q3">
+    <div class="c-eyebrow">
+      <span class="c-eyebrow-num">P3</span>
+      ¿Qué tareas dejarías en manos de una máquina o IA?
+      <span class="c-eyebrow-sub">Multirrespuesta · solo 12% rechaza la IA por completo</span>
+    </div>
+    <div class="p3-body">
+      <!-- ranking bars -->
+      <div class="p3-rank">
+        <div class="p3-bar-item">
+          <div class="p3-bar-meta">
+            <span class="p3-rank-num">01</span>
+            <span class="p3-bar-lbl">Tramitar solicitudes sencillas</span>
+            <span class="p3-bar-pct">61%</span>
+          </div>
+          <div class="p3-track"><div class="p3-fill" style="width:61%"></div></div>
+        </div>
+        <div class="p3-bar-item">
+          <div class="p3-bar-meta">
+            <span class="p3-rank-num">02</span>
+            <span class="p3-bar-lbl">Revisar documentación y requisitos</span>
+            <span class="p3-bar-pct">54%</span>
+          </div>
+          <div class="p3-track"><div class="p3-fill" style="width:54%;opacity:.82"></div></div>
+        </div>
+        <div class="p3-bar-item">
+          <div class="p3-bar-meta">
+            <span class="p3-rank-num">03</span>
+            <span class="p3-bar-lbl">Responder preguntas frecuentes</span>
+            <span class="p3-bar-pct">48%</span>
+          </div>
+          <div class="p3-track"><div class="p3-fill" style="width:48%;opacity:.65"></div></div>
+        </div>
+        <div class="p3-bar-item">
+          <div class="p3-bar-meta">
+            <span class="p3-rank-num">04</span>
+            <span class="p3-bar-lbl">Enviar notificaciones y recordatorios</span>
+            <span class="p3-bar-pct">39%</span>
+          </div>
+          <div class="p3-track"><div class="p3-fill" style="width:39%;opacity:.5"></div></div>
+        </div>
+        <div class="p3-bar-item">
+          <div class="p3-bar-meta">
+            <span class="p3-rank-num">—</span>
+            <span class="p3-bar-lbl" style="color:var(--muted)">Ninguna — prefiero trato humano</span>
+            <span class="p3-bar-pct muted">12%</span>
+          </div>
+          <div class="p3-track"><div class="p3-fill muted" style="width:12%"></div></div>
+        </div>
+      </div>
+      <!-- donut — apertura a la IA -->
+      <div class="p3-right">
+        <div class="p3-donut-eyebrow">Apertura a la IA</div>
+        <div class="p3-donut-wrap">
+          <div style="position:relative;flex-shrink:0">
+            <canvas id="c-q3-donut" width="130" height="130"></canvas>
+            <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none">
+              <span style="font-size:28px;font-weight:900;color:var(--amber);letter-spacing:-1px;line-height:1">88%</span>
+              <span style="font-size:9px;font-weight:700;color:var(--muted-l);text-transform:uppercase;letter-spacing:.8px">abiertos</span>
+            </div>
+          </div>
+          <div class="p3-donut-legend">
+            <div class="legend-item"><div class="legend-dot" style="background:var(--amber)"></div><span class="legend-txt">Muy abierto</span><span class="legend-pct" style="color:var(--amber)">52%</span></div>
+            <div class="legend-item"><div class="legend-dot" style="background:#f0a800"></div><span class="legend-txt">Abierto</span><span class="legend-pct" style="color:#c87a00">36%</span></div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--muted-l)"></div><span class="legend-txt">Reticente</span><span class="legend-pct" style="color:var(--muted-l)">12%</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── P4: ¿Cómo relacionarse? ── -->
+  <div class="card c-q4">
+    <div class="c-eyebrow">
+      <span class="c-eyebrow-num">P4</span>
+      ¿Cómo prefieres relacionarte con la Administración?
+    </div>
+    <div class="donut-wrap">
+      <canvas id="c-q4" width="128" height="128" style="flex-shrink:0"></canvas>
+      <div class="donut-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#205cf2"></div><span class="legend-txt">Web / App</span><span class="legend-pct">34%</span></div>
+        <div class="legend-item"><div class="legend-dot" style="background:#0598b8"></div><span class="legend-txt">Asistente virtual</span><span class="legend-pct">18%</span></div>
+        <div class="legend-item"><div class="legend-dot" style="background:#5adaa4"></div><span class="legend-txt">Híbrido presencial</span><span class="legend-pct">17%</span></div>
+        <div class="legend-item"><div class="legend-dot" style="background:#e08f00"></div><span class="legend-txt">Teléfono</span><span class="legend-pct">12%</span></div>
+        <div class="legend-item"><div class="legend-dot" style="background:#3dc78e"></div><span class="legend-txt">Solo digital</span><span class="legend-pct">11%</span></div>
+        <div class="legend-item"><div class="legend-dot" style="background:#c0cce8"></div><span class="legend-txt">Solo presencial</span><span class="legend-pct">8%</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── P5: ¿Documentos repetidos? ── -->
+  <div class="card c-q5">
+    <div class="c-eyebrow">
+      <span class="c-eyebrow-num">P5</span>
+      ¿Cuántas veces has dado un dato que la Admin ya tenía?
+    </div>
+    <span class="c-hero hero-rose">68%</span>
+    <div class="c-hero-lbl">casi siempre o siempre tiene que resubir documentación</div>
+    <div class="c-rule"></div>
+    <div class="c-sub">
+      <strong style="color:var(--rose)">30%</strong> "Siempre me lo piden todo aunque lo tengan"<br>
+      <strong style="color:var(--rose)">38%</strong> "Casi siempre / bastantes veces"<br><br>
+      Solo el <strong style="color:var(--text)">8%</strong> dice que nunca ha tenido que repetir documentación
+    </div>
+  </div>
+
+  <!-- ── P6: ¿Qué tecnología? ── -->
+  <div class="card c-q6">
+    <div class="c-eyebrow">
+      <span class="c-eyebrow-num">P6</span>
+      ¿Qué tecnología deseas en los servicios públicos?
+    </div>
+    <div class="bar-list">
+      <div class="bar-item">
+        <div class="bar-meta">
+          <span class="bar-label">Chatbots y asistentes</span>
+          <span class="bar-pct" style="color:var(--lime)">52%</span>
+        </div>
+        <div class="bar-track"><div class="bar-fill bf-lime" style="width:52%"></div></div>
+      </div>
+      <div class="bar-item">
+        <div class="bar-meta">
+          <span class="bar-label">Sensores / IoT en ciudades</span>
+          <span class="bar-pct" style="color:var(--lime)">31%</span>
+        </div>
+        <div class="bar-track"><div class="bar-fill bf-lime" style="width:31%;opacity:.8"></div></div>
+      </div>
+      <div class="bar-item">
+        <div class="bar-meta">
+          <span class="bar-label">Robots de atención presencial</span>
+          <span class="bar-pct" style="color:var(--lime)">21%</span>
+        </div>
+        <div class="bar-track"><div class="bar-fill bf-lime" style="width:21%;opacity:.65"></div></div>
+      </div>
+      <div class="bar-item">
+        <div class="bar-meta">
+          <span class="bar-label">Drones para emergencias</span>
+          <span class="bar-pct" style="color:var(--lime)">11%</span>
+        </div>
+        <div class="bar-track"><div class="bar-fill bf-lime" style="width:11%;opacity:.5"></div></div>
+      </div>
+    </div>
+    <div class="c-note">Multirrespuesta · 9% prefiere ninguna tecnología nueva</div>
+  </div>
+
+  <!-- ── P7: ¿Hasta dónde confiar datos? ── -->
+  <div class="card c-q7">
+    <div class="c-eyebrow">
+      <span class="c-eyebrow-num">P7</span>
+      ¿Hasta dónde confiarías tus datos a la Administración?
+    </div>
+    <div class="dist-wrap">
+      <div class="dist-track">
+        <div class="dist-seg" style="width:29%;background:var(--blue)">29%</div>
+        <div class="dist-seg" style="width:41%;background:var(--teal-l)">41%</div>
+        <div class="dist-seg" style="width:22%;background:var(--amber)">22%</div>
+        <div class="dist-seg" style="width:8%;background:var(--rose)">8%</div>
+      </div>
+      <div class="dist-legend-row">
+        <div class="dist-li">
+          <div class="dist-dot" style="background:var(--blue)"></div>
+          <div class="dist-body">
+            <span class="dist-pct" style="color:var(--blue)">29%</span>
+            <span class="dist-lbl">Confío totalmente si mejora el servicio</span>
+          </div>
+        </div>
+        <div class="dist-li">
+          <div class="dist-dot" style="background:var(--teal-l)"></div>
+          <div class="dist-body">
+            <span class="dist-pct" style="color:var(--teal-l)">41%</span>
+            <span class="dist-lbl">Solo si puedo controlar qué comparto</span>
+          </div>
+        </div>
+        <div class="dist-li">
+          <div class="dist-dot" style="background:var(--amber)"></div>
+          <div class="dist-body">
+            <span class="dist-pct" style="color:var(--amber)">22%</span>
+            <span class="dist-lbl">Prefiero compartir lo mínimo imprescindible</span>
+          </div>
+        </div>
+        <div class="dist-li">
+          <div class="dist-dot" style="background:var(--rose)"></div>
+          <div class="dist-body">
+            <span class="dist-pct" style="color:var(--rose)">8%</span>
+            <span class="dist-lbl">No confiaría en compartir más datos</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+// P3 — Donut apertura a la IA
+new Chart(document.getElementById('c-q3-donut'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Muy abierto','Abierto','Reticente'],
+    datasets: [{
+      data: [52, 36, 12],
+      backgroundColor: ['#e08f00','#f0a800','#c0cce8'],
+      borderColor: '#ffffff',
+      borderWidth: 3
+    }]
+  },
+  options: {
+    responsive: false,
+    cutout: '68%',
+    plugins: { legend: { display: false } }
+  }
+});
+
+// P4 — Donut canal de relación
+new Chart(document.getElementById('c-q4'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Web/App','Asistente virtual','Híbrido','Teléfono','Solo digital','Solo presencial'],
+    datasets: [{
+      data: [34, 18, 17, 12, 11, 8],
+      backgroundColor: ['#205cf2','#0598b8','#5adaa4','#e08f00','#3dc78e','#c0cce8'],
+      borderColor: '#ffffff',
+      borderWidth: 3,
+      hoverOffset: 4
+    }]
+  },
+  options: {
+    responsive: false,
+    cutout: '68%',
+    plugins: { legend: { display: false }, tooltip: { enabled: true } }
+  }
+});
+</script>
+</body>
+</html>

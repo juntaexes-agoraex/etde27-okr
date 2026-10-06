@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Semáforo de Servicios Públicos — ÁgoraEX</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{
+  font-family:system-ui,-apple-system,sans-serif;
+  background:#E8EBF5;
+  min-height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:flex-start;
+}
+.app{
+  width:100%;
+  max-width:600px;
+  min-height:100vh;
+  background:#fff;
+  display:flex;
+  flex-direction:column;
+  position:relative;
+}
+.screen{
+  display:none;
+  flex-direction:column;
+  min-height:100vh;
+}
+button{
+  -webkit-appearance:none;
+  appearance:none;
+  border:none;
+  cursor:pointer;
+  font-family:system-ui,-apple-system,sans-serif;
+}
+.header{
+  padding:14px 20px;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  flex-shrink:0;
+}
+.header-logo-group{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex:1;
+}
+.header-text-block{
+  display:flex;
+  flex-direction:column;
+}
+.header-brand{
+  font-size:18px;
+  font-weight:700;
+  color:white;
+  line-height:1.15;
+  letter-spacing:-0.2px;
+}
+.header-brand-teal{color:#5ADAA4;}
+.header-sub{
+  font-size:11.5px;
+  color:rgba(255,255,255,0.72);
+  margin-top:2px;
+  line-height:1.2;
+}
+.header-center-group{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:3px;
+}
+.header-center-title{
+  font-size:16px;
+  font-weight:700;
+  color:white;
+}
+.header-center-sub{
+  font-size:12px;
+  color:rgba(255,255,255,0.6);
+}
+.body-flex{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+}
+.body-padded{
+  flex:1;
+  padding:32px 24px 24px;
+  display:flex;
+  flex-direction:column;
+}
+.welcome-title{
+  font-size:28px;
+  font-weight:700;
+  color:#1E104D;
+  line-height:1.2;
+  margin-bottom:10px;
+}
+.welcome-sub{
+  font-size:16px;
+  color:#666;
+  margin-bottom:28px;
+  line-height:1.4;
+}
+.legend-row{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-bottom:40px;
+}
+.legend-pill{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  padding:7px 14px;
+  border-radius:20px;
+  font-size:13px;
+  font-weight:500;
+  line-height:1;
+}
+.legend-pill-verde{background:#DCFCE7;color:#166534;}
+.legend-pill-amarillo{background:#FEF3C7;color:#92400E;}
+.legend-pill-rojo{background:#FEE2E2;color:#991B1B;}
+.legend-dot{
+  width:10px;
+  height:10px;
+  border-radius:50%;
+  flex-shrink:0;
+}
+.legend-dot-verde{background:#22C55E;}
+.legend-dot-amarillo{background:#F59E0B;}
+.legend-dot-rojo{background:#EF4444;}
+.btn-primary{
+  display:block;
+  width:100%;
+  height:56px;
+  background:#205CF2;
+  color:white;
+  border-radius:12px;
+  font-size:17px;
+  font-weight:600;
+  transition:background 0.15s;
+  letter-spacing:0.1px;
+}
+.btn-primary:hover{background:#1849D6;}
+.btn-primary:active{background:#1235BE;}
+.btn-primary:disabled{opacity:0.4;pointer-events:none;}
+.btn-outline{
+  display:block;
+  width:100%;
+  height:56px;
+  background:white;
+  color:#205CF2;
+  border:2px solid #205CF2;
+  border-radius:12px;
+  font-size:17px;
+  font-weight:600;
+  transition:background 0.15s;
+}
+.btn-outline:hover{background:#EEF2FE;}
+.btn-outline:active{background:#E0E8FD;}
+.footer{
+  padding:14px 20px;
+  border-top:1px solid #E8EBF5;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  background:white;
+  flex-shrink:0;
+}
+.footer-eu-wrap{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.footer-eu-label{
+  font-size:11px;
+  color:#555;
+  line-height:1.3;
+}
+.footer-sep{
+  color:#CCC;
+  font-size:12px;
+  flex-shrink:0;
+}
+.footer-junta{
+  font-family:Georgia,serif;
+  font-size:11px;
+  color:#444;
+}
+.instruction-strip{
+  background:#F8F9FE;
+  padding:10px 20px;
+  font-size:13px;
+  color:#555;
+  border-bottom:1px solid #F0F0F0;
+  flex-shrink:0;
+}
+.sem-list{flex:1;}
+.sem-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  min-height:64px;
+  padding:0 20px;
+  border-bottom:1px solid #F0F0F0;
+}
+.sem-row:nth-child(even){background:#F8F9FE;}
+.sem-label{
+  font-size:16px;
+  font-weight:500;
+  color:#1E104D;
+  flex:1;
+  margin-right:16px;
+  line-height:1.3;
+}
+.sem-dots{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  flex-shrink:0;
+}
+.sem-dot{
+  width:36px;
+  height:36px;
+  border-radius:50%;
+  border:2.5px solid transparent;
+  cursor:pointer;
+  transition:transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+  flex-shrink:0;
+  padding:0;
+  outline:none;
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
+}
+.sem-dot.verde{background:#22C55E;}
+.sem-dot.amarillo{background:#F59E0B;}
+.sem-dot.rojo{background:#EF4444;}
+.sem-dot.selected{
+  transform:scale(1.2);
+  border-color:#1E104D;
+  box-shadow:0 0 0 3px rgba(0,0,0,0.12);
+}
+.sticky-bar{
+  position:sticky;
+  bottom:0;
+  background:white;
+  border-top:1px solid #E8EBF5;
+  padding:16px 20px;
+  flex-shrink:0;
+}
+.prog-text{
+  font-size:13px;
+  color:#888;
+  margin-bottom:10px;
+}
+.prio-btn{
+  display:flex;align-items:center;width:100%;min-height:60px;padding:0 20px;
+  background:white;border:none;border-bottom:1px solid #F0F0F0;
+  font-size:16px;font-weight:500;color:#1E104D;text-align:left;
+  cursor:pointer;transition:background 0.15s,color 0.15s;font-family:system-ui,-apple-system,sans-serif;
+}
+.prio-btn:nth-child(even){background:#F8F9FE;}
+.prio-btn.selected,.prio-btn.selected:nth-child(even){background:#205CF2;color:white;}
+.prio-title{font-size:21px;font-weight:700;color:#1E104D;line-height:1.3;margin-bottom:8px;}
+.prio-sub{font-size:17px;color:#205CF2;font-weight:600;margin-bottom:4px;}
+.gracias-body{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:40px 24px 32px;
+  text-align:center;
+}
+.check-circle{
+  width:80px;
+  height:80px;
+  border-radius:50%;
+  background:#5ADAA4;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  margin-bottom:24px;
+  flex-shrink:0;
+}
+.gracias-title{
+  font-size:28px;
+  font-weight:700;
+  color:#1E104D;
+  margin-bottom:12px;
+}
+.gracias-sub{
+  font-size:15px;
+  color:#666;
+  line-height:1.55;
+  max-width:300px;
+  margin-bottom:16px;
+}
+.gracias-counter{
+  font-size:14px;
+  color:#444;
+  font-weight:500;
+  margin-bottom:36px;
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="screen" id="sc-welcome">
+    <div class="header" style="background:#205CF2;">
+      <div class="header-logo-group">
+        <svg width="36" height="36" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <line x1="22" y1="22" x2="31" y2="13" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+          <line x1="22" y1="22" x2="31" y2="31" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+          <line x1="22" y1="22" x2="13" y2="31" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+          <line x1="22" y1="22" x2="13" y2="13" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+          <line x1="22" y1="22" x2="22" y2="8" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+          <line x1="22" y1="22" x2="36" y2="22" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+          <line x1="22" y1="22" x2="22" y2="36" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+          <line x1="22" y1="22" x2="8" y2="22" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+          <line x1="31" y1="13" x2="37" y2="7" stroke="#5ADAA4" stroke-width="1" stroke-linecap="round" opacity=".7"/>
+          <line x1="31" y1="31" x2="37" y2="37" stroke="#5ADAA4" stroke-width="1" stroke-linecap="round" opacity=".7"/>
+          <line x1="13" y1="31" x2="7" y2="37" stroke="#5ADAA4" stroke-width="1" stroke-linecap="round" opacity=".7"/>
+          <line x1="13" y1="13" x2="7" y2="7" stroke="#5ADAA4" stroke-width="1" stroke-linecap="round" opacity=".7"/>
+          <circle cx="37" cy="7" r="2.5" fill="#5ADAA4" opacity=".75"/>
+          <circle cx="37" cy="37" r="2.5" fill="#5ADAA4" opacity=".75"/>
+          <circle cx="7" cy="37" r="2.5" fill="#5ADAA4" opacity=".75"/>
+          <circle cx="7" cy="7" r="2.5" fill="#5ADAA4" opacity=".75"/>
+          <circle cx="31" cy="13" r="5" fill="#5ADAA4"/>
+          <circle cx="31" cy="31" r="5" fill="#5ADAA4"/>
+          <circle cx="13" cy="31" r="5" fill="#5ADAA4"/>
+          <circle cx="13" cy="13" r="5" fill="#5ADAA4"/>
+          <circle cx="22" cy="8" r="3" fill="white"/>
+          <circle cx="36" cy="22" r="3" fill="white"/>
+          <circle cx="22" cy="36" r="3" fill="white"/>
+          <circle cx="8" cy="22" r="3" fill="white"/>
+          <rect x="18" y="18" width="8" height="8" rx="1.5" fill="white"/>
+        </svg>
+        <div class="header-text-block">
+          <span class="header-brand">Ágora<span class="header-brand-teal">EX</span></span>
+          <span class="header-sub">Congreso Potencial Digital 2026 · Cáceres</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="body-padded">
+      <h1 class="welcome-title">Semáforo de Servicios Públicos</h1>
+      <p class="welcome-sub">¿Cómo funcionan los servicios que usas?</p>
+      <div class="legend-row">
+        <div class="legend-pill legend-pill-verde">
+          <span class="legend-dot legend-dot-verde"></span>
+          Verde — Funciona bien
+        </div>
+        <div class="legend-pill legend-pill-amarillo">
+          <span class="legend-dot legend-dot-amarillo"></span>
+          Amarillo — Mejorable
+        </div>
+        <div class="legend-pill legend-pill-rojo">
+          <span class="legend-dot legend-dot-rojo"></span>
+          Rojo — No funciona
+        </div>
+      </div>
+      <button class="btn-primary" onclick="goTo('semaforo')">Empezar &#8594;</button>
+    </div>
+
+    <div class="footer">
+      <div class="footer-eu-wrap">
+        <svg id="eu-flag-w" viewBox="0 0 60 40" width="60" height="40"><rect width="60" height="40" fill="#003399" rx="3"/></svg>
+        <span class="footer-eu-label">Cofinanciado por la<br>Unión Europea</span>
+      </div>
+      <span class="footer-sep">|</span>
+      <span class="footer-junta">JUNTA DE EXTREMADURA</span>
+    </div>
+  </div>
+
+  <div class="screen" id="sc-semaforo">
+    <div class="header" style="background:#1E104D;justify-content:space-between;">
+      <svg width="36" height="36" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;">
+        <line x1="22" y1="22" x2="31" y2="13" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="22" y1="22" x2="31" y2="31" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="22" y1="22" x2="13" y2="31" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="22" y1="22" x2="13" y2="13" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="22" y1="22" x2="22" y2="8" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="22" y1="22" x2="36" y2="22" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="22" y1="22" x2="22" y2="36" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="22" y1="22" x2="8" y2="22" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="31" y1="13" x2="37" y2="7" stroke="#5ADAA4" stroke-width="1" stroke-linecap="round" opacity=".7"/>
+        <line x1="31" y1="31" x2="37" y2="37" stroke="#5ADAA4" stroke-width="1" stroke-linecap="round" opacity=".7"/>
+        <line x1="13" y1="31" x2="7" y2="37" stroke="#5ADAA4" stroke-width="1" stroke-linecap="round" opacity=".7"/>
+        <line x1="13" y1="13" x2="7" y2="7" stroke="#5ADAA4" stroke-width="1" stroke-linecap="round" opacity=".7"/>
+        <circle cx="37" cy="7" r="2.5" fill="#5ADAA4" opacity=".75"/>
+        <circle cx="37" cy="37" r="2.5" fill="#5ADAA4" opacity=".75"/>
+        <circle cx="7" cy="37" r="2.5" fill="#5ADAA4" opacity=".75"/>
+        <circle cx="7" cy="7" r="2.5" fill="#5ADAA4" opacity=".75"/>
+        <circle cx="31" cy="13" r="5" fill="#5ADAA4"/>
+        <circle cx="31" cy="31" r="5" fill="#5ADAA4"/>
+        <circle cx="13" cy="31" r="5" fill="#5ADAA4"/>
+        <circle cx="13" cy="13" r="5" fill="#5ADAA4"/>
+        <circle cx="22" cy="8" r="3" fill="white"/>
+        <circle cx="36" cy="22" r="3" fill="white"/>
+        <circle cx="22" cy="36" r="3" fill="white"/>
+        <circle cx="8" cy="22" r="3" fill="white"/>
+        <rect x="18" y="18" width="8" height="8" rx="1.5" fill="white"/>
+      </svg>
+      <div class="header-center-group">
+        <span class="header-center-title">Semáforo ciudadano</span>
+        <span class="header-center-sub">Puntúa cada servicio</span>
+      </div>
+      <div style="width:36px;flex-shrink:0;"></div>
+    </div>
+
+    <div class="body-flex">
+      <div class="instruction-strip">Toca un color para valorar cada servicio</div>
+      <div class="sem-list" id="sem-list"></div>
+      <div class="sticky-bar">
+        <div class="prog-text" id="prog-text">0 de 7 valorados</div>
+        <button class="btn-primary" id="btn-enviar" disabled onclick="submitSemaforo()" style="opacity:0.4;pointer-events:none;">Enviar valoración &#8594;</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="screen" id="sc-prioridad">
+    <div class="header" style="background:#1E104D;justify-content:space-between;">
+      <svg width="36" height="36" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;">
+        <line x1="22" y1="22" x2="31" y2="13" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="22" y1="22" x2="31" y2="31" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="22" y1="22" x2="13" y2="31" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="22" y1="22" x2="13" y2="13" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="22" y1="22" x2="22" y2="8" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="22" y1="22" x2="36" y2="22" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="22" y1="22" x2="22" y2="36" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="22" y1="22" x2="8" y2="22" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="31" y1="13" x2="37" y2="7" stroke="#5ADAA4" stroke-width="1" stroke-linecap="round" opacity=".7"/>
+        <line x1="31" y1="31" x2="37" y2="37" stroke="#5ADAA4" stroke-width="1" stroke-linecap="round" opacity=".7"/>
+        <line x1="13" y1="31" x2="7" y2="37" stroke="#5ADAA4" stroke-width="1" stroke-linecap="round" opacity=".7"/>
+        <line x1="13" y1="13" x2="7" y2="7" stroke="#5ADAA4" stroke-width="1" stroke-linecap="round" opacity=".7"/>
+        <circle cx="37" cy="7" r="2.5" fill="#5ADAA4" opacity=".75"/>
+        <circle cx="37" cy="37" r="2.5" fill="#5ADAA4" opacity=".75"/>
+        <circle cx="7" cy="37" r="2.5" fill="#5ADAA4" opacity=".75"/>
+        <circle cx="7" cy="7" r="2.5" fill="#5ADAA4" opacity=".75"/>
+        <circle cx="31" cy="13" r="5" fill="#5ADAA4"/>
+        <circle cx="31" cy="31" r="5" fill="#5ADAA4"/>
+        <circle cx="13" cy="31" r="5" fill="#5ADAA4"/>
+        <circle cx="13" cy="13" r="5" fill="#5ADAA4"/>
+        <circle cx="22" cy="8" r="3" fill="white"/>
+        <circle cx="36" cy="22" r="3" fill="white"/>
+        <circle cx="22" cy="36" r="3" fill="white"/>
+        <circle cx="8" cy="22" r="3" fill="white"/>
+        <rect x="18" y="18" width="8" height="8" rx="1.5" fill="white"/>
+      </svg>
+      <div class="header-center-group">
+        <span class="header-center-title">Una prioridad</span>
+        <span class="header-center-sub">Elige solo una</span>
+      </div>
+      <div style="width:36px;flex-shrink:0;"></div>
+    </div>
+    <div class="body-flex">
+      <div style="padding:24px 20px 16px;border-bottom:1px solid #F0F0F0;">
+        <p class="prio-title">Si solo pudiéramos mejorar uno el año que viene...</p>
+        <p class="prio-sub">¿Cuál elegirías?</p>
+      </div>
+      <div id="prio-list" style="flex:1;"></div>
+      <div class="sticky-bar">
+        <button class="btn-primary" id="btn-prio" disabled onclick="submitPrioridad()" style="opacity:0.4;pointer-events:none;">Finalizar &#8594;</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="screen" id="sc-gracias">
+    <div class="header" style="background:#5ADAA4;">
+      <div class="header-logo-group">
+        <svg width="36" height="36" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <line x1="22" y1="22" x2="31" y2="13" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+          <line x1="22" y1="22" x2="31" y2="31" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+          <line x1="22" y1="22" x2="13" y2="31" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+          <line x1="22" y1="22" x2="13" y2="13" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+          <line x1="22" y1="22" x2="22" y2="8" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+          <line x1="22" y1="22" x2="36" y2="22" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+          <line x1="22" y1="22" x2="22" y2="36" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+          <line x1="22" y1="22" x2="8" y2="22" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+          <line x1="31" y1="13" x2="37" y2="7" stroke="white" stroke-width="1" stroke-linecap="round" opacity=".5"/>
+          <line x1="31" y1="31" x2="37" y2="37" stroke="white" stroke-width="1" stroke-linecap="round" opacity=".5"/>
+          <line x1="13" y1="31" x2="7" y2="37" stroke="white" stroke-width="1" stroke-linecap="round" opacity=".5"/>
+          <line x1="13" y1="13" x2="7" y2="7" stroke="white" stroke-width="1" stroke-linecap="round" opacity=".5"/>
+          <circle cx="37" cy="7" r="2.5" fill="white" opacity=".6"/>
+          <circle cx="37" cy="37" r="2.5" fill="white" opacity=".6"/>
+          <circle cx="7" cy="37" r="2.5" fill="white" opacity=".6"/>
+          <circle cx="7" cy="7" r="2.5" fill="white" opacity=".6"/>
+          <circle cx="31" cy="13" r="5" fill="white" opacity=".8"/>
+          <circle cx="31" cy="31" r="5" fill="white" opacity=".8"/>
+          <circle cx="13" cy="31" r="5" fill="white" opacity=".8"/>
+          <circle cx="13" cy="13" r="5" fill="white" opacity=".8"/>
+          <circle cx="22" cy="8" r="3" fill="white"/>
+          <circle cx="36" cy="22" r="3" fill="white"/>
+          <circle cx="22" cy="36" r="3" fill="white"/>
+          <circle cx="8" cy="22" r="3" fill="white"/>
+          <rect x="18" y="18" width="8" height="8" rx="1.5" fill="white"/>
+        </svg>
+        <div class="header-text-block">
+          <span class="header-brand">Ágora<span style="color:white;opacity:0.85;">EX</span></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="gracias-body">
+      <div class="check-circle">
+        <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M10 20L17 27L30 13" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <h1 class="gracias-title">¡Gracias!</h1>
+      <p class="gracias-sub">Tu valoración ayuda a mejorar los servicios públicos.</p>
+      <p class="gracias-counter" id="gracias-counter"></p>
+      <button class="btn-outline" onclick="resetSemaforo()">Nueva valoración</button>
+    </div>
+
+    <div class="footer">
+      <div class="footer-eu-wrap">
+        <svg id="eu-flag-g" viewBox="0 0 60 40" width="60" height="40"><rect width="60" height="40" fill="#003399" rx="3"/></svg>
+        <span class="footer-eu-label">Cofinanciado por la<br>Unión Europea</span>
+      </div>
+      <span class="footer-sep">|</span>
+      <span class="footer-junta">JUNTA DE EXTREMADURA</span>
+    </div>
+  </div>
+
+</div>
+
+<script>
+var SERVICIOS = [
+  { id: 'cita-sanitaria',       label: 'Cita previa sanitaria' },
+  { id: 'registro-electronico', label: 'Registro electrónico' },
+  { id: 'solicitar-ayudas',     label: 'Solicitar ayudas' },
+  { id: 'oficina-empleo',       label: 'Oficina de empleo' },
+  { id: 'certificados',         label: 'Certificados digitales' },
+  { id: 'educacion',            label: 'Trámites educativos' },
+  { id: 'sede-electronica',     label: 'Sede electrónica' },
+];
+
+var votos = {};
+var prioridad = '';
+
+function starPoints(cx,cy,R,r){var pts=[];for(var i=0;i<10;i++){var a=-Math.PI/2+i*Math.PI/5;var rad=(i%2===0)?R:r;pts.push((cx+rad*Math.cos(a)).toFixed(2)+','+(cy+rad*Math.sin(a)).toFixed(2));}return pts.join(' ');}
+function buildEUFlag(svgId){var svg=document.getElementById(svgId);if(!svg)return;var g=document.createElementNS('http://www.w3.org/2000/svg','g');g.setAttribute('fill','#FFCC00');for(var k=0;k<12;k++){var a=-Math.PI/2+k*Math.PI/6;var poly=document.createElementNS('http://www.w3.org/2000/svg','polygon');poly.setAttribute('points',starPoints(30+13*Math.cos(a),20+13*Math.sin(a),2.8,1.1));g.appendChild(poly);}svg.appendChild(g);}
+
+function goTo(id) {
+  document.querySelectorAll('.screen').forEach(function(s){ s.style.display='none'; });
+  var el = document.getElementById('sc-'+id);
+  if(el) { el.style.display='flex'; el.style.flexDirection='column'; }
+}
+
+function selectColor(serviceId, color, el) {
+  votos[serviceId] = color;
+  var row = el.closest('.sem-row');
+  row.querySelectorAll('.sem-dot').forEach(function(d){ d.classList.remove('selected'); });
+  el.classList.add('selected');
+  updateProgress();
+}
+
+function updateProgress() {
+  var count = Object.keys(votos).length;
+  document.getElementById('prog-text').textContent = count + ' de ' + SERVICIOS.length + ' valorados';
+  var btn = document.getElementById('btn-enviar');
+  if(count === SERVICIOS.length) {
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    btn.style.pointerEvents = 'auto';
+  }
+}
+
+function submitSemaforo() {
+  goTo('prioridad');
+}
+
+function selectPrioridad(id, el) {
+  prioridad = id;
+  document.querySelectorAll('.prio-btn').forEach(function(b){ b.classList.remove('selected'); });
+  el.classList.add('selected');
+  var btn = document.getElementById('btn-prio');
+  btn.disabled = false;
+  btn.style.opacity = '1';
+  btn.style.pointerEvents = 'auto';
+}
+
+function submitPrioridad() {
+  var responses = JSON.parse(localStorage.getItem('agx_semaforo_responses') || '[]');
+  responses.push({ votos: votos, prioridad: prioridad, timestamp: Date.now() });
+  localStorage.setItem('agx_semaforo_responses', JSON.stringify(responses));
+  var count = responses.length;
+  document.getElementById('gracias-counter').textContent = 'Ya han participado ' + count + (count === 1 ? ' persona.' : ' personas.');
+  goTo('gracias');
+}
+
+function buildPrioridadList() {
+  var list = document.getElementById('prio-list');
+  SERVICIOS.forEach(function(s) {
+    var btn = document.createElement('button');
+    btn.className = 'prio-btn';
+    btn.type = 'button';
+    btn.textContent = s.label;
+    (function(serviceId, el){ btn.onclick = function(){ selectPrioridad(serviceId, el); }; })(s.id, btn);
+    list.appendChild(btn);
+  });
+}
+
+function resetSemaforo() {
+  votos = {};
+  prioridad = '';
+  document.getElementById('sem-list').querySelectorAll('.sem-dot').forEach(function(d){ d.classList.remove('selected'); });
+  document.getElementById('prog-text').textContent = '0 de ' + SERVICIOS.length + ' valorados';
+  var btn = document.getElementById('btn-enviar');
+  btn.disabled = true; btn.style.opacity = '0.4'; btn.style.pointerEvents = 'none';
+  document.querySelectorAll('.prio-btn').forEach(function(b){ b.classList.remove('selected'); });
+  var pbtn = document.getElementById('btn-prio');
+  pbtn.disabled = true; pbtn.style.opacity = '0.4'; pbtn.style.pointerEvents = 'none';
+  goTo('welcome');
+}
+
+function buildSemaforoList() {
+  var list = document.getElementById('sem-list');
+  SERVICIOS.forEach(function(s) {
+    var row = document.createElement('div');
+    row.className = 'sem-row';
+    var label = document.createElement('span');
+    label.className = 'sem-label';
+    label.textContent = s.label;
+    var dots = document.createElement('div');
+    dots.className = 'sem-dots';
+    ['verde','amarillo','rojo'].forEach(function(c) {
+      var dot = document.createElement('button');
+      dot.className = 'sem-dot ' + c;
+      dot.setAttribute('aria-label', c.charAt(0).toUpperCase() + c.slice(1));
+      dot.setAttribute('type', 'button');
+      (function(serviceId, color, el){ dot.onclick = function(){ selectColor(serviceId, color, el); }; })(s.id, c, dot);
+      dots.appendChild(dot);
+    });
+    row.appendChild(label);
+    row.appendChild(dots);
+    list.appendChild(row);
+  });
+}
+
+window.addEventListener('DOMContentLoaded', function() {
+  buildEUFlag('eu-flag-w');
+  buildEUFlag('eu-flag-g');
+  buildSemaforoList();
+  buildPrioridadList();
+  goTo('welcome');
+});
+</script>
+</body>
+</html>

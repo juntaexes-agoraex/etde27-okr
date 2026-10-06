@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Semáforo Ciudadano — Congreso Potencial Digital 2026</title>
+<style>
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+body {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: #205CF2;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+  color: white;
+  display: flex;
+  flex-direction: column;
+}
+#header {
+  height: 70px;
+  min-height: 70px;
+  background: rgba(0,0,0,0.15);
+  border-bottom: 1px solid rgba(255,255,255,0.15);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+}
+#header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+#header-left span {
+  font-size: 20px;
+  font-weight: 700;
+  color: white;
+  letter-spacing: 0.01em;
+}
+#header-center {
+  font-size: 28px;
+  font-weight: 800;
+  color: white;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+#header-right {
+  font-size: 14px;
+  color: #5ADAA4;
+  font-weight: 500;
+  text-align: right;
+  white-space: nowrap;
+}
+#legend {
+  height: 40px;
+  min-height: 40px;
+  background: rgba(0,0,0,0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 40px;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: rgba(255,255,255,0.8);
+}
+.legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+#main {
+  flex: 1;
+  padding: 16px 40px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+#service-list {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+}
+.service-row {
+  display: flex;
+  align-items: center;
+  background: rgba(255,255,255,0.1);
+  border-radius: 12px;
+  padding: 0 20px;
+  min-height: 52px;
+  max-height: 90px;
+  flex: 1;
+  margin: 5px 0;
+  cursor: default;
+  transition: background 0.2s;
+  position: relative;
+}
+.service-row:hover {
+  background: rgba(255,255,255,0.16);
+}
+.row-label {
+  width: 30%;
+  font-size: 17px;
+  font-weight: 600;
+  color: white;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-right: 16px;
+}
+.row-bar-wrap {
+  width: 55%;
+  padding-right: 20px;
+}
+.bar-container {
+  height: 28px;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  width: 100%;
+}
+.bar-seg {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: white;
+  white-space: nowrap;
+  overflow: hidden;
+  transition: width 0.6s ease;
+  min-width: 0;
+}
+.bar-verde {
+  background: #22C55E;
+}
+.bar-amarillo {
+  background: #F59E0B;
+}
+.bar-rojo {
+  background: #EF4444;
+}
+.bar-nodata {
+  background: rgba(255,255,255,0.2);
+  color: rgba(255,255,255,0.6);
+  font-size: 12px;
+  font-weight: 500;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.row-dot-wrap {
+  width: 15%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.dominant-dot {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  transition: background 0.6s ease;
+  flex-shrink: 0;
+}
+#footer {
+  height: 50px;
+  min-height: 50px;
+  background: rgba(0,0,0,0.15);
+  border-top: 1px solid rgba(255,255,255,0.12);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+}
+#footer-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: rgba(255,255,255,0.6);
+}
+#footer-right {
+  font-family: Georgia, 'Times New Roman', serif;
+  text-transform: uppercase;
+  font-size: 12px;
+  color: rgba(255,255,255,0.6);
+  letter-spacing: 0.05em;
+}
+</style>
+</head>
+<body>
+
+<div id="header">
+  <div id="header-left">
+    <svg width="40" height="40" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <line x1="22" y1="22" x2="31" y2="13" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+      <line x1="22" y1="22" x2="31" y2="31" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+      <line x1="22" y1="22" x2="13" y2="31" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+      <line x1="22" y1="22" x2="13" y2="13" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+      <line x1="22" y1="22" x2="22" y2="8" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+      <line x1="22" y1="22" x2="36" y2="22" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+      <line x1="22" y1="22" x2="22" y2="36" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+      <line x1="22" y1="22" x2="8" y2="22" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+      <line x1="31" y1="13" x2="37" y2="7" stroke="#5ADAA4" stroke-width="1" stroke-linecap="round" opacity=".7"/>
+      <line x1="31" y1="31" x2="37" y2="37" stroke="#5ADAA4" stroke-width="1" stroke-linecap="round" opacity=".7"/>
+      <line x1="13" y1="31" x2="7" y2="37" stroke="#5ADAA4" stroke-width="1" stroke-linecap="round" opacity=".7"/>
+      <line x1="13" y1="13" x2="7" y2="7" stroke="#5ADAA4" stroke-width="1" stroke-linecap="round" opacity=".7"/>
+      <circle cx="37" cy="7" r="2.5" fill="#5ADAA4" opacity=".75"/>
+      <circle cx="37" cy="37" r="2.5" fill="#5ADAA4" opacity=".75"/>
+      <circle cx="7" cy="37" r="2.5" fill="#5ADAA4" opacity=".75"/>
+      <circle cx="7" cy="7" r="2.5" fill="#5ADAA4" opacity=".75"/>
+      <circle cx="31" cy="13" r="5" fill="#5ADAA4"/>
+      <circle cx="31" cy="31" r="5" fill="#5ADAA4"/>
+      <circle cx="13" cy="31" r="5" fill="#5ADAA4"/>
+      <circle cx="13" cy="13" r="5" fill="#5ADAA4"/>
+      <circle cx="22" cy="8" r="3" fill="white"/>
+      <circle cx="36" cy="22" r="3" fill="white"/>
+      <circle cx="22" cy="36" r="3" fill="white"/>
+      <circle cx="8" cy="22" r="3" fill="white"/>
+      <rect x="18" y="18" width="8" height="8" rx="1.5" fill="white"/>
+    </svg>
+    <span>ÁgoraEX</span>
+  </div>
+  <div id="header-center">Semáforo Ciudadano</div>
+  <div id="header-right">0 participantes · --:--:--</div>
+</div>
+
+<div id="legend">
+  <div class="legend-item">
+    <div class="legend-dot" style="background:#22C55E;"></div>
+    <span>Verde — Funciona bien</span>
+  </div>
+  <div class="legend-item">
+    <div class="legend-dot" style="background:#F59E0B;"></div>
+    <span>Amarillo — Mejorable</span>
+  </div>
+  <div class="legend-item">
+    <div class="legend-dot" style="background:#EF4444;"></div>
+    <span>Rojo — No funciona</span>
+  </div>
+</div>
+
+<div id="main">
+  <div id="service-list"></div>
+</div>
+
+<div id="footer">
+  <div id="footer-left">
+    <svg id="eu-semaforo-dash" width="60" height="40" viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg">
+      <rect width="60" height="40" fill="#003399"/>
+    </svg>
+    <span>Cofinanciado por la Unión Europea</span>
+  </div>
+  <div id="footer-right">Junta de Extremadura</div>
+</div>
+
+<script>
+var SERVICIOS = [
+  { id: 'cita-sanitaria',       label: 'Cita previa sanitaria' },
+  { id: 'registro-electronico', label: 'Registro electrónico' },
+  { id: 'solicitar-ayudas',     label: 'Solicitar ayudas' },
+  { id: 'oficina-empleo',       label: 'Oficina de empleo' },
+  { id: 'certificados',         label: 'Certificados digitales' },
+  { id: 'educacion',            label: 'Trámites educativos' },
+  { id: 'sede-electronica',     label: 'Sede electrónica' },
+];
+
+var demoData = {
+  total: 47,
+  counts: {
+    'cita-sanitaria':       { verde:20, amarillo:18, rojo:9,  total:47 },
+    'registro-electronico': { verde:12, amarillo:22, rojo:13, total:47 },
+    'solicitar-ayudas':     { verde:8,  amarillo:19, rojo:20, total:47 },
+    'oficina-empleo':       { verde:15, amarillo:20, rojo:12, total:47 },
+    'certificados':         { verde:25, amarillo:14, rojo:8,  total:47 },
+    'educacion':            { verde:18, amarillo:17, rojo:12, total:47 },
+    'sede-electronica':     { verde:10, amarillo:21, rojo:16, total:47 },
+  }
+};
+
+function starPoints(cx,cy,R,r){var pts=[];for(var i=0;i<10;i++){var a=-Math.PI/2+i*Math.PI/5;var rad=(i%2===0)?R:r;pts.push((cx+rad*Math.cos(a)).toFixed(2)+','+(cy+rad*Math.sin(a)).toFixed(2));}return pts.join(' ');}
+
+function buildEUFlag(svgId){var svg=document.getElementById(svgId);if(!svg)return;var g=document.createElementNS('http://www.w3.org/2000/svg','g');g.setAttribute('fill','#FFCC00');for(var k=0;k<12;k++){var a=-Math.PI/2+k*Math.PI/6;var poly=document.createElementNS('http://www.w3.org/2000/svg','polygon');poly.setAttribute('points',starPoints(30+13*Math.cos(a),20+13*Math.sin(a),2.8,1.1));g.appendChild(poly);}svg.appendChild(g);}
+
+function getData() {
+  var responses = JSON.parse(localStorage.getItem('agx_semaforo_responses') || '[]');
+  var total = responses.length;
+  var counts = {};
+  SERVICIOS.forEach(function(s) {
+    counts[s.id] = { verde: 0, amarillo: 0, rojo: 0, total: 0 };
+  });
+  responses.forEach(function(r) {
+    if(r.votos) {
+      Object.keys(r.votos).forEach(function(sid) {
+        if(counts[sid] && r.votos[sid]) {
+          counts[sid][r.votos[sid]]++;
+          counts[sid].total++;
+        }
+      });
+    }
+  });
+  return { total: total, counts: counts };
+}
+
+function pad(n) {
+  return n < 10 ? '0' + n : '' + n;
+}
+
+function getTimeStr() {
+  var now = new Date();
+  return pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
+}
+
+function buildRows() {
+  var list = document.getElementById('service-list');
+
+  SERVICIOS.forEach(function(s) {
+    var row = document.createElement('div');
+    row.className = 'service-row';
+    row.id = 'row-' + s.id;
+
+    var label = document.createElement('div');
+    label.className = 'row-label';
+    label.textContent = s.label;
+
+    var barWrap = document.createElement('div');
+    barWrap.className = 'row-bar-wrap';
+
+    var barContainer = document.createElement('div');
+    barContainer.className = 'bar-container';
+
+    var nodata = document.createElement('div');
+    nodata.className = 'bar-nodata';
+    nodata.id = 'nodata-' + s.id;
+    nodata.textContent = 'Sin votos';
+
+    var segVerde = document.createElement('div');
+    segVerde.className = 'bar-seg bar-verde';
+    segVerde.id = 'bar-verde-' + s.id;
+    segVerde.style.width = '0%';
+
+    var segAmarillo = document.createElement('div');
+    segAmarillo.className = 'bar-seg bar-amarillo';
+    segAmarillo.id = 'bar-amarillo-' + s.id;
+    segAmarillo.style.width = '0%';
+
+    var segRojo = document.createElement('div');
+    segRojo.className = 'bar-seg bar-rojo';
+    segRojo.id = 'bar-rojo-' + s.id;
+    segRojo.style.width = '0%';
+
+    barContainer.appendChild(nodata);
+    barContainer.appendChild(segVerde);
+    barContainer.appendChild(segAmarillo);
+    barContainer.appendChild(segRojo);
+    barWrap.appendChild(barContainer);
+
+    var dotWrap = document.createElement('div');
+    dotWrap.className = 'row-dot-wrap';
+
+    var dot = document.createElement('div');
+    dot.className = 'dominant-dot';
+    dot.id = 'dot-' + s.id;
+    dot.style.background = 'rgba(255,255,255,0.2)';
+
+    dotWrap.appendChild(dot);
+
+    row.appendChild(label);
+    row.appendChild(barWrap);
+    row.appendChild(dotWrap);
+    list.appendChild(row);
+  });
+}
+
+function render() {
+  var d = getData();
+  var isDemo = (d.total === 0);
+  if(isDemo) {
+    d = { total: demoData.total, counts: demoData.counts };
+  }
+
+  var counterEl = document.getElementById('header-right');
+  counterEl.textContent = d.total + (d.total === 1 ? ' participante' : ' participantes') + ' · ' + getTimeStr();
+  if(isDemo) {
+    counterEl.textContent = 'DEMO · ' + d.total + ' participantes · ' + getTimeStr();
+  }
+
+  SERVICIOS.forEach(function(s) {
+    var c = d.counts[s.id];
+    var nodataEl = document.getElementById('nodata-' + s.id);
+    var segV = document.getElementById('bar-verde-' + s.id);
+    var segA = document.getElementById('bar-amarillo-' + s.id);
+    var segR = document.getElementById('bar-rojo-' + s.id);
+    var dot = document.getElementById('dot-' + s.id);
+
+    if(!c || c.total === 0) {
+      nodataEl.style.display = 'flex';
+      segV.style.width = '0%';
+      segA.style.width = '0%';
+      segR.style.width = '0%';
+      segV.textContent = '';
+      segA.textContent = '';
+      segR.textContent = '';
+      dot.style.background = 'rgba(255,255,255,0.2)';
+      return;
+    }
+
+    nodataEl.style.display = 'none';
+
+    var pv = Math.round(c.verde / c.total * 100);
+    var pa = Math.round(c.amarillo / c.total * 100);
+    var pr = 100 - pv - pa;
+
+    segV.style.width = pv + '%';
+    segA.style.width = pa + '%';
+    segR.style.width = pr + '%';
+
+    segV.textContent = pv > 15 ? pv + '%' : '';
+    segA.textContent = pa > 15 ? pa + '%' : '';
+    segR.textContent = pr > 15 ? pr + '%' : '';
+
+    var dominant = 'verde';
+    if(c.amarillo > c.verde && c.amarillo >= c.rojo) dominant = 'amarillo';
+    else if(c.rojo > c.verde && c.rojo > c.amarillo) dominant = 'rojo';
+
+    var dotColor = dominant === 'verde' ? '#22C55E' : dominant === 'amarillo' ? '#F59E0B' : '#EF4444';
+    dot.style.background = dotColor;
+  });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  buildEUFlag('eu-semaforo-dash');
+  buildRows();
+  render();
+  setInterval(render, 5000);
+});
+</script>
+</body>
+</html>

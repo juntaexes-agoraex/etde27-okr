@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard ÁgoraEX — Potencial Digital 2026</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:      #f0f4ff;
+  --card:    #ffffff;
+  --card2:   #f8faff;
+  --border:  rgba(32,92,242,.15);
+  --blue:    #205cf2;
+  --blue-l:  #3b6ef0;
+  --blue-xl: #205cf2;
+  --teal:    #5adaa4;
+  --teal-l:  #3dc78e;
+  --light:   #e9effe;
+  --amber:   #e08f00;
+  --rose:    #e0294f;
+  --cyan:    #0598b8;
+  --lime:    #5f9900;
+  --orange:  #d95f00;
+  --text:    #0d1b3e;
+  --muted:   #6b82a8;
+  --muted-l: #8a9fc4;
+  --grid:    rgba(0,0,0,.07);
+}
+
+body{background:var(--bg);color:var(--text);
+  font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+  height:100vh;overflow:hidden;font-size:14px}
+
+/* subtle background pattern */
+body::before{
+  content:'';position:fixed;inset:0;
+  background-image:radial-gradient(rgba(32,92,242,.07) 1px,transparent 1px);
+  background-size:32px 32px;pointer-events:none;z-index:0}
+
+/* ── HEADER ───────────────────────────── */
+#hdr{
+  position:fixed;top:0;left:0;right:0;height:66px;z-index:300;
+  background:rgba(255,255,255,.98);
+  border-bottom:1px solid var(--border);
+  backdrop-filter:blur(16px);
+  display:flex;align-items:center;gap:16px;padding:0 28px;
+  box-shadow:0 2px 12px rgba(32,92,242,.08);
+}
+
+.logo-svg-wrap{
+  height:42px;display:flex;align-items:center;flex-shrink:0;
+}
+
+.hdr-sep{width:1px;height:38px;background:var(--border);flex-shrink:0;margin:0 6px}
+
+.hdr-kpis{display:flex;gap:28px;flex:1}
+.hdr-kpi{display:flex;flex-direction:column}
+.hdr-kpi-v{font-size:22px;font-weight:800;line-height:1}
+.hdr-kpi-l{font-size:10px;color:var(--muted-l);text-transform:uppercase;letter-spacing:.8px;margin-top:2px}
+.hvc{color:var(--blue-l)}
+.htc{color:var(--teal)}
+.hac{color:var(--amber)}
+.hrc{color:var(--rose)}
+
+.hdr-right{margin-left:auto;text-align:right;flex-shrink:0}
+.hdr-ev{font-size:11px;color:var(--muted-l);text-transform:uppercase;letter-spacing:1.2px}
+.hdr-dt{font-size:13px;color:var(--text);font-weight:500}
+
+.live{
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(244,63,94,.1);border:1px solid rgba(244,63,94,.3);
+  color:#fb7185;font-size:10px;font-weight:700;text-transform:uppercase;
+  letter-spacing:1.5px;padding:4px 11px;border-radius:100px;flex-shrink:0;
+}
+.live-dot{width:6px;height:6px;border-radius:50%;background:#f43f5e;
+  animation:blink 1.5s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+
+/* ── SLIDES ─────────────────────────── */
+#deck{position:fixed;inset:66px 0 44px 0;overflow:hidden;z-index:1}
+
+.slide{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;
+  padding:20px 28px;
+  opacity:0;pointer-events:none;
+  transition:opacity .6s ease;
+}
+.slide.on{opacity:1;pointer-events:all}
+
+/* ── COMMON ─────────────────────────── */
+.card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:14px;padding:16px 20px;
+  display:flex;flex-direction:column;
+  position:relative;overflow:hidden;
+  box-shadow:0 1px 4px rgba(32,92,242,.07);
+}
+/* top accent line on cards */
+.card-accent::after{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,var(--blue),var(--teal));
+}
+
+.card-ttl{
+  font-size:10px;text-transform:uppercase;letter-spacing:1.4px;
+  color:var(--blue-xl);font-weight:700;margin-bottom:3px;
+}
+.card-sub{font-size:11.5px;color:var(--muted-l);margin-bottom:12px;flex-shrink:0}
+.chart-wrap{flex:1;position:relative;min-height:0}
+
+.mini-row{display:flex;gap:11px;flex-shrink:0;margin-top:12px}
+.mini{
+  flex:1;background:var(--card);border:1px solid var(--border);
+  border-radius:10px;padding:11px 14px;text-align:center;
+  box-shadow:0 1px 3px rgba(32,92,242,.06);
+}
+.mini-v{font-size:24px;font-weight:800;color:var(--amber);line-height:1}
+.mini-l{font-size:9.5px;color:var(--muted-l);text-transform:uppercase;letter-spacing:.7px;margin-top:3px}
+
+.tag{
+  display:inline-block;
+  background:rgba(32,92,242,.14);
+  border:1px solid rgba(32,92,242,.35);
+  color:var(--blue-xl);font-size:10px;font-weight:700;
+  text-transform:uppercase;letter-spacing:1.5px;
+  padding:3px 13px;border-radius:100px;margin-bottom:10px;
+}
+.question{font-size:24px;font-weight:800;line-height:1.25;margin-bottom:14px}
+
+/* ── SLIDE 0 ─────────────────────────── */
+.big-kpis{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:13px;
+  flex-shrink:0;margin-bottom:14px;
+}
+.bkpi{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:14px;padding:18px 22px;position:relative;overflow:hidden;
+}
+.bkpi::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+}
+.bkpi:nth-child(1)::before{background:linear-gradient(90deg,var(--blue),var(--blue-l))}
+.bkpi:nth-child(2)::before{background:linear-gradient(90deg,var(--teal),var(--teal-l))}
+.bkpi:nth-child(3)::before{background:linear-gradient(90deg,var(--amber),#fbbf24)}
+.bkpi:nth-child(4)::before{background:linear-gradient(90deg,var(--rose),#fb7185)}
+
+.bkpi-ico{font-size:18px;margin-bottom:6px}
+.bkpi-val{font-size:52px;font-weight:900;letter-spacing:-2px;line-height:1}
+.bkpi:nth-child(1) .bkpi-val{color:var(--blue-l)}
+.bkpi:nth-child(2) .bkpi-val{color:var(--teal)}
+.bkpi:nth-child(3) .bkpi-val{color:var(--amber)}
+.bkpi:nth-child(4) .bkpi-val{color:var(--rose)}
+.bkpi-lbl{font-size:11.5px;color:var(--muted-l);text-transform:uppercase;letter-spacing:.7px;margin-top:5px}
+.bkpi-sub{font-size:10.5px;color:var(--muted);margin-top:2px}
+
+.two-col{display:grid;grid-template-columns:2fr 1fr;gap:14px;flex:1;min-height:0}
+
+.next-banner{
+  background:rgba(32,92,242,.08);border:1px solid var(--border);
+  border-radius:10px;padding:12px 16px;
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:10px;flex-shrink:0;
+}
+.next-lbl{font-size:10px;color:var(--muted-l);text-transform:uppercase;letter-spacing:1px}
+.next-name{font-size:14px;font-weight:600;color:var(--blue-xl)}
+.next-time{font-size:26px;font-weight:800;color:var(--amber)}
+
+.tl-item{
+  display:flex;align-items:center;gap:8px;font-size:11.5px;
+  background:rgba(32,92,242,.04);border:1px solid rgba(32,92,242,.1);
+  border-radius:8px;padding:7px 10px;margin-bottom:6px;
+}
+.tl-item.nx{background:rgba(32,92,242,.1);border-color:rgba(32,92,242,.35)}
+.tl-ico{font-size:13px;width:16px;text-align:center;flex-shrink:0}
+.tl-time{color:var(--muted-l);min-width:36px;flex-shrink:0;font-size:11px}
+.tl-name{color:var(--muted-l)}
+.tl-item.nx .tl-name{color:var(--text)}
+.tl-badge{margin-left:auto;font-size:9px;color:var(--teal);font-weight:700;
+  text-transform:uppercase;letter-spacing:1px;flex-shrink:0}
+
+/* ── DYN LAYOUTS ─────────────────────── */
+.body-2col{display:grid;grid-template-columns:3fr 2fr;gap:14px;flex:1;min-height:0}
+
+/* ── SLIDE 3 MATRIX ─────────────────── */
+.matrix{width:100%;border-collapse:separate;border-spacing:0 4px;font-size:12.5px}
+.matrix thead th{
+  text-align:center;color:var(--muted-l);font-size:10.5px;
+  text-transform:uppercase;letter-spacing:1.2px;padding:7px 10px;font-weight:700;
+}
+.matrix thead th:first-child{text-align:left}
+.matrix tbody tr{background:rgba(240,244,255,.7);transition:background .2s}
+.matrix tbody tr:hover{background:rgba(32,92,242,.06)}
+.matrix tbody td{padding:12px 12px;text-align:center}
+.matrix tbody td:first-child{text-align:left;border-radius:8px 0 0 8px;font-weight:500}
+.matrix tbody td:last-child{border-radius:0 8px 8px 0}
+.bd{display:inline-block;padding:4px 11px;border-radius:6px;font-weight:700;font-size:12px}
+.bm{background:rgba(32,92,242,.2);color:var(--blue-xl)}
+.bb{background:rgba(245,166,35,.2);color:var(--amber)}
+.bh{background:rgba(90,218,164,.2);color:var(--teal)}
+
+/* ── SLIDE 5 COLUMNS ─────────────────── */
+.three-col{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;flex:1;min-height:0}
+.pile{border-radius:14px;padding:16px;display:flex;flex-direction:column;overflow:hidden}
+.pile.pr{background:rgba(244,63,94,.05);border:1px solid rgba(244,63,94,.2)}
+.pile.pa{background:rgba(245,166,35,.05);border:1px solid rgba(245,166,35,.2)}
+.pile.pg{background:rgba(90,218,164,.05);border:1px solid rgba(90,218,164,.2)}
+.pile-ttl{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1.3px;
+  padding-bottom:9px;border-bottom:1px solid rgba(255,255,255,.07);margin-bottom:5px;flex-shrink:0}
+.pile.pr .pile-ttl{color:#fb7185}
+.pile.pa .pile-ttl{color:var(--amber)}
+.pile.pg .pile-ttl{color:var(--teal)}
+.pile-sub{font-size:10.5px;color:var(--muted-l);margin-bottom:11px;flex-shrink:0}
+.pitem{
+  background:rgba(32,92,242,.04);border-radius:8px;
+  padding:9px 13px;margin-bottom:7px;
+  display:flex;justify-content:space-between;align-items:center;font-size:12.5px;
+}
+.pitem-pct{font-weight:700;font-size:13.5px}
+.pile.pr .pitem-pct{color:#fb7185}
+.pile.pa .pitem-pct{color:var(--amber)}
+.pile.pg .pitem-pct{color:var(--teal)}
+
+/* ── SLIDE 0 OVERVIEW ────────────────── */
+.s0-hdr{
+  display:flex;align-items:baseline;justify-content:space-between;
+  margin-bottom:12px;flex-shrink:0;
+}
+.s0-htitle{font-size:17px;font-weight:800;color:var(--text)}
+.s0-sub{font-size:11px;color:var(--muted-l)}
+
+.dyn-grid{
+  display:grid;
+  grid-template-columns:repeat(12,1fr);
+  grid-template-rows:1fr 1fr;
+  gap:12px;
+  flex:1;min-height:0;
+}
+.dyn-card{
+  grid-column:span 3;
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:12px 14px 10px;
+  display:flex;flex-direction:column;
+  position:relative;overflow:hidden;
+  box-shadow:0 1px 4px rgba(32,92,242,.07);
+}
+.dyn-card.wide{grid-column:span 4}
+.dyn-num{
+  font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;
+  padding:2px 10px;border-radius:100px;margin-bottom:7px;
+  display:inline-flex;align-items:center;gap:5px;width:fit-content;
+}
+.dyn-name{font-size:12px;font-weight:700;color:var(--text);line-height:1.3;margin-bottom:3px;flex-shrink:0}
+.dyn-chart{flex:1;position:relative;min-height:0}
+.dyn-stat{
+  margin-top:7px;flex-shrink:0;
+  display:flex;align-items:baseline;gap:6px;
+}
+.dyn-stat-v{font-size:20px;font-weight:900;line-height:1}
+.dyn-stat-l{font-size:9.5px;color:var(--muted-l);line-height:1.3}
+
+/* ── SLIDE 8 SYNTHESIS ────────────────── */
+.synth-title{
+  font-size:32px;font-weight:900;text-align:center;
+  background:linear-gradient(135deg,var(--blue-l),var(--teal));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  margin-bottom:5px;flex-shrink:0;
+}
+.synth-sub{text-align:center;color:var(--muted-l);font-size:13px;margin-bottom:18px;flex-shrink:0}
+.synth-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.synth-row2{display:flex;gap:12px;justify-content:center;margin-top:12px}
+
+.scard{
+  background:var(--card);border-radius:13px;padding:18px;
+  border-left:3px solid var(--blue);position:relative;overflow:hidden;
+  box-shadow:0 1px 4px rgba(32,92,242,.08);
+  border-top:1px solid var(--border);border-right:1px solid var(--border);border-bottom:1px solid var(--border);
+}
+.scard::before{
+  content:'';position:absolute;top:0;right:0;width:80px;height:80px;
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(32,92,242,.05),transparent 70%);
+}
+.scard-ico{font-size:22px;margin-bottom:10px}
+.scard-dom{font-size:9.5px;text-transform:uppercase;letter-spacing:1.3px;color:var(--muted-l);margin-bottom:5px}
+.scard-res{font-size:13.5px;font-weight:600;line-height:1.4}
+.scard-hint{font-size:11.5px;color:var(--muted-l);margin-top:7px}
+
+/* ── NAV ─────────────────────────────── */
+#nav{
+  position:fixed;bottom:0;left:0;right:0;height:44px;z-index:300;
+  background:rgba(255,255,255,.98);border-top:1px solid var(--border);
+  display:flex;align-items:center;
+  box-shadow:0 -2px 8px rgba(32,92,242,.06);
+}
+#prog-track{position:absolute;top:0;left:0;right:0;height:2px;background:rgba(32,92,242,.12)}
+#prog-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--teal));width:0%}
+
+.nbtn{
+  background:none;border:none;color:var(--muted-l);cursor:pointer;
+  padding:0 18px;height:100%;font-size:18px;transition:color .2s;
+}
+.nbtn:hover{color:#fff}
+
+#dots{display:flex;align-items:center;gap:7px;flex:1;justify-content:center}
+.dot{
+  width:6px;height:6px;border-radius:50%;background:#c7d4ec;
+  cursor:pointer;border:none;padding:0;transition:all .3s;
+}
+.dot.on{background:var(--blue);transform:scale(1.7)}
+
+#counter{padding:0 18px;font-size:11px;color:var(--muted-l);flex-shrink:0}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════ HEADER ═══════════════════ -->
+<header id="hdr">
+
+  <!-- LOGO REAL desde Logo-Agora.svg (quadrant top-left, sin fondo) -->
+  <div class="logo-svg-wrap">
+    <svg viewBox="88 409 762 225" height="42" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+      <defs>
+        <linearGradient id="lg1" x1="92.9" y1="514.7" x2="320.4" y2="514.7" gradientUnits="userSpaceOnUse">
+          <stop offset=".5" stop-color="#205cf2"/>
+          <stop offset=".9" stop-color="#5adaa4"/>
+        </linearGradient>
+      </defs>
+      <!-- red de nodos (símbolo) -->
+      <path fill="url(#lg1)" d="M266.3,552c-3.2-.5-6.2,0-8.9,1.1-3.9,1.7-8.4.9-11.4-2l-5.4-5.2c-4.4-4.3-6.8-10.1-6.8-16.2v-24.7c0-4.4,1.8-8.6,4.9-11.6l13.9-13.6c2.3-2.2,5.4-3.4,8.5-2.9,1.8.3,3.7.3,5.7-.1,6.6-1.3,11.7-6.7,12.7-13.3,1.6-10.9-7.7-20.1-18.7-18.3-6.8,1.1-12.3,6.8-13.2,13.7-.3,2.4,0,4.8.6,6.9,1.2,4,0,8.3-3,11.2l-6.9,6.8c-3.6,3.5-8.4,5.4-13.3,5.4h-33.7c-5.7,0-11.2-2.2-15.3-6.2l-8.6-8.4c-2.7-2.6-4-6.4-3.2-10.1.4-1.8.5-3.7.2-5.7-1-6.9-6.4-12.5-13.3-13.6-11-1.7-20.3,7.6-18.5,18.6,1.1,6.9,6.8,12.4,13.8,13.3,2,.3,4,.1,5.8-.3,3.5-.8,7.2,0,9.8,2.5l8.8,8.5c5,4.9,7.9,11.6,7.9,18.7v25.4c0,6.4-2.6,12.6-7.2,17l-3.8,3.7c-3,2.9-7.5,3.5-11,1.4-3-1.7-6.5-2.6-10.3-2.1-7,.9-12.7,6.5-13.7,13.5-1.7,11.5,8.7,21,20.4,17.9,7-1.9,11.6-8.5,11.6-15.7h0c0-1.4.5-2.6,1.5-3.5l14.5-14.2c3.8-3.7,9-5.8,14.3-5.8h27c4.3,0,8.3,1.7,11.4,4.6l10.2,10c2.5,2.4,4,5.7,4,9.1s.1,2.3.4,3.4c1.4,6.5,6.8,11.6,13.4,12.5,10.9,1.5,20-7.8,18.2-18.7-1.1-6.7-6.6-12-13.3-13.1ZM206.4,459.1c8.6,0,15.5-6.9,15.5-15.5s-6.9-15.5-15.5-15.5-15.5,6.9-15.5,15.5,6.9,15.5,15.5,15.5ZM281.1,532c8.6,0,15.5-6.9,15.5-15.5s-6.9-15.5-15.5-15.5-15.5,6.9-15.5,15.5,6.9,15.5,15.5,15.5ZM136.5,532c8.6,0,15.5-6.9,15.5-15.5s-6.9-15.5-15.5-15.5-15.5,6.9-15.5,15.5,6.9,15.5,15.5,15.5ZM210.9,606.4c8.6,0,15.5-6.9,15.5-15.5s-6.9-15.5-15.5-15.5-15.5,6.9-15.5,15.5,6.9,15.5,15.5,15.5ZM111.5,479.1c0,5.1-4.2,9.3-9.3,9.3s-9.3-4.2-9.3-9.3,4.2-9.3,9.3-9.3,9.3,4.2,9.3,9.3ZM177.3,409c0,5.1-4.2,9.3-9.3,9.3s-9.3-4.2-9.3-9.3,4.2-9.3,9.3-9.3,9.3,4.2,9.3,9.3ZM242.4,421.9c5.1,0,9.3-4.2,9.3-9.3s-4.2-9.3-9.3-9.3-9.3,4.2-9.3,9.3,4.2,9.3,9.3,9.3ZM319,474.1c0,5.1-4.2,9.3-9.3,9.3s-9.3-4.2-9.3-9.3,4.2-9.3,9.3-9.3,9.3,4.2,9.3,9.3ZM320.4,560.5c0,5.1-4.2,9.3-9.3,9.3s-9.3-4.2-9.3-9.3,4.2-9.3,9.3-9.3,9.3,4.2,9.3,9.3ZM260.9,620.4c0,5.1-4.2,9.3-9.3,9.3s-9.3-4.2-9.3-9.3,4.2-9.3,9.3-9.3,9.3,4.2,9.3,9.3ZM180.2,617.4c0,5.1-4.2,9.3-9.3,9.3s-9.3-4.2-9.3-9.3,4.2-9.3,9.3-9.3,9.3,4.2,9.3,9.3ZM112.5,551.1c0,5.1-4.2,9.3-9.3,9.3s-9.3-4.2-9.3-9.3,4.2-9.3,9.3-9.3,9.3,4.2,9.3,9.3Z"/>
+      <!-- Á -->
+      <path fill="#205cf2" d="M405.3,483.2h-3.9l-27.5,75h-9.6l30.5-83.4h17.1l30.4,83.4h-9.6l-27.3-75ZM379.1,528h48.6v8.3h-48.6v-8.3ZM414.5,446.4v8.5l-24.8,13.7v-7.1l24.8-15Z"/>
+      <!-- g -->
+      <path fill="#205cf2" d="M493.3,498.7h8.2v48.6c0,7.3-1.6,13.6-4.9,18.8-3.3,5.2-8,9.2-14.2,11.9-6.2,2.7-13.7,4.1-22.6,4.1l-1.4-8.2c11.2-.2,19.7-2.5,25.5-7,5.8-4.5,8.7-11,8.7-19.6v-1.3l1,.2c-1.8,3.5-4.6,6.5-8.2,9-3.7,2.5-8.4,3.8-14.2,3.9-5.5,0-10.3-1.3-14.4-3.8-4.1-2.5-7.3-6.1-9.5-10.7-2.3-4.6-3.4-10-3.4-16.2s1.1-11.6,3.4-16.1c2.3-4.6,5.4-8.1,9.5-10.7,4.1-2.5,8.9-3.8,14.4-3.8s6.7.5,9.5,1.6c2.8,1.1,5.2,2.5,7.1,4.3,2,1.8,3.6,3.8,4.9,6l.6-11.1ZM453.5,528.5c0,6.8,1.8,12.2,5.3,16.3,3.5,4,8.3,6,14.4,6s6.9-.9,9.9-2.6c2.9-1.7,5.3-4.3,7-7.6,1.7-3.3,2.6-7.3,2.6-12s-.9-8.7-2.6-12c-1.7-3.3-4-5.8-7-7.6-2.9-1.8-6.2-2.7-9.9-2.7-6,0-10.7,2-14.3,6.1-3.6,4-5.4,9.4-5.4,16.2Z"/>
+      <!-- o -->
+      <path fill="#205cf2" d="M540.7,559.1c-5.6,0-10.7-1.2-15.1-3.7-4.4-2.5-7.9-6-10.5-10.5-2.5-4.6-3.8-10-3.8-16.3s1.3-11.8,3.9-16.4c2.6-4.6,6.1-8.1,10.6-10.6,4.5-2.5,9.5-3.7,15.2-3.7s10.7,1.2,15.2,3.7c4.5,2.5,8,6,10.6,10.5,2.6,4.6,3.9,10,3.9,16.3s-1.3,11.8-3.9,16.4c-2.6,4.6-6.2,8.1-10.7,10.6-4.5,2.5-9.6,3.7-15.2,3.7ZM540.6,550.6c3.5,0,6.8-.8,9.9-2.3,3.1-1.5,5.6-4,7.6-7.3,1.9-3.3,2.9-7.5,2.9-12.6s-1-9.4-2.9-12.6c-1.9-3.3-4.4-5.7-7.4-7.2-3.1-1.5-6.3-2.3-9.8-2.3s-6.7.8-9.8,2.3c-3,1.5-5.5,4-7.3,7.3-1.9,3.3-2.8,7.5-2.8,12.6s.9,9.4,2.7,12.6c1.8,3.3,4.2,5.7,7.2,7.2,3,1.5,6.2,2.3,9.7,2.3Z"/>
+      <!-- r -->
+      <path fill="#205cf2" d="M580.5,498.7h8.2l.5,8.7c1.6-2.1,3.5-4,5.8-5.5,2.3-1.5,4.8-2.6,7.5-3.2,2.7-.6,5.7-.6,8.8,0v8.9c-3.3-.6-6.3-.6-9,0-2.7.6-4.9,1.8-6.8,3.6-1.9,1.7-3.4,4-4.4,6.6-1,2.7-1.5,5.7-1.5,9.2v31.2h-8.9v-59.5Z"/>
+      <!-- a -->
+      <path fill="#205cf2" d="M655.9,558.3l-.7-10.7c-1.7,3.7-4.1,6.5-7.4,8.5-3.3,2-7.4,3-12.4,3s-7.9-.7-11-2c-3-1.3-5.3-3.3-7-5.8-1.6-2.5-2.4-5.5-2.4-8.9,0-5,1.9-9.1,5.6-12.3,3.7-3.2,9.1-5.2,16.2-5.9l18.3-2v-4.8c0-3.3-1.2-6-3.7-8-2.5-2-5.8-3-10-3s-7.6,1-10.3,2.9c-2.7,1.9-4.6,4.6-5.7,8.2l-8.1-2.9c1.6-5.2,4.5-9.3,8.8-12.3,4.2-2.9,9.4-4.4,15.5-4.4s12.6,1.8,16.5,5.4c3.9,3.6,5.9,8.5,5.9,14.7v40.3h-8.2ZM655.2,529.8l-18.5,2.1c-4,.5-7,1.6-9.1,3.3-2.1,1.7-3.1,4-3.1,6.7s1,5,3,6.7,4.9,2.5,8.8,2.5,7.9-.9,10.7-2.6c2.8-1.7,4.8-4.1,6.1-7.1,1.3-3,2-6.2,2-9.7v-1.9Z"/>
+      <!-- EX (teal) -->
+      <path fill="#5adaa4" d="M706.3,494.2h40.2c3.1,0,5.6-2.5,5.6-5.6v-14.5h-43.7c-11.1,0-20.1,9-20.1,20.1v18.2c0-18.2,18.1-18.2,18.1-18.2Z"/>
+      <path fill="#5adaa4" d="M847.3,474.1h-20.7c-2.3,0-4.4,1.1-5.7,2.9l-16.1,22.3-18.2-25.2h-24.3l30.3,42.1-13,18c-1.8,2.5-4.7,4-7.8,4h-57.6s-.4,0-1.1,0c-2.9-.4-5.2-2.9-5.2-5.9s2.3-5.5,5.2-5.9c.7,0,1.1,0,1.1,0h20.5c3.1,0,5.6-2.5,5.6-5.6v-14.5h-25.7c-12.4,0-23,8.5-25.7,20.1h0s0,0,0,0c-.5,1.9-.7,4-.7,6,0,1.8.2,3.5.5,5.1h0c.3,1.2.6,2.4,1,3.6h0c.4,1.1.9,2.2,1.4,3.2h0l.6,1h0l.7,1.1h0c4.7,6.9,12.6,11.4,21.5,11.4h48.1s19.2,0,19.2,0c3.2,0,6.1-1.5,8-4.1l15.2-21.1,18.2,25.2h24.3l-30.3-42.1,30.3-42.1Z"/>
+    </svg>
+  </div>
+
+  <div class="hdr-sep"></div>
+
+  <div class="hdr-kpis">
+    <div class="hdr-kpi">
+      <span class="hdr-kpi-v hvc">1.247</span>
+      <span class="hdr-kpi-l">Visitas al rincón</span>
+    </div>
+    <div class="hdr-kpi">
+      <span class="hdr-kpi-v htc">186</span>
+      <span class="hdr-kpi-l">Participantes</span>
+    </div>
+    <div class="hdr-kpi">
+      <span class="hdr-kpi-v hac">7</span>
+      <span class="hdr-kpi-l">Dinámicas realizadas</span>
+    </div>
+    <div class="hdr-kpi">
+      <span class="hdr-kpi-v hrc">423</span>
+      <span class="hdr-kpi-l">Aportaciones recogidas</span>
+    </div>
+  </div>
+
+  <div class="hdr-right">
+    <div class="hdr-ev">Rincón ÁgoraEX · Extremadura</div>
+    <div class="hdr-dt">Potencial Digital 2026</div>
+  </div>
+  <div class="live"><span class="live-dot"></span>En directo</div>
+</header>
+
+<!-- ═══════════════════ SLIDES ═══════════════════ -->
+<div id="deck">
+
+  <!-- 0 · VISIÓN GENERAL 7 DINÁMICAS -->
+  <div class="slide on" id="s0">
+    <div class="s0-hdr">
+      <span class="s0-htitle">Las 7 dinámicas del Rincón ÁgoraEX</span>
+      <span class="s0-sub">Resumen de resultados · Potencial Digital 2026 · Extremadura</span>
+    </div>
+    <div class="dyn-grid">
+
+      <!-- D1 -->
+      <div class="dyn-card" style="border-top:2px solid var(--blue)">
+        <div class="dyn-num" style="background:rgba(32,92,242,.10);color:var(--blue)">D1 · Servicios Públicos</div>
+        <div class="dyn-name">¿Qué hace que un servicio funcione?</div>
+        <div class="dyn-chart"><canvas id="c-ov1"></canvas></div>
+        <div class="dyn-stat">
+          <span class="dyn-stat-v" style="color:var(--blue)">#1 Rapidez</span>
+          <span class="dyn-stat-l">28 part. · 142 votos</span>
+        </div>
+      </div>
+
+      <!-- D2 -->
+      <div class="dyn-card" style="border-top:2px solid var(--teal)">
+        <div class="dyn-num" style="background:rgba(90,218,164,.13);color:var(--teal-l)">D2 · Adm. Proactiva</div>
+        <div class="dyn-name">Antes de que lo pidas</div>
+        <div class="dyn-chart"><canvas id="c-ov2"></canvas></div>
+        <div class="dyn-stat">
+          <span class="dyn-stat-v" style="color:var(--teal)">48%</span>
+          <span class="dyn-stat-l">«Avísame y pregúntame» · 32 part.</span>
+        </div>
+      </div>
+
+      <!-- D3 -->
+      <div class="dyn-card" style="border-top:2px solid var(--amber)">
+        <div class="dyn-num" style="background:rgba(224,143,0,.10);color:var(--amber)">D3 · Automatización</div>
+        <div class="dyn-name">¿Qué tareas dejarías a una máquina?</div>
+        <div class="dyn-chart"><canvas id="c-ov3"></canvas></div>
+        <div class="dyn-stat">
+          <span class="dyn-stat-v" style="color:var(--amber)">70%</span>
+          <span class="dyn-stat-l">Reservan la decisión final al ser humano</span>
+        </div>
+      </div>
+
+      <!-- D4 -->
+      <div class="dyn-card" style="border-top:2px solid var(--rose)">
+        <div class="dyn-num" style="background:rgba(224,41,79,.09);color:var(--rose)">D4 · Atención Ciudadana</div>
+        <div class="dyn-name">Una Adm. para cada persona</div>
+        <div class="dyn-chart"><canvas id="c-ov4"></canvas></div>
+        <div class="dyn-stat">
+          <span class="dyn-stat-v" style="color:var(--rose)">64%</span>
+          <span class="dyn-stat-l">Cambió de canal al cambiar de perfil</span>
+        </div>
+      </div>
+
+      <!-- D5 -->
+      <div class="dyn-card wide" style="border-top:2px solid var(--cyan)">
+        <div class="dyn-num" style="background:rgba(5,152,184,.10);color:var(--cyan)">D5 · Simplificación</div>
+        <div class="dyn-name">No me lo vuelvas a pedir</div>
+        <div class="dyn-chart"><canvas id="c-ov5"></canvas></div>
+        <div class="dyn-stat">
+          <span class="dyn-stat-v" style="color:var(--cyan)">72%</span>
+          <span class="dyn-stat-l">Podría no volver a pedirse · 26 part.</span>
+        </div>
+      </div>
+
+      <!-- D6 -->
+      <div class="dyn-card wide" style="border-top:2px solid var(--lime)">
+        <div class="dyn-num" style="background:rgba(95,153,0,.10);color:var(--lime)">D6 · Innovación Tecnológica</div>
+        <div class="dyn-name">La Adm. sale de la pantalla</div>
+        <div class="dyn-chart"><canvas id="c-ov6"></canvas></div>
+        <div class="dyn-stat">
+          <span class="dyn-stat-v" style="color:var(--lime)">38</span>
+          <span class="dyn-stat-l">Votos: Drones + Incendios · 22 part.</span>
+        </div>
+      </div>
+
+      <!-- D7 -->
+      <div class="dyn-card wide" style="border-top:2px solid var(--orange)">
+        <div class="dyn-num" style="background:rgba(217,95,0,.10);color:var(--orange)">D7 · Datos y Confianza</div>
+        <div class="dyn-name">¿Hasta dónde confiarías tus datos?</div>
+        <div class="dyn-chart"><canvas id="c-ov7"></canvas></div>
+        <div class="dyn-stat">
+          <span class="dyn-stat-v" style="color:var(--orange)">6,8</span>
+          <span class="dyn-stat-l">Confianza media / 10 · 312 respuestas</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 1 · D1 SERVICIOS PÚBLICOS -->
+  <div class="slide" id="s1">
+    <div class="tag">Dinámica 1 · Servicios públicos</div>
+    <div class="question">¿Qué hace que un servicio público funcione de verdad?</div>
+    <div style="flex:1;min-height:0;display:flex;flex-direction:column;gap:12px">
+      <div class="card card-accent" style="flex:1;min-height:0">
+        <div class="card-ttl">Factores más valorados por los participantes</div>
+        <div class="card-sub">Porcentaje de votos por categoría · 28 participantes · 142 votos totales</div>
+        <div class="chart-wrap"><canvas id="c-d1"></canvas></div>
+      </div>
+      <div class="mini-row" style="margin-top:0">
+        <div class="mini"><div class="mini-v" style="color:var(--blue-xl);font-size:17px">#1 Rapidez</div><div class="mini-l">Factor más valorado</div></div>
+        <div class="mini"><div class="mini-v">28</div><div class="mini-l">Participantes</div></div>
+        <div class="mini"><div class="mini-v">142</div><div class="mini-l">Votos totales</div></div>
+        <div class="mini"><div class="mini-v" style="color:var(--teal)">5,1</div><div class="mini-l">Votos / persona</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2 · D2 PROACTIVIDAD -->
+  <div class="slide" id="s2">
+    <div class="tag">Dinámica 2 · Administración proactiva</div>
+    <div class="question">Antes de que lo pidas: ¿cuándo debería anticiparse la Administración?</div>
+    <div class="body-2col" style="grid-template-rows:1fr auto">
+      <div class="card card-accent">
+        <div class="card-ttl">Situaciones con mayor demanda de proactividad</div>
+        <div class="card-sub">Votos por situación vital · 32 participantes</div>
+        <div class="chart-wrap"><canvas id="c-d2a"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-ttl">¿Hasta dónde automatizarlo?</div>
+        <div class="card-sub">Nivel de anticipación aceptado</div>
+        <div class="chart-wrap"><canvas id="c-d2b"></canvas></div>
+      </div>
+      <div class="mini-row" style="margin-top:0;grid-column:1/-1">
+        <div class="mini"><div class="mini-v" style="color:var(--blue-xl);font-size:16px">Nacimiento de un hijo</div><div class="mini-l">Situación más demandada (85%)</div></div>
+        <div class="mini"><div class="mini-v">48%</div><div class="mini-l">Prefieren «Avísame y pregúntame»</div></div>
+        <div class="mini"><div class="mini-v">32</div><div class="mini-l">Participantes</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3 · D3 MÁQUINA / PERSONA -->
+  <div class="slide" id="s3">
+    <div class="tag">Dinámica 3 · Automatización</div>
+    <div class="question">¿Qué tareas dejarías a una máquina?</div>
+    <div style="flex:1;min-height:0;display:flex;flex-direction:column;gap:12px">
+      <div class="card card-accent" style="flex:1;min-height:0;overflow:auto">
+        <div class="card-ttl">Máquina · Copiloto · Persona — distribución por tarea</div>
+        <div class="card-sub">Porcentaje de participantes que asigna cada modalidad · 24 participantes</div>
+        <table class="matrix">
+          <thead><tr>
+            <th style="width:38%;text-align:left">Tarea</th>
+            <th>🤖 Máquina</th><th>🤝 Copiloto</th><th>👤 Persona</th>
+          </tr></thead>
+          <tbody>
+            <tr><td>Revisar documentos</td><td><span class="bd bm">62%</span></td><td><span class="bd bb">28%</span></td><td><span class="bd bh">10%</span></td></tr>
+            <tr><td>Detectar errores y fraude</td><td><span class="bd bm">71%</span></td><td><span class="bd bb">22%</span></td><td><span class="bd bh">7%</span></td></tr>
+            <tr><td>Atender consultas ciudadanas</td><td><span class="bd bm">28%</span></td><td><span class="bd bb">45%</span></td><td><span class="bd bh">27%</span></td></tr>
+            <tr><td>Valorar solicitudes de ayuda</td><td><span class="bd bm">18%</span></td><td><span class="bd bb">38%</span></td><td><span class="bd bh">44%</span></td></tr>
+            <tr><td>Tomar la decisión final</td><td><span class="bd bm">8%</span></td><td><span class="bd bb">22%</span></td><td><span class="bd bh">70%</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="mini-row" style="margin-top:0;flex-shrink:0">
+        <div class="mini"><div class="mini-v" style="color:var(--blue-xl);font-size:16px">Detectar errores</div><div class="mini-l">Mayor aceptación de automatización (71%)</div></div>
+        <div class="mini"><div class="mini-v" style="color:var(--teal);font-size:16px">Decisión final</div><div class="mini-l">Reservada al criterio humano (70%)</div></div>
+        <div class="mini"><div class="mini-v">24</div><div class="mini-l">Participantes</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4 · D4 CANAL POR PERFIL -->
+  <div class="slide" id="s4">
+    <div class="tag">Dinámica 4 · Atención ciudadana</div>
+    <div class="question">Una Administración para cada persona</div>
+    <div style="flex:1;min-height:0;display:flex;flex-direction:column;gap:12px">
+      <div class="card card-accent" style="flex:1;min-height:0">
+        <div class="card-ttl">Canal preferido según perfil ciudadano</div>
+        <div class="card-sub">Porcentaje de elecciones por canal y perfil · 30 participantes</div>
+        <div class="chart-wrap"><canvas id="c-d4"></canvas></div>
+      </div>
+      <div class="mini-row" style="margin-top:0;flex-shrink:0">
+        <div class="mini" style="flex:0 0 auto;padding:11px 22px">
+          <div class="mini-v" style="font-size:38px;color:var(--rose)">64%</div>
+          <div class="mini-l">Cambió de canal al cambiar de perfil</div>
+        </div>
+        <div class="mini"><div class="mini-v" style="color:var(--blue-xl);font-size:16px">App / Web</div><div class="mini-l">Canal más elegido globalmente</div></div>
+        <div class="mini"><div class="mini-v" style="color:var(--amber);font-size:16px">Presencial</div><div class="mini-l">Preferido por persona mayor (75%)</div></div>
+        <div class="mini"><div class="mini-v">30</div><div class="mini-l">Participantes</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5 · D5 NO ME LO VUELVAS A PEDIR -->
+  <div class="slide" id="s5">
+    <div class="tag">Dinámica 5 · Simplificación</div>
+    <div class="question">No me lo vuelvas a pedir</div>
+    <div class="three-col">
+      <div class="pile pr">
+        <div class="pile-ttl">📋 Pídemelo</div>
+        <div class="pile-sub">La Administración debe seguir solicitándolo</div>
+        <div class="pitem"><span>Declaración de bienes</span><span class="pitem-pct">78%</span></div>
+        <div class="pitem"><span>Declaración jurada</span><span class="pitem-pct">65%</span></div>
+        <div class="pitem"><span>Docs. específicos empresa</span><span class="pitem-pct">61%</span></div>
+        <div class="pitem"><span>Informes técnicos propios</span><span class="pitem-pct">54%</span></div>
+      </div>
+      <div class="pile pa">
+        <div class="pile-ttl">🔍 Consúltalo</div>
+        <div class="pile-sub">La Administración puede verificarlo internamente</div>
+        <div class="pitem"><span>DNI / N.º de identificación</span><span class="pitem-pct">89%</span></div>
+        <div class="pitem"><span>Cert. de empadronamiento</span><span class="pitem-pct">84%</span></div>
+        <div class="pitem"><span>Situación laboral (SEPE)</span><span class="pitem-pct">76%</span></div>
+        <div class="pitem"><span>Estado de deudas tributarias</span><span class="pitem-pct">71%</span></div>
+      </div>
+      <div class="pile pg">
+        <div class="pile-ttl">🗑️ Elimínalo</div>
+        <div class="pile-sub">Podría dejar de ser necesario del todo</div>
+        <div class="pitem"><span>Fotocopias de originales</span><span class="pitem-pct">91%</span></div>
+        <div class="pitem"><span>Firma presencial en trámites online</span><span class="pitem-pct">87%</span></div>
+        <div class="pitem"><span>Justificantes de pago anteriores</span><span class="pitem-pct">72%</span></div>
+        <div class="pitem"><span>Certificados en papel</span><span class="pitem-pct">68%</span></div>
+      </div>
+    </div>
+    <div class="mini-row" style="flex-shrink:0;margin-top:12px">
+      <div class="mini" style="flex:0 0 auto;padding:10px 24px">
+        <div class="mini-v" style="font-size:36px;color:var(--teal)">72%</div>
+        <div class="mini-l">De la información analizada podría no volver a pedirse</div>
+      </div>
+      <div class="mini"><div class="mini-v">26</div><div class="mini-l">Participantes</div></div>
+      <div class="mini"><div class="mini-v">12</div><div class="mini-l">Tipos de información analizados</div></div>
+    </div>
+  </div>
+
+  <!-- 6 · D6 TECNOLOGÍA -->
+  <div class="slide" id="s6">
+    <div class="tag">Dinámica 6 · Innovación tecnológica</div>
+    <div class="question">La Administración sale de la pantalla</div>
+    <div style="flex:1;min-height:0;display:flex;flex-direction:column;gap:12px">
+      <div class="card card-accent" style="flex:1;min-height:0">
+        <div class="card-ttl">Combinaciones tecnología × ámbito público más votadas</div>
+        <div class="card-sub">Ranking de casos de uso propuestos · 22 participantes · 18 combinaciones totales</div>
+        <div class="chart-wrap"><canvas id="c-d6"></canvas></div>
+      </div>
+      <div class="mini-row" style="margin-top:0;flex-shrink:0">
+        <div class="mini"><div class="mini-v" style="color:var(--blue-xl);font-size:16px">Drones + Incendios</div><div class="mini-l">Combinación más votada (38 votos)</div></div>
+        <div class="mini"><div class="mini-v">18</div><div class="mini-l">Casos de uso propuestos</div></div>
+        <div class="mini"><div class="mini-v">22</div><div class="mini-l">Participantes</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7 · CONFIANZA DATOS -->
+  <div class="slide" id="s7">
+    <div class="tag">Actividad permanente · Datos y confianza</div>
+    <div class="question">¿Hasta dónde confiarías tus datos?</div>
+    <div class="body-2col" style="grid-template-rows:1fr auto">
+      <div class="card card-accent">
+        <div class="card-ttl">Garantías de seguridad más valoradas</div>
+        <div class="card-sub">Porcentaje de respuestas que las priorizan · 312 respuestas acumuladas</div>
+        <div class="chart-wrap"><canvas id="c-d7a"></canvas></div>
+      </div>
+      <div class="card" style="align-items:center">
+        <div class="card-ttl" style="width:100%">Nivel de confianza declarado</div>
+        <div class="card-sub" style="width:100%">Distribución de respuestas</div>
+        <div class="chart-wrap" style="width:100%"><canvas id="c-d7b"></canvas></div>
+        <div style="text-align:center;margin-top:10px;flex-shrink:0">
+          <div style="font-size:46px;font-weight:900;color:var(--amber);line-height:1">6,8</div>
+          <div style="font-size:11px;color:var(--muted-l)">Índice medio de confianza (sobre 10)</div>
+        </div>
+      </div>
+      <div class="mini-row" style="margin-top:0;grid-column:1/-1">
+        <div class="mini"><div class="mini-v" style="color:var(--amber);font-size:16px">Trazabilidad</div><div class="mini-l">Garantía más valorada (73%)</div></div>
+        <div class="mini"><div class="mini-v">312</div><div class="mini-l">Respuestas acumuladas</div></div>
+        <div class="mini"><div class="mini-v" style="color:var(--teal)">Alta</div><div class="mini-l">Disposición a compartir datos anónimos</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 8 · LA ADMINISTRACIÓN QUE QUEREMOS -->
+  <div class="slide" id="s8">
+    <div class="synth-title">La Administración que queremos</div>
+    <div class="synth-sub">Síntesis de los resultados del Rincón ÁgoraEX · Potencial Digital 2026 · Extremadura</div>
+    <div class="synth-grid">
+      <div class="scard" style="border-left-color:var(--blue-l)">
+        <div class="scard-ico">⚡</div>
+        <div class="scard-dom">Experiencia de servicio</div>
+        <div class="scard-res">Factor más valorado: <strong>Rapidez</strong></div>
+        <div class="scard-hint">78% lo sitúa entre sus prioridades</div>
+      </div>
+      <div class="scard" style="border-left-color:var(--teal)">
+        <div class="scard-ico">🔔</div>
+        <div class="scard-dom">Proactividad</div>
+        <div class="scard-res">Modelo preferido: <strong>Avísame y pregúntame</strong></div>
+        <div class="scard-hint">48% opta por anticipación con aviso previo</div>
+      </div>
+      <div class="scard" style="border-left-color:var(--amber)">
+        <div class="scard-ico">🤖</div>
+        <div class="scard-dom">Automatización</div>
+        <div class="scard-res">Mayor aceptación: <strong>Detectar errores</strong></div>
+        <div class="scard-hint">La decisión final siempre humana (70%)</div>
+      </div>
+      <div class="scard" style="border-left-color:var(--rose)">
+        <div class="scard-ico">📱</div>
+        <div class="scard-dom">Atención ciudadana</div>
+        <div class="scard-res">64% cambia de canal según su perfil</div>
+        <div class="scard-hint">No existe un canal único válido para todos</div>
+      </div>
+    </div>
+    <div class="synth-row2">
+      <div class="scard" style="width:calc(25% - 9px);border-left-color:var(--cyan)">
+        <div class="scard-ico">📂</div>
+        <div class="scard-dom">Simplificación</div>
+        <div class="scard-res">72% de la documentación podría no volver a pedirse</div>
+        <div class="scard-hint">Fotocopias y firmas en papel: primeras candidatas</div>
+      </div>
+      <div class="scard" style="width:calc(25% - 9px);border-left-color:var(--lime)">
+        <div class="scard-ico">🚁</div>
+        <div class="scard-dom">Innovación tecnológica</div>
+        <div class="scard-res">Caso más votado: <strong>Drones + incendios forestales</strong></div>
+        <div class="scard-hint">18 casos de uso propuestos en total</div>
+      </div>
+      <div class="scard" style="width:calc(25% - 9px);border-left-color:var(--orange)">
+        <div class="scard-ico">🔒</div>
+        <div class="scard-dom">Confianza digital</div>
+        <div class="scard-res">Garantía más valorada: <strong>Trazabilidad</strong></div>
+        <div class="scard-hint">Índice medio de confianza: 6,8 / 10</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════ NAV ═══════════════════ -->
+<nav id="nav">
+  <div id="prog-track"><div id="prog-fill"></div></div>
+  <button class="nbtn" id="btn-prev">‹</button>
+  <div id="dots"></div>
+  <button class="nbtn" id="btn-next">›</button>
+  <div id="counter">1 / 9</div>
+</nav>
+
+<script>
+/* ── PALETTE ─────────────────────────────── */
+const P={
+  blue:'#205cf2', blueL:'#3b6ef0', blueXL:'#205cf2',
+  teal:'#5adaa4', tealL:'#3dc78e',
+  amber:'#e08f00', rose:'#e0294f',
+  cyan:'#0598b8', lime:'#5f9900', orange:'#d95f00',
+  muted:'#6b82a8', mutedL:'#8a9fc4',
+  card:'#ffffff', border:'rgba(32,92,242,.15)',
+  grid:'rgba(0,0,0,.07)',
+};
+
+Chart.defaults.color = P.muted;
+Chart.defaults.font.family = "'Segoe UI',system-ui,sans-serif";
+
+const BASE={
+  responsive:true, maintainAspectRatio:false,
+  plugins:{
+    legend:{labels:{color:P.muted,boxWidth:11,padding:14,font:{size:11}}},
+    tooltip:{backgroundColor:'#ffffff',borderColor:P.border,borderWidth:1,
+      titleColor:P.muted,bodyColor:'#0d1b3e',padding:10,
+      boxShadow:'0 4px 12px rgba(32,92,242,.15)'}
+  },
+  scales:{
+    x:{grid:{color:P.grid},ticks:{color:P.muted,font:{size:11}}},
+    y:{grid:{color:P.grid},ticks:{color:P.muted,font:{size:11}}}
+  }
+};
+
+function merge(a,b){
+  const r={...a};
+  for(const k in b){
+    if(b[k]&&typeof b[k]==='object'&&!Array.isArray(b[k]))r[k]=merge(a[k]||{},b[k]);
+    else r[k]=b[k];
+  }
+  return r;
+}
+
+/* ── CHARTS ─────────────────────────────── */
+function initCharts(){
+
+  const MINI=merge(BASE,{
+    layout:{padding:{top:2,bottom:2}},
+    plugins:{
+      legend:{display:false},
+      tooltip:{backgroundColor:P.card,borderColor:P.border,borderWidth:1,bodyColor:'#0d1b3e',padding:8}
+    },
+    scales:{
+      x:{grid:{color:P.grid},ticks:{color:P.muted,font:{size:10}}},
+      y:{grid:{color:P.grid},ticks:{color:P.muted,font:{size:10}}}
+    }
+  });
+
+  /* D1 overview – horizontal bar factores */
+  new Chart($('c-ov1'),{type:'bar',data:{
+    labels:['Rapidez','Sencillez','Claridad','Atención'],
+    datasets:[{data:[78,65,58,52],
+      backgroundColor:['rgba(32,92,242,.85)','rgba(32,92,242,.68)','rgba(32,92,242,.52)','rgba(32,92,242,.38)'],
+      borderRadius:4,borderWidth:0}]
+  },options:merge(MINI,{indexAxis:'y',
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.parsed.x}%`}}},
+    scales:{x:{max:100,ticks:{callback:n=>n+'%',font:{size:10},color:P.muted},grid:{color:P.grid}},
+      y:{grid:{display:false},ticks:{font:{size:10},color:P.muted}}}
+  })});
+
+  /* D2 overview – doughnut anticipación */
+  new Chart($('c-ov2'),{type:'doughnut',data:{
+    labels:['Avísame y pregúntame','Actúa directamente','Solo avísame'],
+    datasets:[{data:[48,35,17],
+      backgroundColor:[P.amber,P.blueL,P.teal],
+      borderColor:'#f0f4ff',borderWidth:2,hoverOffset:4}]
+  },options:{responsive:true,maintainAspectRatio:false,cutout:'65%',
+    plugins:{
+      legend:{position:'bottom',labels:{color:P.muted,font:{size:9},boxWidth:8,padding:5}},
+      tooltip:{backgroundColor:P.card,borderColor:P.border,borderWidth:1,bodyColor:'#0d1b3e',
+        callbacks:{label:c=>` ${c.label}: ${c.parsed}%`}}
+    }
+  }});
+
+  /* D3 overview – grouped bar máquina/copiloto/persona */
+  new Chart($('c-ov3'),{type:'bar',data:{
+    labels:['Revisar docs','Consultas','Decisión'],
+    datasets:[
+      {label:'Máquina',data:[62,28,8],backgroundColor:'rgba(32,92,242,.8)',borderRadius:3,borderWidth:0},
+      {label:'Copiloto',data:[28,45,22],backgroundColor:'rgba(224,143,0,.8)',borderRadius:3,borderWidth:0},
+      {label:'Persona',data:[10,27,70],backgroundColor:'rgba(90,218,164,.85)',borderRadius:3,borderWidth:0},
+    ]
+  },options:merge(MINI,{
+    plugins:{legend:{display:true,labels:{color:P.muted,font:{size:9},boxWidth:8,padding:5}}},
+    scales:{x:{grid:{display:false},ticks:{font:{size:9},color:P.muted}},
+      y:{max:100,ticks:{callback:n=>n+'%',font:{size:9},color:P.muted},grid:{color:P.grid}}}
+  })});
+
+  /* D4 overview – horizontal bar canal más elegido */
+  new Chart($('c-ov4'),{type:'bar',data:{
+    labels:['App / Web','Presencial','Telefónico','Chatbot'],
+    datasets:[{data:[38,26,20,16],
+      backgroundColor:['rgba(224,41,79,.85)','rgba(224,41,79,.68)','rgba(224,41,79,.50)','rgba(224,41,79,.35)'],
+      borderRadius:4,borderWidth:0}]
+  },options:merge(MINI,{indexAxis:'y',
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.parsed.x}%`}}},
+    scales:{x:{max:50,ticks:{callback:n=>n+'%',font:{size:10},color:P.muted},grid:{color:P.grid}},
+      y:{grid:{display:false},ticks:{font:{size:10},color:P.muted}}}
+  })});
+
+  /* D5 overview – doughnut pedir/consultar/eliminar */
+  new Chart($('c-ov5'),{type:'doughnut',data:{
+    labels:['Eliminar','Consultar','Pedir'],
+    datasets:[{data:[38,35,27],
+      backgroundColor:[P.teal,P.cyan,P.rose],
+      borderColor:'#f0f4ff',borderWidth:2,hoverOffset:4}]
+  },options:{responsive:true,maintainAspectRatio:false,cutout:'65%',
+    plugins:{
+      legend:{position:'bottom',labels:{color:P.muted,font:{size:9},boxWidth:8,padding:5}},
+      tooltip:{backgroundColor:P.card,borderColor:P.border,borderWidth:1,bodyColor:'#0d1b3e',
+        callbacks:{label:c=>` ${c.label}: ${c.parsed}%`}}
+    }
+  }});
+
+  /* D6 overview – horizontal bar top combinaciones tech */
+  new Chart($('c-ov6'),{type:'bar',data:{
+    labels:['Sensores + MA','Drones + Incendios','IA + Atención','Robótica + Residuos'],
+    datasets:[{data:[42,38,35,28],
+      backgroundColor:['rgba(90,218,164,.8)','rgba(32,92,242,.85)','rgba(5,152,184,.75)','rgba(224,143,0,.75)'],
+      borderRadius:4,borderWidth:0}]
+  },options:merge(MINI,{indexAxis:'y',
+    plugins:{legend:{display:false}},
+    scales:{x:{ticks:{font:{size:10},color:P.muted},grid:{color:P.grid}},
+      y:{grid:{display:false},ticks:{font:{size:10},color:P.muted}}}
+  })});
+
+  /* D7 overview – doughnut confianza */
+  new Chart($('c-ov7'),{type:'doughnut',data:{
+    labels:['Alta (7–10)','Media (4–6)','Baja (1–3)'],
+    datasets:[{data:[28,49,23],
+      backgroundColor:[P.teal,P.amber,P.rose],
+      borderColor:'#f0f4ff',borderWidth:2,hoverOffset:4}]
+  },options:{responsive:true,maintainAspectRatio:false,cutout:'65%',
+    plugins:{
+      legend:{position:'bottom',labels:{color:P.muted,font:{size:9},boxWidth:8,padding:5}},
+      tooltip:{backgroundColor:P.card,borderColor:P.border,borderWidth:1,bodyColor:'#0d1b3e',
+        callbacks:{label:c=>` ${c.label}: ${c.parsed}%`}}
+    }
+  }});
+
+  /* D1 factores */
+  new Chart($('c-d1'),{type:'bar',data:{
+    labels:['Rapidez','Sencillez','Claridad de información','Atención personalizada','Accesibilidad','Seguridad'],
+    datasets:[{label:'% de votos',data:[78,65,58,52,47,41],
+      backgroundColor:['rgba(32,92,242,.82)','rgba(32,92,242,.70)','rgba(32,92,242,.60)',
+        'rgba(32,92,242,.50)','rgba(32,92,242,.42)','rgba(32,92,242,.34)'],
+      borderColor:P.blueXL,borderWidth:1,borderRadius:6}]
+  },options:merge(BASE,{indexAxis:'y',
+    plugins:{legend:{display:false},
+      tooltip:{callbacks:{label:c=>` ${c.parsed.x}%`}}},
+    scales:{x:{max:100,grid:{color:P.grid},ticks:{callback:n=>n+'%',color:P.mutedL}},
+      y:{grid:{display:false},ticks:{color:P.mutedL}}}
+  })});
+
+  /* D2a situaciones */
+  new Chart($('c-d2a'),{type:'bar',data:{
+    labels:['Nacimiento\nhijo','Desempleo','Jubilación','Crear\nempresa','Cambio\ndomicilio'],
+    datasets:[{label:'% votos',data:[85,72,68,61,54],
+      backgroundColor:['rgba(90,218,164,.82)','rgba(90,218,164,.70)','rgba(90,218,164,.60)',
+        'rgba(90,218,164,.50)','rgba(90,218,164,.40)'],
+      borderColor:P.teal,borderWidth:1,borderRadius:6}]
+  },options:merge(BASE,{
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.parsed.y}%`}}},
+    scales:{y:{max:100,grid:{color:P.grid},ticks:{callback:n=>n+'%',color:P.mutedL}},
+      x:{grid:{display:false},ticks:{color:P.mutedL,maxRotation:0}}}
+  })});
+
+  /* D2b donut */
+  new Chart($('c-d2b'),{type:'doughnut',data:{
+    labels:['Automáticamente','Avísame y pregúntame','Prefiero iniciarlo yo'],
+    datasets:[{data:[35,48,17],
+      backgroundColor:[P.blueL,P.amber,P.teal],
+      borderColor:'#f0f4ff',borderWidth:2,hoverOffset:6}]
+  },options:{responsive:true,maintainAspectRatio:false,cutout:'65%',
+    plugins:{
+      legend:{position:'bottom',labels:{color:P.mutedL,font:{size:11},boxWidth:10,padding:10}},
+      tooltip:{backgroundColor:P.card,borderColor:P.border,borderWidth:1,bodyColor:'#fff',
+        callbacks:{label:c=>` ${c.label}: ${c.parsed}%`}}
+    }
+  }});
+
+  /* D4 canal/perfil */
+  new Chart($('c-d4'),{type:'bar',data:{
+    labels:['Persona mayor','Autónomo/a','Persona joven','Entorno rural'],
+    datasets:[
+      {label:'Presencial',data:[75,22,8,32],backgroundColor:'rgba(245,166,35,.72)',borderColor:P.amber,borderWidth:1,borderRadius:4},
+      {label:'Teléfono',data:[18,12,10,58],backgroundColor:'rgba(90,218,164,.65)',borderColor:P.teal,borderWidth:1,borderRadius:4},
+      {label:'App / Web',data:[7,65,82,10],backgroundColor:'rgba(32,92,242,.72)',borderColor:P.blueL,borderWidth:1,borderRadius:4},
+      {label:'Chat / asistente',data:[0,1,0,0],backgroundColor:'rgba(6,182,212,.65)',borderColor:P.cyan,borderWidth:1,borderRadius:4},
+    ]
+  },options:merge(BASE,{
+    scales:{x:{grid:{display:false},ticks:{color:P.mutedL}},
+      y:{max:100,grid:{color:P.grid},ticks:{callback:n=>n+'%',color:P.mutedL}}}
+  })});
+
+  /* D6 tecnología */
+  new Chart($('c-d6'),{type:'bar',data:{
+    labels:['Sensores + Medio ambiente','Drones + Incendios forestales','IA + Atención ciudadana',
+      'Robótica + Gestión residuos','IoT + Movilidad urbana','Visión artificial + Seguridad vial','IA + Detección fraude'],
+    datasets:[{label:'Votos',data:[42,38,35,28,24,19,16],
+      backgroundColor:['rgba(90,218,164,.78)','rgba(32,92,242,.82)','rgba(6,182,212,.72)',
+        'rgba(245,166,35,.72)','rgba(132,204,22,.72)','rgba(249,115,22,.72)','rgba(79,128,246,.72)'],
+      borderColor:[P.teal,P.blue,P.cyan,P.amber,P.lime,P.orange,P.blueL],
+      borderWidth:1,borderRadius:6}]
+  },options:merge(BASE,{indexAxis:'y',
+    plugins:{legend:{display:false}},
+    scales:{x:{grid:{color:P.grid},ticks:{color:P.mutedL}},
+      y:{grid:{display:false},ticks:{color:P.mutedL}}}
+  })});
+
+  /* D7a garantías */
+  new Chart($('c-d7a'),{type:'bar',data:{
+    labels:['Trazabilidad','Transparencia de uso','Respuesta ante incidentes','Anonimización','Control propio de datos','Auditorías externas'],
+    datasets:[{label:'% que la prioriza',data:[73,68,61,55,49,38],
+      backgroundColor:['rgba(245,166,35,.82)','rgba(245,166,35,.70)','rgba(245,166,35,.60)',
+        'rgba(245,166,35,.50)','rgba(245,166,35,.40)','rgba(245,166,35,.32)'],
+      borderColor:P.amber,borderWidth:1,borderRadius:6}]
+  },options:merge(BASE,{indexAxis:'y',
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.parsed.x}%`}}},
+    scales:{x:{max:100,grid:{color:P.grid},ticks:{callback:n=>n+'%',color:P.mutedL}},
+      y:{grid:{display:false},ticks:{color:P.mutedL}}}
+  })});
+
+  /* D7b donut confianza */
+  new Chart($('c-d7b'),{type:'doughnut',data:{
+    labels:['Confianza alta (7–10)','Confianza media (4–6)','Confianza baja (1–3)'],
+    datasets:[{data:[28,49,23],
+      backgroundColor:[P.teal,P.amber,P.rose],
+      borderColor:'#091628',borderWidth:2,hoverOffset:4}]
+  },options:{responsive:true,maintainAspectRatio:false,cutout:'60%',
+    plugins:{
+      legend:{position:'bottom',labels:{color:P.mutedL,font:{size:10},boxWidth:9,padding:8}},
+      tooltip:{backgroundColor:P.card,borderColor:P.border,borderWidth:1,bodyColor:'#fff',
+        callbacks:{label:c=>` ${c.label}: ${c.parsed}%`}}
+    }
+  }});
+}
+
+/* ── TIMELINE ───────────────────────────── */
+function buildTimeline(){
+  const sessions=[
+    {t:'09:30',n:'¿Qué hace que un servicio funcione?',done:true},
+    {t:'10:30',n:'Administración proactiva',done:true},
+    {t:'11:30',n:'¿Qué tareas dejarías a una máquina?',done:true},
+    {t:'12:30',n:'Una Adm. para cada persona',done:true},
+    {t:'14:30',n:'No me lo vuelvas a pedir',done:true},
+    {t:'15:30',n:'La Adm. sale de la pantalla',done:true},
+    {t:'16:30',n:'¿Hasta dónde confiarías tus datos?',done:false,nx:true},
+  ];
+  const tl=document.getElementById('timeline');
+  sessions.forEach(s=>{
+    const d=document.createElement('div');
+    d.className='tl-item'+(s.nx?' nx':'');
+    d.style.opacity=s.done?'1':'.7';
+    d.innerHTML=`
+      <span class="tl-ico" style="color:${s.done?P.teal:(s.nx?P.blueXL:P.muted)}">${s.done?'✓':(s.nx?'▶':'○')}</span>
+      <span class="tl-time">${s.t}</span>
+      <span class="tl-name">${s.n}</span>
+      ${s.nx?'<span class="tl-badge">PRÓXIMA</span>':''}
+    `;
+    tl.appendChild(d);
+  });
+}
+
+/* ── CAROUSEL ───────────────────────────── */
+const TOTAL=9, DUR=30000;
+let cur=0,elapsed=0,lastTick=null,rafId=null,paused=false;
+
+const slides=document.querySelectorAll('.slide');
+const dotsEl=document.getElementById('dots');
+const progFill=document.getElementById('prog-fill');
+const counterEl=document.getElementById('counter');
+
+slides.forEach((_,i)=>{
+  const b=document.createElement('button');
+  b.className='dot'+(i===0?' on':'');
+  b.title=`Pantalla ${i+1}`;
+  b.addEventListener('click',()=>goTo(i));
+  dotsEl.appendChild(b);
+});
+
+function $(id){return document.getElementById(id)}
+
+function goTo(idx){
+  slides[cur].classList.remove('on');
+  document.querySelectorAll('.dot')[cur].classList.remove('on');
+  cur=((idx%TOTAL)+TOTAL)%TOTAL;
+  slides[cur].classList.add('on');
+  document.querySelectorAll('.dot')[cur].classList.add('on');
+  counterEl.textContent=`${cur+1} / ${TOTAL}`;
+  resetTimer();
+}
+
+function resetTimer(){
+  cancelAnimationFrame(rafId);
+  elapsed=0;lastTick=null;
+  progFill.style.width='0%';
+  if(!paused)rafId=requestAnimationFrame(tick);
+}
+
+function tick(now){
+  if(!lastTick)lastTick=now;
+  elapsed+=now-lastTick;lastTick=now;
+  progFill.style.width=Math.min(elapsed/DUR*100,100)+'%';
+  if(elapsed>=DUR)goTo(cur+1);
+  else rafId=requestAnimationFrame(tick);
+}
+
+function pause(){if(paused)return;paused=true;cancelAnimationFrame(rafId);lastTick=null}
+function resume(){if(!paused)return;paused=false;lastTick=null;rafId=requestAnimationFrame(tick)}
+
+document.getElementById('btn-prev').addEventListener('click',()=>goTo(cur-1));
+document.getElementById('btn-next').addEventListener('click',()=>goTo(cur+1));
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key==='ArrowDown')goTo(cur+1);
+  if(e.key==='ArrowLeft'||e.key==='ArrowUp')goTo(cur-1);
+  if(e.key==='Escape')paused?resume():pause();
+});
+document.getElementById('deck').addEventListener('mouseenter',pause);
+document.getElementById('deck').addEventListener('mouseleave',resume);
+
+/* ── BOOT ───────────────────────────────── */
+initCharts();
+resetTimer();
+</script>
+</body>
+</html>

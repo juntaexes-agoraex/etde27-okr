@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Dinámica 1 · ÁgoraEx · Congreso Potencial Digital 2026</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,sans-serif;background:#F4F6FB;min-height:100vh;display:flex;justify-content:center;align-items:flex-start}
+.app{width:100%;max-width:600px;min-height:100vh;background:#fff;display:flex;flex-direction:column;position:relative;overflow:hidden}
+.screen{display:none;flex-direction:column;min-height:100vh;opacity:0;transition:opacity .25s ease}
+.screen.active{display:flex;opacity:1}
+.screen.fade-in{animation:fadeIn .25s ease forwards}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+.header{padding:18px 20px 16px;display:flex;align-items:center;gap:12px;flex-shrink:0}
+.header-blue{background:#205CF2}
+.header-dark{background:#1E104D}
+.header-teal{background:#5ADAA4}
+.header-brand{display:flex;align-items:center;gap:10px;flex:1}
+.header-brand-name{font-size:18px;font-weight:700;color:#fff;letter-spacing:-.2px}
+.header-brand-name span{color:#5ADAA4}
+.header-meta{font-size:11px;color:rgba(255,255,255,.75);margin-top:2px}
+.header-right{display:flex;align-items:center;gap:8px}
+.progress-label{font-size:13px;font-weight:600;color:rgba(255,255,255,.9)}
+
+.progress-bar{display:flex;gap:6px;padding:0 20px 16px;flex-shrink:0}
+.progress-seg{flex:1;height:4px;border-radius:4px;background:#E0E5F5;transition:background .3s}
+.progress-seg.done{background:#205CF2}
+
+.body{flex:1;padding:24px 20px;display:flex;flex-direction:column}
+.screen-title{font-size:24px;font-weight:800;color:#1E104D;line-height:1.2;margin-bottom:8px}
+.screen-subtitle{font-size:15px;color:#555;line-height:1.5;margin-bottom:28px}
+
+.footer{padding:16px 20px;border-top:1px solid #E8EDF5;display:flex;align-items:center;justify-content:center;gap:10px;flex-shrink:0}
+.footer-sep{color:#C0C8D8;font-size:13px}
+.footer-junta{font-family:Georgia,serif;font-size:12px;font-weight:700;text-transform:uppercase;color:#1E104D;letter-spacing:.5px}
+.footer-eu{display:flex;align-items:center;gap:6px}
+.footer-eu-text{font-size:11px;color:#555;white-space:nowrap}
+
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:56px;border:none;border-radius:14px;font-size:17px;font-weight:700;cursor:pointer;transition:all .18s ease;outline:none;-webkit-tap-highlight-color:transparent}
+.btn-blue{background:#205CF2;color:#fff}
+.btn-blue:hover{background:#1a4fd4;transform:translateY(-1px);box-shadow:0 4px 16px rgba(32,92,242,.3)}
+.btn-blue:active{transform:translateY(0);box-shadow:none}
+.btn-blue:disabled{background:#B0BFEF;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-outline{background:#fff;color:#205CF2;border:2px solid #205CF2}
+.btn-outline:hover{background:#F0F4FF}
+.btn-outline:active{background:#E0E9FF}
+
+.welcome-hero{text-align:center;padding:32px 0 24px}
+.welcome-title{font-size:30px;font-weight:900;color:#1E104D;line-height:1.15;margin-bottom:14px}
+.welcome-sub{font-size:16px;color:#555;line-height:1.55;margin-bottom:0}
+.welcome-deco{width:64px;height:4px;background:linear-gradient(90deg,#205CF2,#5ADAA4);border-radius:4px;margin:20px auto 0}
+
+.cards{display:flex;flex-direction:column;gap:14px;margin-bottom:28px}
+.opt-card{background:#fff;border:2px solid #E0E5F5;border-radius:16px;padding:20px 18px;display:flex;align-items:center;gap:16px;cursor:pointer;transition:all .2s ease;position:relative;min-height:80px;-webkit-tap-highlight-color:transparent;user-select:none}
+.opt-card:hover{border-color:#B0BFEF;box-shadow:0 2px 10px rgba(32,92,242,.08)}
+.opt-card:active{transform:scale(.98)}
+.opt-card.selected{border-color:#205CF2;background:#F0F4FF}
+.opt-card-icon{flex-shrink:0;width:48px;height:48px;display:flex;align-items:center;justify-content:center}
+.opt-card-text{flex:1}
+.opt-card-title{font-size:18px;font-weight:800;color:#1E104D;letter-spacing:-.2px}
+.opt-card-sub{font-size:13px;color:#666;margin-top:3px}
+.opt-card-check{width:26px;height:26px;border-radius:50%;border:2px solid #C0C8D8;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s}
+.opt-card.selected .opt-card-check{background:#205CF2;border-color:#205CF2}
+.opt-card-check svg{opacity:0;transition:opacity .15s}
+.opt-card.selected .opt-card-check svg{opacity:1}
+
+.pill-list{display:flex;flex-direction:column;gap:12px;margin-bottom:28px}
+.opt-pill{width:100%;min-height:60px;padding:14px 20px;background:#fff;border:2px solid #E0E5F5;border-radius:30px;font-size:16px;font-weight:600;color:#1E104D;cursor:pointer;text-align:left;display:flex;align-items:center;justify-content:space-between;gap:10px;transition:all .2s ease;-webkit-tap-highlight-color:transparent;user-select:none}
+.opt-pill:hover{border-color:#B0BFEF;box-shadow:0 2px 8px rgba(32,92,242,.08)}
+.opt-pill:active{transform:scale(.98)}
+.opt-pill.selected{background:#5ADAA4;border-color:#5ADAA4;color:#fff}
+.opt-pill-check{width:22px;height:22px;flex-shrink:0;opacity:0;transition:opacity .15s}
+.opt-pill.selected .opt-pill-check{opacity:1}
+
+.textarea-wrap{position:relative;margin-bottom:10px}
+.inp-textarea{width:100%;min-height:140px;padding:16px;border:2px solid #E0E5F5;border-radius:16px;font-size:16px;font-family:inherit;color:#1E104D;resize:none;outline:none;transition:border-color .2s;line-height:1.5}
+.inp-textarea:focus{border-color:#205CF2}
+.char-counter{text-align:right;font-size:13px;color:#888;margin-bottom:24px;transition:color .2s}
+.char-counter.warn{color:#F59E0B}
+.char-counter.limit{color:#EF4444}
+
+.stars-row{display:flex;justify-content:center;gap:12px;margin:8px 0 12px}
+.star-btn{background:none;border:none;cursor:pointer;padding:4px;-webkit-tap-highlight-color:transparent;transition:transform .15s ease}
+.star-btn:hover{transform:scale(1.15)}
+.star-btn:active{transform:scale(.95)}
+.star-btn svg{display:block;transition:all .15s}
+.stars-labels{display:flex;justify-content:space-between;margin-bottom:28px;padding:0 4px}
+.stars-labels span{font-size:12px;color:#888}
+.stars-nums{display:flex;justify-content:space-between;margin-bottom:4px;padding:0 10px}
+.stars-nums span{font-size:12px;color:#AAB;width:20px;text-align:center}
+
+.gracias-body{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:32px 20px}
+.gracias-check{width:90px;height:90px;border-radius:50%;background:#5ADAA4;display:flex;align-items:center;justify-content:center;margin-bottom:24px;box-shadow:0 8px 28px rgba(90,218,164,.35)}
+.gracias-title{font-size:36px;font-weight:900;color:#1E104D;margin-bottom:12px}
+.gracias-sub{font-size:16px;color:#555;line-height:1.55;margin-bottom:20px}
+.gracias-count{font-size:14px;font-weight:600;color:#205CF2;background:#F0F4FF;border-radius:20px;padding:8px 18px;margin-bottom:32px}
+.btn-wrap{width:100%;padding:0 20px 28px}
+</style>
+</head>
+<body>
+<div class="app">
+
+<div id="sc-welcome" class="screen active">
+  <div class="header header-blue">
+    <div class="header-brand">
+      <svg width="40" height="40" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <line x1="22" y1="22" x2="31" y2="13" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="22" y1="22" x2="31" y2="31" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="22" y1="22" x2="13" y2="31" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="22" y1="22" x2="13" y2="13" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="22" y1="22" x2="22" y2="8" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="22" y1="22" x2="36" y2="22" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="22" y1="22" x2="22" y2="36" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="22" y1="22" x2="8" y2="22" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="31" y1="13" x2="37" y2="7" stroke="#5ADAA4" stroke-width="1" stroke-linecap="round" opacity=".7"/>
+        <line x1="31" y1="31" x2="37" y2="37" stroke="#5ADAA4" stroke-width="1" stroke-linecap="round" opacity=".7"/>
+        <line x1="13" y1="31" x2="7" y2="37" stroke="#5ADAA4" stroke-width="1" stroke-linecap="round" opacity=".7"/>
+        <line x1="13" y1="13" x2="7" y2="7" stroke="#5ADAA4" stroke-width="1" stroke-linecap="round" opacity=".7"/>
+        <circle cx="37" cy="7" r="2.5" fill="#5ADAA4" opacity=".75"/>
+        <circle cx="37" cy="37" r="2.5" fill="#5ADAA4" opacity=".75"/>
+        <circle cx="7" cy="37" r="2.5" fill="#5ADAA4" opacity=".75"/>
+        <circle cx="7" cy="7" r="2.5" fill="#5ADAA4" opacity=".75"/>
+        <circle cx="31" cy="13" r="5" fill="#5ADAA4"/>
+        <circle cx="31" cy="31" r="5" fill="#5ADAA4"/>
+        <circle cx="13" cy="31" r="5" fill="#5ADAA4"/>
+        <circle cx="13" cy="13" r="5" fill="#5ADAA4"/>
+        <circle cx="22" cy="8" r="3" fill="#fff"/>
+        <circle cx="36" cy="22" r="3" fill="#fff"/>
+        <circle cx="22" cy="36" r="3" fill="#fff"/>
+        <circle cx="8" cy="22" r="3" fill="#fff"/>
+        <rect x="18" y="18" width="8" height="8" rx="1.5" fill="#fff"/>
+      </svg>
+      <div>
+        <div class="header-brand-name">ÁgoraEX</div>
+        <div class="header-meta">Congreso Potencial Digital 2026 · Cáceres</div>
+      </div>
+    </div>
+  </div>
+  <div class="body" style="justify-content:space-between">
+    <div class="welcome-hero">
+      <div class="screen-title welcome-title">Diseña tu administración ideal</div>
+      <div class="screen-subtitle welcome-sub">En 2 minutos, imagina que puedes cambiar la Administración. ¿Cómo sería para ti?</div>
+      <div class="welcome-deco"></div>
+    </div>
+    <button class="btn btn-blue" onclick="goTo('p1')">Empezar &rarr;</button>
+  </div>
+  <div class="footer">
+    <div class="footer-eu">
+      <svg id="eu-flag-d1" viewBox="0 0 60 40" width="52" height="34"><rect width="60" height="40" fill="#003399" rx="3"/></svg>
+      <span class="footer-eu-text">Cofinanciado por la Unión Europea</span>
+    </div>
+    <span class="footer-sep">|</span>
+    <span class="footer-junta">Junta de Extremadura</span>
+  </div>
+</div>
+
+<div id="sc-p1" class="screen">
+  <div class="header header-dark">
+    <div class="header-brand">
+      <svg width="36" height="36" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <line x1="22" y1="22" x2="31" y2="13" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="22" y1="22" x2="31" y2="31" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="22" y1="22" x2="13" y2="31" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="22" y1="22" x2="13" y2="13" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="22" y1="22" x2="22" y2="8" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="22" y1="22" x2="36" y2="22" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="22" y1="22" x2="22" y2="36" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="22" y1="22" x2="8" y2="22" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="31" y1="13" x2="37" y2="7" stroke="#5ADAA4" stroke-width="1" stroke-linecap="round" opacity=".7"/>
+        <line x1="31" y1="31" x2="37" y2="37" stroke="#5ADAA4" stroke-width="1" stroke-linecap="round" opacity=".7"/>
+        <line x1="13" y1="31" x2="7" y2="37" stroke="#5ADAA4" stroke-width="1" stroke-linecap="round" opacity=".7"/>
+        <line x1="13" y1="13" x2="7" y2="7" stroke="#5ADAA4" stroke-width="1" stroke-linecap="round" opacity=".7"/>
+        <circle cx="37" cy="7" r="2.5" fill="#5ADAA4" opacity=".75"/>
+        <circle cx="37" cy="37" r="2.5" fill="#5ADAA4" opacity=".75"/>
+        <circle cx="7" cy="37" r="2.5" fill="#5ADAA4" opacity=".75"/>
+        <circle cx="7" cy="7" r="2.5" fill="#5ADAA4" opacity=".75"/>
+        <circle cx="31" cy="13" r="5" fill="#5ADAA4"/>
+        <circle cx="31" cy="31" r="5" fill="#5ADAA4"/>
+        <circle cx="13" cy="31" r="5" fill="#5ADAA4"/>
+        <circle cx="13" cy="13" r="5" fill="#5ADAA4"/>
+        <circle cx="22" cy="8" r="3" fill="#fff"/>
+        <circle cx="36" cy="22" r="3" fill="#fff"/>
+        <circle cx="22" cy="36" r="3" fill="#fff"/>
+        <circle cx="8" cy="22" r="3" fill="#fff"/>
+        <rect x="18" y="18" width="8" height="8" rx="1.5" fill="#fff"/>
+      </svg>
+    </div>
+    <div class="header-right">
+      <span class="progress-label">1 de 4</span>
+    </div>
+  </div>
+  <div class="progress-bar">
+    <div class="progress-seg done"></div>
+    <div class="progress-seg"></div>
+    <div class="progress-seg"></div>
+    <div class="progress-seg"></div>
+  </div>
+  <div class="body">
+    <div class="screen-title">¿Qué mejorarías primero?</div>
+    <div class="screen-subtitle" style="margin-bottom:20px">Elige una opción</div>
+    <div class="cards">
+      <div class="opt-card" onclick="selectP1('tramites',this)">
+        <div class="opt-card-icon">
+          <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="9" y="8" width="26" height="32" rx="3" fill="#E8EEFF" stroke="#205CF2" stroke-width="1.5"/>
+            <rect x="16" y="4" width="12" height="7" rx="2" fill="#205CF2"/>
+            <rect x="14" y="19" width="16" height="2.5" rx="1.25" fill="#205CF2" opacity=".5"/>
+            <rect x="14" y="24" width="16" height="2.5" rx="1.25" fill="#205CF2" opacity=".5"/>
+            <rect x="14" y="29" width="10" height="2.5" rx="1.25" fill="#205CF2" opacity=".35"/>
+          </svg>
+        </div>
+        <div class="opt-card-text">
+          <div class="opt-card-title">TRÁMITES</div>
+          <div class="opt-card-sub">Gestiones y documentación</div>
+        </div>
+        <div class="opt-card-check"><svg width="14" height="11" viewBox="0 0 14 11" fill="none"><path d="M1 5.5L5 9.5L13 1.5" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      </div>
+      <div class="opt-card" onclick="selectP1('atencion',this)">
+        <div class="opt-card-icon">
+          <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="16" cy="15" r="6" fill="#5ADAA4"/>
+            <path d="M4 35c0-6.627 5.373-12 12-12" stroke="#5ADAA4" stroke-width="2.5" stroke-linecap="round"/>
+            <circle cx="29" cy="13" r="7" fill="#205CF2"/>
+            <path d="M17 35c0-6.627 5.373-12 12-12s12 5.373 12 12" stroke="#205CF2" stroke-width="2.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="opt-card-text">
+          <div class="opt-card-title">ATENCIÓN</div>
+          <div class="opt-card-sub">Trato y comunicación</div>
+        </div>
+        <div class="opt-card-check"><svg width="14" height="11" viewBox="0 0 14 11" fill="none"><path d="M1 5.5L5 9.5L13 1.5" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      </div>
+      <div class="opt-card" onclick="selectP1('digital',this)">
+        <div class="opt-card-icon">💻</div>
+        <div class="opt-card-text">
+          <div class="opt-card-title">SERVICIOS DIGITALES</div>
+          <div class="opt-card-sub">Apps y plataformas online</div>
+        </div>
+        <div class="opt-card-check"><svg width="14" height="11" viewBox="0 0 14 11" fill="none"><path d="M1 5.5L5 9.5L13 1.5" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="sc-p2" class="screen">
+  <div class="header header-dark">
+    <div class="header-brand">
+      <svg width="36" height="36" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <line x1="22" y1="22" x2="31" y2="13" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="22" y1="22" x2="31" y2="31" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="22" y1="22" x2="13" y2="31" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="22" y1="22" x2="13" y2="13" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="22" y1="22" x2="22" y2="8" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="22" y1="22" x2="36" y2="22" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="22" y1="22" x2="22" y2="36" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="22" y1="22" x2="8" y2="22" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="31" y1="13" x2="37" y2="7" stroke="#5ADAA4" stroke-width="1" stroke-linecap="round" opacity=".7"/>
+        <line x1="31" y1="31" x2="37" y2="37" stroke="#5ADAA4" stroke-width="1" stroke-linecap="round" opacity=".7"/>
+        <line x1="13" y1="31" x2="7" y2="37" stroke="#5ADAA4" stroke-width="1" stroke-linecap="round" opacity=".7"/>
+        <line x1="13" y1="13" x2="7" y2="7" stroke="#5ADAA4" stroke-width="1" stroke-linecap="round" opacity=".7"/>
+        <circle cx="37" cy="7" r="2.5" fill="#5ADAA4" opacity=".75"/>
+        <circle cx="37" cy="37" r="2.5" fill="#5ADAA4" opacity=".75"/>
+        <circle cx="7" cy="37" r="2.5" fill="#5ADAA4" opacity=".75"/>
+        <circle cx="7" cy="7" r="2.5" fill="#5ADAA4" opacity=".75"/>
+        <circle cx="31" cy="13" r="5" fill="#5ADAA4"/>
+        <circle cx="31" cy="31" r="5" fill="#5ADAA4"/>
+        <circle cx="13" cy="31" r="5" fill="#5ADAA4"/>
+        <circle cx="13" cy="13" r="5" fill="#5ADAA4"/>
+        <circle cx="22" cy="8" r="3" fill="#fff"/>
+        <circle cx="36" cy="22" r="3" fill="#fff"/>
+        <circle cx="22" cy="36" r="3" fill="#fff"/>
+        <circle cx="8" cy="22" r="3" fill="#fff"/>
+        <rect x="18" y="18" width="8" height="8" rx="1.5" fill="#fff"/>
+      </svg>
+    </div>
+    <div class="header-right">
+      <span class="progress-label">2 de 4</span>
+    </div>
+  </div>
+  <div class="progress-bar">
+    <div class="progress-seg done"></div>
+    <div class="progress-seg done"></div>
+    <div class="progress-seg"></div>
+    <div class="progress-seg"></div>
+  </div>
+  <div class="body">
+    <div class="screen-title" id="p2-title">Las opciones deberían ser...</div>
+    <div class="screen-subtitle" style="margin-bottom:20px">Elige una opción</div>
+    <div class="pill-list" id="p2-pills"></div>
+    <button class="btn btn-blue" id="btn-p2-next" onclick="goTo('p3')" disabled>Siguiente &rarr;</button>
+  </div>
+</div>
+
+<div id="sc-p3" class="screen">
+  <div class="header header-dark">
+    <div class="header-brand">
+      <svg width="36" height="36" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <line x1="22" y1="22" x2="31" y2="13" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="22" y1="22" x2="31" y2="31" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="22" y1="22" x2="13" y2="31" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="22" y1="22" x2="13" y2="13" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="22" y1="22" x2="22" y2="8" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="22" y1="22" x2="36" y2="22" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="22" y1="22" x2="22" y2="36" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="22" y1="22" x2="8" y2="22" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="31" y1="13" x2="37" y2="7" stroke="#5ADAA4" stroke-width="1" stroke-linecap="round" opacity=".7"/>
+        <line x1="31" y1="31" x2="37" y2="37" stroke="#5ADAA4" stroke-width="1" stroke-linecap="round" opacity=".7"/>
+        <line x1="13" y1="31" x2="7" y2="37" stroke="#5ADAA4" stroke-width="1" stroke-linecap="round" opacity=".7"/>
+        <line x1="13" y1="13" x2="7" y2="7" stroke="#5ADAA4" stroke-width="1" stroke-linecap="round" opacity=".7"/>
+        <circle cx="37" cy="7" r="2.5" fill="#5ADAA4" opacity=".75"/>
+        <circle cx="37" cy="37" r="2.5" fill="#5ADAA4" opacity=".75"/>
+        <circle cx="7" cy="37" r="2.5" fill="#5ADAA4" opacity=".75"/>
+        <circle cx="7" cy="7" r="2.5" fill="#5ADAA4" opacity=".75"/>
+        <circle cx="31" cy="13" r="5" fill="#5ADAA4"/>
+        <circle cx="31" cy="31" r="5" fill="#5ADAA4"/>
+        <circle cx="13" cy="31" r="5" fill="#5ADAA4"/>
+        <circle cx="13" cy="13" r="5" fill="#5ADAA4"/>
+        <circle cx="22" cy="8" r="3" fill="#fff"/>
+        <circle cx="36" cy="22" r="3" fill="#fff"/>
+        <circle cx="22" cy="36" r="3" fill="#fff"/>
+        <circle cx="8" cy="22" r="3" fill="#fff"/>
+        <rect x="18" y="18" width="8" height="8" rx="1.5" fill="#fff"/>
+      </svg>
+    </div>
+    <div class="header-right">
+      <span class="progress-label">3 de 4</span>
+    </div>
+  </div>
+  <div class="progress-bar">
+    <div class="progress-seg done"></div>
+    <div class="progress-seg done"></div>
+    <div class="progress-seg done"></div>
+    <div class="progress-seg"></div>
+  </div>
+  <div class="body">
+    <div class="screen-title">Si solo pudieras cambiar UNA cosa...</div>
+    <div class="screen-subtitle" style="margin-bottom:20px">Campo opcional — escribe tu idea</div>
+    <div class="textarea-wrap">
+      <textarea id="inp-p3" class="inp-textarea" maxlength="140" placeholder="Escribe tu idea aquí..." oninput="updateCounter()"></textarea>
+    </div>
+    <div class="char-counter" id="char-counter">0 / 140</div>
+    <button class="btn btn-blue" onclick="goTo('p4')">Siguiente &rarr;</button>
+  </div>
+</div>
+
+<div id="sc-p4" class="screen">
+  <div class="header header-dark">
+    <div class="header-brand">
+      <svg width="36" height="36" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <line x1="22" y1="22" x2="31" y2="13" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="22" y1="22" x2="31" y2="31" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="22" y1="22" x2="13" y2="31" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="22" y1="22" x2="13" y2="13" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="22" y1="22" x2="22" y2="8" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="22" y1="22" x2="36" y2="22" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="22" y1="22" x2="22" y2="36" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="22" y1="22" x2="8" y2="22" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="31" y1="13" x2="37" y2="7" stroke="#5ADAA4" stroke-width="1" stroke-linecap="round" opacity=".7"/>
+        <line x1="31" y1="31" x2="37" y2="37" stroke="#5ADAA4" stroke-width="1" stroke-linecap="round" opacity=".7"/>
+        <line x1="13" y1="31" x2="7" y2="37" stroke="#5ADAA4" stroke-width="1" stroke-linecap="round" opacity=".7"/>
+        <line x1="13" y1="13" x2="7" y2="7" stroke="#5ADAA4" stroke-width="1" stroke-linecap="round" opacity=".7"/>
+        <circle cx="37" cy="7" r="2.5" fill="#5ADAA4" opacity=".75"/>
+        <circle cx="37" cy="37" r="2.5" fill="#5ADAA4" opacity=".75"/>
+        <circle cx="7" cy="37" r="2.5" fill="#5ADAA4" opacity=".75"/>
+        <circle cx="7" cy="7" r="2.5" fill="#5ADAA4" opacity=".75"/>
+        <circle cx="31" cy="13" r="5" fill="#5ADAA4"/>
+        <circle cx="31" cy="31" r="5" fill="#5ADAA4"/>
+        <circle cx="13" cy="31" r="5" fill="#5ADAA4"/>
+        <circle cx="13" cy="13" r="5" fill="#5ADAA4"/>
+        <circle cx="22" cy="8" r="3" fill="#fff"/>
+        <circle cx="36" cy="22" r="3" fill="#fff"/>
+        <circle cx="22" cy="36" r="3" fill="#fff"/>
+        <circle cx="8" cy="22" r="3" fill="#fff"/>
+        <rect x="18" y="18" width="8" height="8" rx="1.5" fill="#fff"/>
+      </svg>
+    </div>
+    <div class="header-right">
+      <span class="progress-label">4 de 4</span>
+    </div>
+  </div>
+  <div class="progress-bar">
+    <div class="progress-seg done"></div>
+    <div class="progress-seg done"></div>
+    <div class="progress-seg done"></div>
+    <div class="progress-seg done"></div>
+  </div>
+  <div class="body">
+    <div class="screen-title">Si la Administración fuera una app...</div>
+    <div class="screen-subtitle" style="margin-bottom:28px">¿Qué nota le darías?</div>
+    <div class="stars-nums">
+      <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
+    </div>
+    <div class="stars-row" id="stars-row">
+      <button class="star-btn" onclick="selectStar(1)" aria-label="1 estrella"><svg width="48" height="48" viewBox="0 0 48 48"><polygon points="24,6 28.9,18.2 42,19.1 32.5,27.5 35.6,41 24,33.8 12.4,41 15.5,27.5 6,19.1 19.1,18.2" stroke="#C0C8D8" stroke-width="2" fill="none"/></svg></button>
+      <button class="star-btn" onclick="selectStar(2)" aria-label="2 estrellas"><svg width="48" height="48" viewBox="0 0 48 48"><polygon points="24,6 28.9,18.2 42,19.1 32.5,27.5 35.6,41 24,33.8 12.4,41 15.5,27.5 6,19.1 19.1,18.2" stroke="#C0C8D8" stroke-width="2" fill="none"/></svg></button>
+      <button class="star-btn" onclick="selectStar(3)" aria-label="3 estrellas"><svg width="48" height="48" viewBox="0 0 48 48"><polygon points="24,6 28.9,18.2 42,19.1 32.5,27.5 35.6,41 24,33.8 12.4,41 15.5,27.5 6,19.1 19.1,18.2" stroke="#C0C8D8" stroke-width="2" fill="none"/></svg></button>
+      <button class="star-btn" onclick="selectStar(4)" aria-label="4 estrellas"><svg width="48" height="48" viewBox="0 0 48 48"><polygon points="24,6 28.9,18.2 42,19.1 32.5,27.5 35.6,41 24,33.8 12.4,41 15.5,27.5 6,19.1 19.1,18.2" stroke="#C0C8D8" stroke-width="2" fill="none"/></svg></button>
+      <button class="star-btn" onclick="selectStar(5)" aria-label="5 estrellas"><svg width="48" height="48" viewBox="0 0 48 48"><polygon points="24,6 28.9,18.2 42,19.1 32.5,27.5 35.6,41 24,33.8 12.4,41 15.5,27.5 6,19.1 19.1,18.2" stroke="#C0C8D8" stroke-width="2" fill="none"/></svg></button>
+    </div>
+    <div class="stars-labels">
+      <span>Muy mala</span>
+      <span>Excelente</span>
+    </div>
+    <button class="btn btn-blue" id="btn-p4-fin" onclick="finalizar()" disabled>Finalizar &rarr;</button>
+  </div>
+</div>
+
+<div id="sc-gracias" class="screen">
+  <div class="header header-teal">
+    <div class="header-brand">
+      <svg width="40" height="40" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <line x1="22" y1="22" x2="31" y2="13" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="22" y1="22" x2="31" y2="31" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="22" y1="22" x2="13" y2="31" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="22" y1="22" x2="13" y2="13" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="22" y1="22" x2="22" y2="8" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="22" y1="22" x2="36" y2="22" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="22" y1="22" x2="22" y2="36" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="22" y1="22" x2="8" y2="22" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="31" y1="13" x2="37" y2="7" stroke="#fff" stroke-width="1" stroke-linecap="round" opacity=".7"/>
+        <line x1="31" y1="31" x2="37" y2="37" stroke="#fff" stroke-width="1" stroke-linecap="round" opacity=".7"/>
+        <line x1="13" y1="31" x2="7" y2="37" stroke="#fff" stroke-width="1" stroke-linecap="round" opacity=".7"/>
+        <line x1="13" y1="13" x2="7" y2="7" stroke="#fff" stroke-width="1" stroke-linecap="round" opacity=".7"/>
+        <circle cx="37" cy="7" r="2.5" fill="#fff" opacity=".75"/>
+        <circle cx="37" cy="37" r="2.5" fill="#fff" opacity=".75"/>
+        <circle cx="7" cy="37" r="2.5" fill="#fff" opacity=".75"/>
+        <circle cx="7" cy="7" r="2.5" fill="#fff" opacity=".75"/>
+        <circle cx="31" cy="13" r="5" fill="#fff"/>
+        <circle cx="31" cy="31" r="5" fill="#fff"/>
+        <circle cx="13" cy="31" r="5" fill="#fff"/>
+        <circle cx="13" cy="13" r="5" fill="#fff"/>
+        <circle cx="22" cy="8" r="3" fill="#fff"/>
+        <circle cx="36" cy="22" r="3" fill="#fff"/>
+        <circle cx="22" cy="36" r="3" fill="#fff"/>
+        <circle cx="8" cy="22" r="3" fill="#fff"/>
+        <rect x="18" y="18" width="8" height="8" rx="1.5" fill="#fff"/>
+      </svg>
+      <div class="header-brand-name" style="color:#1E104D">ÁgoraEX</div>
+    </div>
+  </div>
+  <div class="gracias-body">
+    <div class="gracias-check">
+      <svg width="42" height="42" viewBox="0 0 42 42" fill="none"><path d="M8 21L17 30L34 12" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div class="gracias-title">¡Gracias!</div>
+    <div class="gracias-sub">Tu idea ayudará a mejorar los servicios públicos.</div>
+    <div class="gracias-count" id="gracias-count">Ya han participado 1 persona.</div>
+  </div>
+  <div class="btn-wrap">
+    <button class="btn btn-outline" onclick="resetSurvey()">Nueva encuesta</button>
+  </div>
+  <div class="footer">
+    <div class="footer-eu">
+      <svg id="eu-flag-d1-g" viewBox="0 0 60 40" width="52" height="34"><rect width="60" height="40" fill="#003399" rx="3"/></svg>
+      <span class="footer-eu-text">Cofinanciado por la Unión Europea</span>
+    </div>
+    <span class="footer-sep">|</span>
+    <span class="footer-junta">Junta de Extremadura</span>
+  </div>
+</div>
+
+</div>
+
+<script>
+var S = { p1: '', p2: '', p4: 0 };
+
+var P2_DATA = {
+  tramites: {
+    title: 'Los trámites deberían ser...',
+    opts: ['Más rápidos','Más sencillos','Sin tanto papeleo','Totalmente online']
+  },
+  atencion: {
+    title: 'La atención debería ser...',
+    opts: ['Más cercana','Más rápida','Más personalizada','Disponible 24/7']
+  },
+  digital: {
+    title: 'Los servicios digitales deberían ser...',
+    opts: ['Más fáciles de usar','Más intuitivos','Todo desde el móvil','Con IA que ayude']
+  }
+};
+
+function goTo(id) {
+  var screens = document.querySelectorAll('.screen');
+  screens.forEach(function(s) {
+    s.classList.remove('active','fade-in');
+    s.style.display = 'none';
+  });
+  var target = document.getElementById('sc-' + id);
+  if (target) {
+    target.style.display = 'flex';
+    target.classList.add('active','fade-in');
+    target.scrollTop = 0;
+  }
+}
+
+function selectP1(val, el) {
+  S.p1 = val;
+  document.querySelectorAll('#sc-p1 .opt-card').forEach(function(c) {
+    c.classList.remove('selected');
+  });
+  el.classList.add('selected');
+  buildP2();
+  setTimeout(function() { goTo('p2'); }, 400);
+}
+
+function buildP2() {
+  var data = P2_DATA[S.p1];
+  if (!data) return;
+  document.getElementById('p2-title').textContent = data.title;
+  var container = document.getElementById('p2-pills');
+  container.innerHTML = '';
+  S.p2 = '';
+  document.getElementById('btn-p2-next').disabled = true;
+  data.opts.forEach(function(opt) {
+    var btn = document.createElement('button');
+    btn.className = 'opt-pill';
+    btn.innerHTML = '<span>' + opt + '</span><svg class="opt-pill-check" width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="11" r="10" fill="rgba(255,255,255,.3)"/><path d="M6.5 11L9.5 14L15.5 8" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    btn.setAttribute('data-val', opt);
+    btn.onclick = function() { selectP2(opt, btn); };
+    container.appendChild(btn);
+  });
+}
+
+function selectP2(val, el) {
+  S.p2 = val;
+  document.querySelectorAll('#p2-pills .opt-pill').forEach(function(b) {
+    b.classList.remove('selected');
+  });
+  el.classList.add('selected');
+  document.getElementById('btn-p2-next').disabled = false;
+}
+
+function updateCounter() {
+  var ta = document.getElementById('inp-p3');
+  var counter = document.getElementById('char-counter');
+  var len = ta.value.length;
+  counter.textContent = len + ' / 140';
+  counter.className = 'char-counter';
+  if (len >= 140) counter.classList.add('limit');
+  else if (len >= 120) counter.classList.add('warn');
+}
+
+function selectStar(n) {
+  S.p4 = n;
+  var btns = document.querySelectorAll('#stars-row .star-btn');
+  btns.forEach(function(btn, i) {
+    var poly = btn.querySelector('polygon');
+    if (i < n) {
+      poly.setAttribute('fill','#205CF2');
+      poly.setAttribute('stroke','#205CF2');
+    } else {
+      poly.setAttribute('fill','none');
+      poly.setAttribute('stroke','#C0C8D8');
+    }
+  });
+  document.getElementById('btn-p4-fin').disabled = false;
+}
+
+function saveD1() {
+  var responses = JSON.parse(localStorage.getItem('agx_d1_responses') || '[]');
+  var p3val = document.getElementById('inp-p3') ? document.getElementById('inp-p3').value.trim() : '';
+  responses.push({ p1: S.p1, p2: S.p2, p3: p3val, p4: S.p4, timestamp: Date.now() });
+  localStorage.setItem('agx_d1_responses', JSON.stringify(responses));
+  return responses.length;
+}
+
+function finalizar() {
+  var count = saveD1();
+  var el = document.getElementById('gracias-count');
+  if (count === 1) {
+    el.textContent = 'Ya ha participado 1 persona.';
+  } else {
+    el.textContent = 'Ya han participado ' + count + ' personas.';
+  }
+  goTo('gracias');
+}
+
+function resetSurvey() {
+  S = { p1: '', p2: '', p4: 0 };
+  document.getElementById('inp-p3').value = '';
+  document.getElementById('char-counter').textContent = '0 / 140';
+  document.getElementById('char-counter').className = 'char-counter';
+  document.getElementById('btn-p4-fin').disabled = true;
+  document.querySelectorAll('#stars-row .star-btn polygon').forEach(function(poly) {
+    poly.setAttribute('fill','none');
+    poly.setAttribute('stroke','#C0C8D8');
+  });
+  document.querySelectorAll('#sc-p1 .opt-card').forEach(function(c) { c.classList.remove('selected'); });
+  goTo('welcome');
+}
+
+function starPoints(cx, cy, R, r) {
+  var pts = [];
+  for (var i=0; i<10; i++) {
+    var a = -Math.PI/2 + i*Math.PI/5;
+    var rad = (i%2===0) ? R : r;
+    pts.push((cx+rad*Math.cos(a)).toFixed(2)+','+(cy+rad*Math.sin(a)).toFixed(2));
+  }
+  return pts.join(' ');
+}
+
+function buildEUFlag(svgId) {
+  var svg = document.getElementById(svgId);
+  if(!svg) return;
+  var g = document.createElementNS('http://www.w3.org/2000/svg','g');
+  g.setAttribute('fill','#FFCC00');
+  for(var k=0;k<12;k++) {
+    var a = -Math.PI/2 + k*Math.PI/6;
+    var poly = document.createElementNS('http://www.w3.org/2000/svg','polygon');
+    poly.setAttribute('points', starPoints(30+13*Math.cos(a), 20+13*Math.sin(a), 2.8, 1.1));
+    g.appendChild(poly);
+  }
+  svg.appendChild(g);
+}
+
+buildEUFlag('eu-flag-d1');
+buildEUFlag('eu-flag-d1-g');
+
+var _initScreen = document.getElementById('sc-welcome');
+if (_initScreen) { _initScreen.style.display = 'flex'; }
+</script>
+</body>
+</html>

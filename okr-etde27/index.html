@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OKR ETDE27 — Seguimiento Estratégico · Extremadura 2027</title>
+  <meta name="description" content="Herramienta de seguimiento de OKRs de la Estrategia de Transformación Digital de Extremadura 2027 (ETDE27). 4 ejes estratégicos, 28 indicadores.">
+  <link rel="stylesheet" href="css/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<div id="layout">
+
+  <!-- ══ SIDEBAR ══════════════════════════════════════════════ -->
+  <aside id="sidebar">
+
+    <div class="sb-logo">
+      <div class="sb-logo-badge">ETDE27</div>
+      <div class="sb-logo-title">Seguimiento OKR</div>
+      <div class="sb-logo-sub">Estrategia de Transformación Digital de Extremadura 2027</div>
+    </div>
+
+    <div class="sb-section">Panel de control</div>
+    <ul class="sb-nav">
+      <li>
+        <a href="#" data-view="dashboard">
+          <span class="sb-icon">⬡</span>
+          <span>Resumen ejecutivo</span>
+        </a>
+      </li>
+    </ul>
+
+    <div class="sb-section">Ejes estratégicos</div>
+    <ul class="sb-nav">
+      <li>
+        <a href="#" data-view="eje-1">
+          <span class="sb-eje-dot" style="background:#1D4ED8"></span>
+          <span>Eje 1 · Administración digital</span>
+        </a>
+      </li>
+      <li>
+        <a href="#" data-view="eje-2">
+          <span class="sb-eje-dot" style="background:#7C3AED"></span>
+          <span>Eje 2 · Conectividad</span>
+        </a>
+      </li>
+      <li>
+        <a href="#" data-view="eje-3">
+          <span class="sb-eje-dot" style="background:#059669"></span>
+          <span>Eje 3 · Sociedad digital</span>
+        </a>
+      </li>
+      <li>
+        <a href="#" data-view="eje-4">
+          <span class="sb-eje-dot" style="background:#D97706"></span>
+          <span>Eje 4 · Innovación empresarial</span>
+        </a>
+      </li>
+    </ul>
+
+    <div class="sb-section">Análisis</div>
+    <ul class="sb-nav">
+      <li>
+        <a href="#" data-view="indicadores">
+          <span class="sb-icon">≡</span>
+          <span>Todos los indicadores</span>
+        </a>
+      </li>
+      <li>
+        <a href="#" data-view="evolucion">
+          <span class="sb-icon">↗</span>
+          <span>Evolución base→objetivo</span>
+        </a>
+      </li>
+      <li>
+        <a href="#" data-view="alertas">
+          <span class="sb-icon">⚑</span>
+          <span>Alertas y prioridades</span>
+        </a>
+      </li>
+    </ul>
+
+    <div class="sb-section">Gestión</div>
+    <ul class="sb-nav">
+      <li>
+        <a href="#" data-view="actualizar">
+          <span class="sb-icon">✎</span>
+          <span>Actualización de datos</span>
+        </a>
+      </li>
+      <li>
+        <a href="#" data-view="informe">
+          <span class="sb-icon">⎙</span>
+          <span>Informe ejecutivo</span>
+        </a>
+      </li>
+    </ul>
+
+    <div class="sb-footer">
+      OTID — Oficina de Transformación e Innovación Digital<br>
+      Accenture · Junta de Extremadura<br>
+      Versión 1.0 · Octubre 2026
+    </div>
+  </aside>
+
+  <!-- ══ MAIN CONTENT ══════════════════════════════════════════ -->
+  <main id="main">
+
+    <!-- ── DASHBOARD ──────────────────────────────────────── -->
+    <div id="v-dashboard" class="view">
+      <div class="page-hd">
+        <div class="page-hd-left">
+          <h1>Resumen ejecutivo · ETDE27</h1>
+          <p>Estado global de los 28 indicadores de los 4 ejes estratégicos</p>
+        </div>
+        <div class="page-hd-right">
+          <span class="meta-tag" id="pill-last-update">—</span>
+          <span class="meta-tag" id="pill-total">—</span>
+        </div>
+      </div>
+      <div class="view-inner">
+        <div id="v-dashboard-inner"></div>
+      </div>
+    </div>
+
+    <!-- ── EJE 1 ───────────────────────────────────────────── -->
+    <div id="v-eje-1" class="view">
+      <div class="page-hd">
+        <div class="page-hd-left">
+          <h1>Eje 1 · Administración al servicio de la ciudadanía</h1>
+          <p>Indicadores de transformación de la Administración extremeña</p>
+        </div>
+        <div class="page-hd-right">
+          <button class="btn btn-ghost btn-sm" onclick="navigate('dashboard')">← Volver al resumen</button>
+        </div>
+      </div>
+      <div class="view-inner">
+        <div id="v-eje-1-inner"></div>
+      </div>
+    </div>
+
+    <!-- ── EJE 2 ───────────────────────────────────────────── -->
+    <div id="v-eje-2" class="view">
+      <div class="page-hd">
+        <div class="page-hd-left">
+          <h1>Eje 2 · Conectividad para un territorio más inteligente y seguro</h1>
+          <p>Indicadores de infraestructura digital, conectividad y ciberseguridad</p>
+        </div>
+        <div class="page-hd-right">
+          <button class="btn btn-ghost btn-sm" onclick="navigate('dashboard')">← Volver al resumen</button>
+        </div>
+      </div>
+      <div class="view-inner">
+        <div id="v-eje-2-inner"></div>
+      </div>
+    </div>
+
+    <!-- ── EJE 3 ───────────────────────────────────────────── -->
+    <div id="v-eje-3" class="view">
+      <div class="page-hd">
+        <div class="page-hd-left">
+          <h1>Eje 3 · Hacia una sociedad digital</h1>
+          <p>Indicadores de competencias, inclusión digital y talento</p>
+        </div>
+        <div class="page-hd-right">
+          <button class="btn btn-ghost btn-sm" onclick="navigate('dashboard')">← Volver al resumen</button>
+        </div>
+      </div>
+      <div class="view-inner">
+        <div id="v-eje-3-inner"></div>
+      </div>
+    </div>
+
+    <!-- ── EJE 4 ───────────────────────────────────────────── -->
+    <div id="v-eje-4" class="view">
+      <div class="page-hd">
+        <div class="page-hd-left">
+          <h1>Eje 4 · Construyendo una región competitiva e innovadora</h1>
+          <p>Indicadores de digitalización empresarial e innovación regional</p>
+        </div>
+        <div class="page-hd-right">
+          <button class="btn btn-ghost btn-sm" onclick="navigate('dashboard')">← Volver al resumen</button>
+        </div>
+      </div>
+      <div class="view-inner">
+        <div id="v-eje-4-inner"></div>
+      </div>
+    </div>
+
+    <!-- ── INDICADORES ─────────────────────────────────────── -->
+    <div id="v-indicadores" class="view">
+      <div class="page-hd">
+        <div class="page-hd-left">
+          <h1>Todos los indicadores</h1>
+          <p>Tabla completa con filtros, búsqueda y ordenación por cualquier columna</p>
+        </div>
+        <div class="page-hd-right">
+          <button class="btn btn-ghost btn-sm" onclick="exportJSON()">⬇ JSON</button>
+          <button class="btn btn-ghost btn-sm" onclick="exportCSV()">⬇ CSV</button>
+        </div>
+      </div>
+      <div class="view-inner">
+        <div id="v-indicadores-inner"></div>
+      </div>
+    </div>
+
+    <!-- ── EVOLUCIÓN ───────────────────────────────────────── -->
+    <div id="v-evolucion" class="view">
+      <div class="page-hd">
+        <div class="page-hd-left">
+          <h1>Evolución base → actual → objetivo</h1>
+          <p>Visualización del progreso de cada indicador desde la situación de partida hasta la meta 2027</p>
+        </div>
+      </div>
+      <div class="view-inner">
+        <div id="v-evolucion-inner"></div>
+      </div>
+    </div>
+
+    <!-- ── ALERTAS ─────────────────────────────────────────── -->
+    <div id="v-alertas" class="view">
+      <div class="page-hd">
+        <div class="page-hd-left">
+          <h1>Alertas y prioridades</h1>
+          <p>Indicadores clasificados por estado: urgente, en riesgo, en seguimiento y logros</p>
+        </div>
+      </div>
+      <div class="view-inner">
+        <div id="v-alertas-inner"></div>
+      </div>
+    </div>
+
+    <!-- ── ACTUALIZAR ──────────────────────────────────────── -->
+    <div id="v-actualizar" class="view">
+      <div class="page-hd">
+        <div class="page-hd-left">
+          <h1>Actualización de datos</h1>
+          <p>Edita los valores actuales de los indicadores. Los cambios se guardan en el navegador (localStorage).</p>
+        </div>
+        <div class="page-hd-right">
+          <button class="btn btn-ghost btn-sm" onclick="exportJSON()">⬇ Exportar JSON</button>
+          <button class="btn btn-ghost btn-sm" onclick="exportCSV()">⬇ Exportar CSV</button>
+          <button class="btn btn-ghost btn-sm" onclick="triggerImport()">⬆ Importar JSON</button>
+        </div>
+      </div>
+      <div class="view-inner">
+        <div id="v-actualizar-inner"></div>
+      </div>
+    </div>
+
+    <!-- ── INFORME ─────────────────────────────────────────── -->
+    <div id="v-informe" class="view">
+      <div class="page-hd">
+        <div class="page-hd-left">
+          <h1>Informe ejecutivo</h1>
+          <p>Resumen generado automáticamente con los datos actuales. Use Ctrl+P para imprimir o guardar como PDF.</p>
+        </div>
+      </div>
+      <div class="view-inner">
+        <div id="v-informe-inner"></div>
+      </div>
+    </div>
+
+  </main><!-- /#main -->
+
+</div><!-- /#layout -->
+
+<!-- ══ MODAL DE ACTUALIZACIÓN ═══════════════════════════════ -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="modal-heading">
+    <div class="modal-hd">
+      <div class="modal-title" id="modal-heading">Actualizar indicador</div>
+      <button class="modal-close" onclick="closeModal()" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-ft">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" id="modal-save-btn" onclick="saveModal()">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TOASTS ════════════════════════════════════════════════ -->
+<div id="toasts" aria-live="polite"></div>
+
+<!-- ══ SCRIPTS ══════════════════════════════════════════════ -->
+<script src="js/data.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ranking Ciudadano · Dinámica: Priorización de Retos · Congreso Potencial Digital 2026</title>
+<style>
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  padding: 0;
+  background: #205CF2;
+  color: white;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+#header {
+  height: 68px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  background: rgba(0,0,0,0.15);
+  border-bottom: 1px solid rgba(255,255,255,0.15);
+}
+.h-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+}
+.h-logo-text {
+  font-size: 18px;
+  font-weight: 700;
+  color: white;
+}
+.h-center {
+  flex: 1;
+  text-align: center;
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: white;
+}
+.h-right {
+  flex: 1;
+  text-align: right;
+  font-size: 14px;
+  color: #5ADAA4;
+}
+#main {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 20px;
+  padding: 16px 28px;
+  overflow: hidden;
+  min-height: 0;
+}
+#left-col {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+#right-col {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+.section-label {
+  font-size: 12px;
+  color: rgba(255,255,255,0.6);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 600;
+  margin-bottom: 8px;
+  flex-shrink: 0;
+}
+#podium-wrap {
+  flex-shrink: 0;
+}
+#podium {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 10px;
+}
+.pod-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
+.pod-card {
+  width: 100%;
+  background: rgba(255,255,255,0.1);
+  border-radius: 10px;
+  padding: 10px 8px;
+  text-align: center;
+  margin-bottom: 4px;
+}
+.pod-badge {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 800;
+  margin: 0 auto 6px;
+}
+.pod-badge-1 { background: #F59E0B; color: #1E104D; }
+.pod-badge-2 { background: #94A3B8; color: #1E104D; }
+.pod-badge-3 { background: #CD7C2F; color: #1E104D; }
+.pod-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: white;
+  line-height: 1.3;
+  margin-bottom: 6px;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.pod-votes {
+  font-size: 26px;
+  font-weight: 800;
+  color: white;
+  line-height: 1;
+}
+.pod-platform {
+  width: 100%;
+  border-radius: 4px 4px 0 0;
+}
+.pod-platform-1 {
+  height: 80px;
+  background: rgba(245,158,11,0.3);
+  border: 2px solid rgba(245,158,11,0.65);
+  border-bottom: none;
+}
+.pod-platform-2 {
+  height: 60px;
+  background: rgba(148,163,184,0.3);
+  border: 2px solid rgba(148,163,184,0.65);
+  border-bottom: none;
+}
+.pod-platform-3 {
+  height: 44px;
+  background: rgba(205,124,47,0.3);
+  border: 2px solid rgba(205,124,47,0.65);
+  border-bottom: none;
+}
+#pattern-section {
+  margin-top: 16px;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.pattern-label {
+  font-size: 11px;
+  color: rgba(255,255,255,0.55);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 600;
+  margin-bottom: 6px;
+  flex-shrink: 0;
+}
+#pattern-card {
+  background: rgba(255,255,255,0.12);
+  border-radius: 12px;
+  padding: 14px;
+}
+#pattern-text {
+  font-size: 14px;
+  color: rgba(255,255,255,0.9);
+  line-height: 1.55;
+  margin: 0;
+}
+.ranking-list {
+  flex: 1;
+  overflow-y: auto;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  min-height: 0;
+}
+.ranking-list::-webkit-scrollbar {
+  display: none;
+}
+.rank-row {
+  display: flex;
+  align-items: center;
+  padding: 8px 14px;
+  border-radius: 8px;
+  margin-bottom: 6px;
+  background: rgba(255,255,255,0.09);
+  transition: background 0.4s;
+}
+.rank-row.top3 {
+  background: rgba(255,255,255,0.14);
+}
+.rank-num {
+  font-size: 18px;
+  font-weight: 700;
+  color: white;
+  min-width: 28px;
+}
+.rank-label {
+  font-size: 14px;
+  color: white;
+  font-weight: 500;
+  flex: 1;
+  margin: 0 12px;
+}
+.rank-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.rank-bar-wrap {
+  width: 80px;
+  height: 6px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.rank-bar-fill {
+  height: 100%;
+  background: #5ADAA4;
+  border-radius: 3px;
+  width: 0%;
+  transition: width 0.6s ease;
+}
+.rank-count {
+  font-size: 13px;
+  color: #5ADAA4;
+  font-weight: 600;
+  min-width: 54px;
+  text-align: right;
+}
+#footer {
+  height: 50px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  background: rgba(0,0,0,0.15);
+  border-top: 1px solid rgba(255,255,255,0.12);
+  justify-content: space-between;
+}
+.footer-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.footer-left span {
+  font-size: 13px;
+  color: rgba(255,255,255,0.6);
+}
+.footer-right {
+  font-family: Georgia, 'Times New Roman', serif;
+  text-transform: uppercase;
+  font-size: 12px;
+  color: rgba(255,255,255,0.6);
+  letter-spacing: 0.05em;
+}
+</style>
+</head>
+<body>
+
+<div id="header">
+  <div class="h-left">
+    <svg width="40" height="40" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <line x1="22" y1="22" x2="31" y2="13" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+      <line x1="22" y1="22" x2="31" y2="31" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+      <line x1="22" y1="22" x2="13" y2="31" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+      <line x1="22" y1="22" x2="13" y2="13" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+      <line x1="22" y1="22" x2="22" y2="8" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+      <line x1="22" y1="22" x2="36" y2="22" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+      <line x1="22" y1="22" x2="22" y2="36" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+      <line x1="22" y1="22" x2="8" y2="22" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+      <line x1="31" y1="13" x2="37" y2="7" stroke="#5ADAA4" stroke-width="1" stroke-linecap="round" opacity=".7"/>
+      <line x1="31" y1="31" x2="37" y2="37" stroke="#5ADAA4" stroke-width="1" stroke-linecap="round" opacity=".7"/>
+      <line x1="13" y1="31" x2="7" y2="37" stroke="#5ADAA4" stroke-width="1" stroke-linecap="round" opacity=".7"/>
+      <line x1="13" y1="13" x2="7" y2="7" stroke="#5ADAA4" stroke-width="1" stroke-linecap="round" opacity=".7"/>
+      <circle cx="37" cy="7" r="2.5" fill="#5ADAA4" opacity=".75"/>
+      <circle cx="37" cy="37" r="2.5" fill="#5ADAA4" opacity=".75"/>
+      <circle cx="7" cy="37" r="2.5" fill="#5ADAA4" opacity=".75"/>
+      <circle cx="7" cy="7" r="2.5" fill="#5ADAA4" opacity=".75"/>
+      <circle cx="31" cy="13" r="5" fill="#5ADAA4"/>
+      <circle cx="31" cy="31" r="5" fill="#5ADAA4"/>
+      <circle cx="13" cy="31" r="5" fill="#5ADAA4"/>
+      <circle cx="13" cy="13" r="5" fill="#5ADAA4"/>
+      <circle cx="22" cy="8" r="3" fill="white"/>
+      <circle cx="36" cy="22" r="3" fill="white"/>
+      <circle cx="22" cy="36" r="3" fill="white"/>
+      <circle cx="8" cy="22" r="3" fill="white"/>
+      <rect x="18" y="18" width="8" height="8" rx="1.5" fill="white"/>
+    </svg>
+    <span class="h-logo-text">ÁgoraEX</span>
+  </div>
+  <div class="h-center">RANKING CIUDADANO</div>
+  <div class="h-right" id="live-info">0 participantes · 00:00:00</div>
+</div>
+
+<div id="main">
+  <div id="left-col">
+    <div id="podium-wrap">
+      <div class="section-label">TOP 3</div>
+      <div id="podium">
+        <div class="pod-item">
+          <div class="pod-card" id="pod-2">
+            <div class="pod-badge pod-badge-2">2</div>
+            <div class="pod-label" id="pod-label-2">—</div>
+            <div class="pod-votes" id="pod-votes-2">0</div>
+          </div>
+          <div class="pod-platform pod-platform-2"></div>
+        </div>
+        <div class="pod-item">
+          <div class="pod-card" id="pod-1">
+            <div class="pod-badge pod-badge-1">1</div>
+            <div class="pod-label" id="pod-label-1">—</div>
+            <div class="pod-votes" id="pod-votes-1">0</div>
+          </div>
+          <div class="pod-platform pod-platform-1"></div>
+        </div>
+        <div class="pod-item">
+          <div class="pod-card" id="pod-3">
+            <div class="pod-badge pod-badge-3">3</div>
+            <div class="pod-label" id="pod-label-3">—</div>
+            <div class="pod-votes" id="pod-votes-3">0</div>
+          </div>
+          <div class="pod-platform pod-platform-3"></div>
+        </div>
+      </div>
+    </div>
+    <div id="pattern-section">
+      <div class="pattern-label">PATRONES DETECTADOS</div>
+      <div id="pattern-card">
+        <p id="pattern-text"></p>
+      </div>
+    </div>
+  </div>
+
+  <div id="right-col">
+    <div class="section-label">CLASIFICACIÓN COMPLETA</div>
+    <div class="ranking-list" id="ranking-table"></div>
+  </div>
+</div>
+
+<div id="footer">
+  <div class="footer-left">
+    <svg id="eu-retos-dash" width="57" height="38" viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg">
+      <rect width="60" height="40" fill="#003399"/>
+    </svg>
+    <span>Cofinanciado por la Unión Europea</span>
+  </div>
+  <div class="footer-right">Junta de Extremadura</div>
+</div>
+
+<script>
+var RETOS = [
+  { id: 'tiempos',    label: 'Reducir los tiempos de espera',                       cat: 'rapidez' },
+  { id: 'papeleo',    label: 'Eliminar papeleo innecesario',                         cat: 'simplificacion' },
+  { id: 'movil',      label: 'Trámites desde el móvil',                              cat: 'digital' },
+  { id: 'documentos', label: 'No aportar documentos que ya tiene la Administración', cat: 'simplificacion' },
+  { id: 'ia',         label: 'Incorporar asistentes con IA',                         cat: 'digital' },
+  { id: 'cita',       label: 'Mejorar la cita previa',                               cat: 'rapidez' },
+  { id: 'mayores',    label: 'Trámites más sencillos para mayores',                  cat: 'simplificacion' },
+  { id: 'avisos',     label: 'Recibir avisos del expediente',                        cat: 'digital' },
+  { id: 'atencion',   label: 'Mejor atención al ciudadano',                          cat: 'atencion' },
+  { id: 'plataforma', label: 'Unificar trámites en una única plataforma',            cat: 'digital' },
+];
+
+var CAT_LABELS = {
+  simplificacion: 'Simplificación administrativa',
+  rapidez:        'Rapidez y respuesta',
+  digital:        'Digitalización',
+  atencion:       'Atención ciudadana'
+};
+
+var DEMO = [
+  { retos: ['papeleo','tiempos','cita'], porqué: '' },
+  { retos: ['papeleo','movil','ia'], porqué: '' },
+  { retos: ['tiempos','documentos','papeleo'], porqué: '' },
+  { retos: ['movil','avisos','plataforma'], porqué: '' },
+  { retos: ['papeleo','mayores','atencion'], porqué: '' },
+  { retos: ['cita','tiempos','avisos'], porqué: '' },
+  { retos: ['documentos','papeleo','tiempos'], porqué: '' },
+];
+
+function starPoints(cx,cy,R,r){var pts=[];for(var i=0;i<10;i++){var a=-Math.PI/2+i*Math.PI/5;var rad=(i%2===0)?R:r;pts.push((cx+rad*Math.cos(a)).toFixed(2)+','+(cy+rad*Math.sin(a)).toFixed(2));}return pts.join(' ');}
+function buildEUFlag(svgId){var svg=document.getElementById(svgId);if(!svg)return;var g=document.createElementNS('http://www.w3.org/2000/svg','g');g.setAttribute('fill','#FFCC00');for(var k=0;k<12;k++){var a=-Math.PI/2+k*Math.PI/6;var poly=document.createElementNS('http://www.w3.org/2000/svg','polygon');poly.setAttribute('points',starPoints(30+13*Math.cos(a),20+13*Math.sin(a),2.8,1.1));g.appendChild(poly);}svg.appendChild(g);}
+
+function getData() {
+  var raw = JSON.parse(localStorage.getItem('agx_retos_responses') || '[]');
+  if(raw.length === 0) raw = DEMO;
+  var total = raw.length;
+  var votes = {};
+  RETOS.forEach(function(r){ votes[r.id] = 0; });
+  raw.forEach(function(resp) {
+    if(resp.retos) resp.retos.forEach(function(id){ if(votes[id] !== undefined) votes[id]++; });
+  });
+  var sorted = RETOS.map(function(r){ return { id:r.id, label:r.label, cat:r.cat, votes:votes[r.id] }; })
+    .sort(function(a,b){ return b.votes - a.votes; });
+  return { total: total, votes: votes, sorted: sorted };
+}
+
+function generatePattern(voteCounts) {
+  var catVotes = { simplificacion: 0, rapidez: 0, digital: 0, atencion: 0 };
+  RETOS.forEach(function(r) { catVotes[r.cat] = (catVotes[r.cat]||0) + (voteCounts[r.id]||0); });
+  var sorted = Object.keys(catVotes).sort(function(a,b){ return catVotes[b]-catVotes[a]; });
+  var top = sorted[0], second = sorted[1];
+  var sentences = [
+    'La ciudadanía concentra sus prioridades en <strong>' + CAT_LABELS[top] + '</strong>, con ' + catVotes[top] + ' votos.',
+    CAT_LABELS[second] + ' aparece como segunda preocupación (' + catVotes[second] + ' votos).',
+    'Los resultados apuntan a una demanda de servicios más ágiles y accesibles.'
+  ];
+  return sentences.join(' ');
+}
+
+function buildRankingRows() {
+  var table = document.getElementById('ranking-table');
+  RETOS.forEach(function(r) {
+    var row = document.createElement('div');
+    row.className = 'rank-row';
+    row.id = 'rank-row-' + r.id;
+    row.innerHTML =
+      '<div class="rank-num" id="rank-num-' + r.id + '">—</div>' +
+      '<div class="rank-label" id="rank-label-' + r.id + '">' + r.label + '</div>' +
+      '<div class="rank-right">' +
+        '<div class="rank-bar-wrap"><div class="rank-bar-fill" id="rank-bar-' + r.id + '"></div></div>' +
+        '<div class="rank-count" id="rank-count-' + r.id + '">0 votos</div>' +
+      '</div>';
+    table.appendChild(row);
+  });
+}
+
+function updatePodium(sorted) {
+  [1, 2, 3].forEach(function(rank) {
+    var item = sorted[rank - 1];
+    var labelEl = document.getElementById('pod-label-' + rank);
+    var votesEl = document.getElementById('pod-votes-' + rank);
+    if(labelEl && item) {
+      labelEl.textContent = item.label;
+      votesEl.textContent = item.votes;
+    }
+  });
+}
+
+function updateRanking(sorted, votes) {
+  var maxVotes = sorted.length > 0 ? sorted[0].votes : 1;
+  if(maxVotes === 0) maxVotes = 1;
+  var table = document.getElementById('ranking-table');
+  sorted.forEach(function(item, idx) {
+    var pos = idx + 1;
+    var row = document.getElementById('rank-row-' + item.id);
+    var numEl = document.getElementById('rank-num-' + item.id);
+    var barEl = document.getElementById('rank-bar-' + item.id);
+    var countEl = document.getElementById('rank-count-' + item.id);
+    if(!row) return;
+    if(pos <= 3) {
+      row.classList.add('top3');
+    } else {
+      row.classList.remove('top3');
+    }
+    numEl.textContent = pos;
+    barEl.style.width = ((item.votes / maxVotes) * 100) + '%';
+    countEl.textContent = item.votes + ' votos';
+    table.appendChild(row);
+  });
+}
+
+function render() {
+  var d = getData();
+  var now = new Date();
+  function pad(n){return n<10?'0'+n:n;}
+  document.getElementById('live-info').textContent = d.total + ' participantes · ' + pad(now.getHours())+':'+pad(now.getMinutes())+':'+pad(now.getSeconds());
+  updatePodium(d.sorted);
+  updateRanking(d.sorted, d.votes);
+  document.getElementById('pattern-text').innerHTML = generatePattern(d.votes);
+}
+
+setInterval(render, 5000);
+
+document.addEventListener('DOMContentLoaded', function(){
+  buildEUFlag('eu-retos-dash');
+  buildRankingRows();
+  render();
+});
+</script>
+</body>
+</html>
