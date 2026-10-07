@@ -6,7 +6,7 @@
 // ── METADATOS ────────────────────────────────────────────────
 const OKR_META = {
   titulo: 'ETDE27 — Estrategia de Transformación Digital de Extremadura 2027',
-  version: '1.0',
+  version: '2.0',
   generado: '2026-10-06',
   fuentes: [
     'OTID_Informe de avances_ETDE27_v00.04.pptx (fuente principal)',
@@ -280,9 +280,11 @@ function calcProg(ind) {
 
 function getStatus(ind) {
   const p = calcProg(ind);
-  if (p >= 100) return 'achieved';
-  if (p >= 60)  return 'on_track';
-  if (p >= 30)  return 'at_risk';
+  // Umbrales configurables (v2.0). Por defecto: 100 / 60 / 30
+  const t = statusThresholds();
+  if (p >= t.achieved) return 'achieved';
+  if (p >= t.on_track) return 'on_track';
+  if (p >= t.at_risk)  return 'at_risk';
   return 'critical';
 }
 
@@ -346,17 +348,37 @@ function applyUpdates(orig) {
   });
 }
 
-function saveUpdate(id, v, fecha, obs) {
+function saveUpdate(id, v, fecha, obs, extra = {}) {
   const updates = loadUpdates();
   const ind = DATA.find(i => i.id === id);
   if (!ind) return;
-  updates[id] = { v: parseFloat(v), fecha: fecha || ind.actual.fecha, obs, _prev: ind.actual.v, _at: new Date().toISOString() };
+  // Indicadores binarios guardan 'Sí'/'No'; el resto, numérico
+  const newV = ind.bin ? String(v) : parseFloat(v);
+  updates[id] = { v: newV, fecha: fecha || ind.actual.fecha, obs, _prev: ind.actual.v, _at: new Date().toISOString() };
   localStorage.setItem(LS_KEY, JSON.stringify(updates));
   // History
   const hist = loadHistory();
-  hist.unshift({ id, nombre: ind.nombre, v: parseFloat(v), fecha, _prev: ind.actual.v, _at: updates[id]._at });
+  hist.unshift({ id, nombre: ind.nombre, v: newV, fecha, _prev: ind.actual.v, _at: updates[id]._at });
   if (hist.length > 200) hist.splice(200);
   localStorage.setItem(LS_HIST, JSON.stringify(hist));
+  // Histórico rico (v2.0)
+  try {
+    if (!getHistory2(id).length && ind.actual.v !== null && ind.actual.v !== undefined) {
+      // Primera actualización: se registra el valor vigente como punto de referencia (dato real, no inventado)
+      addRichHistoryEntry(id, {
+        v: ind.actual.v, fecha: ind.actual.fecha,
+        usuario: ind._mod ? (loadConfig().usuarioActual || 'Administrador') : 'Fuente oficial',
+        comentario: ind._mod ? 'Valor vigente previo (actualización local anterior)' : 'Valor de referencia del informe de avances (dato de partida de la herramienta)',
+        confianza: getConfidence(id), origen: 'referencia'
+      });
+    }
+    addRichHistoryEntry(id, {
+      v: newV, fecha: fecha || ind.actual.fecha,
+      comentario: extra.comentario || '',
+      confianza: extra.confianza || getConfidence(id)
+    });
+    logAudit('Actualización de valor', `${fmtNum(ind, ind.actual.v)} → ${fmtNum(ind, newV)} (dato ${fecha || ind.actual.fecha})`, id);
+  } catch (e) { console.error('Histórico v2', e); }
   refreshData();
   toast('Indicador actualizado correctamente', 'success');
 }
@@ -366,12 +388,14 @@ function resetOne(id) {
   delete updates[id];
   localStorage.setItem(LS_KEY, JSON.stringify(updates));
   refreshData();
+  try { logAudit('Restauración de valor original', 'Se elimina la actualización local', id); } catch (e) { console.error(e); }
   toast('Valor restaurado al original');
 }
 
 function resetAll() {
   localStorage.removeItem(LS_KEY);
   refreshData();
+  try { logAudit('Restauración global', 'Todos los indicadores vuelven a sus valores originales'); } catch (e) { console.error(e); }
   toast('Todos los datos restaurados a los valores originales');
 }
 
@@ -439,6 +463,7 @@ function importJSON(jsonStr) {
     if (obj.updates && typeof obj.updates === 'object') {
       localStorage.setItem(LS_KEY, JSON.stringify(obj.updates));
       refreshData();
+      try { logAudit('Importación JSON', Object.keys(obj.updates).length + ' indicadores con actualizaciones'); } catch (e) { console.error(e); }
       toast('Datos importados correctamente', 'success');
       return true;
     }
@@ -476,3 +501,512 @@ function ejeNombre(n) { return EJES.find(e => e.id === n)?.nombre      || 'Eje '
 function statusColor(st) { return STATUS_CONFIG[st]?.color || '#6B7280'; }
 function statusLabel(st) { return STATUS_CONFIG[st]?.label || st; }
 function statusBg(st)    { return STATUS_CONFIG[st]?.bg    || '#F3F4F6'; }
+
+
+/* ═══════════════════════════════════════════════════════════
+   v2.0 — EXTENSIONES DE DATOS
+   Histórico rico · confianza · ritmo · calendario · tareas ·
+   decisiones · snapshots · comentarios · evidencias · auditoría ·
+   configuración · filtros guardados · destacados
+   ═══════════════════════════════════════════════════════════ */
+
+// ── UTILIDADES ───────────────────────────────────────────────
+function uuid() { return Date.now().toString(36) + Math.random().toString(36).substr(2); }
+
+function safeLoad(key, def) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw === null || raw === undefined) return def;
+    const v = JSON.parse(raw);
+    return v === null || v === undefined ? def : v;
+  } catch { return def; }
+}
+
+function safeSave(key, val) {
+  try { localStorage.setItem(key, JSON.stringify(val)); return true; }
+  catch (e) { console.error('localStorage', key, e); toast('No se ha podido guardar en el navegador', 'error'); return false; }
+}
+
+// Fecha local a partir de 'YYYY-MM-DD' (evita desfases de zona horaria)
+function parseDate(d) {
+  if (!d) return null;
+  if (d instanceof Date) return new Date(d.getTime());
+  const [y, m, day] = String(d).slice(0, 10).split('-').map(Number);
+  if (!y) return null;
+  return new Date(y, (m || 1) - 1, day || 1);
+}
+function toISODate(dt) {
+  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+}
+function todayDate() { const t = new Date(); t.setHours(0, 0, 0, 0); return t; }
+function todayISO()  { return toISODate(new Date()); }
+function addDaysISO(iso, n) { const d = parseDate(iso); if (!d) return null; d.setDate(d.getDate() + n); return toISODate(d); }
+function daysBetween(d1, d2) { return Math.ceil((parseDate(d2) - parseDate(d1)) / 86400000); }
+
+function fmtDateTime(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (isNaN(d)) return '—';
+  return d.toLocaleString('es-ES', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+function esc(s) {
+  if (s === null || s === undefined) return '';
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+// Diferencia formateada con unidad (pp para porcentajes)
+function fmtDiff(ind, d, withSign = true) {
+  if (d === null || d === undefined || isNaN(d)) return '—';
+  const sign = withSign && d > 0 ? '+' : '';
+  const r = Math.abs(d % 1) < 1e-9 ? String(Math.round(d)) : (+d.toFixed(2)).toString();
+  if (ind.unidad === '%')   return sign + r + ' pp';
+  if (ind.unidad === '/10') return sign + d.toFixed(1);
+  if (ind.unidad === 'nº')  return sign + r;
+  return sign + r + ' ' + ind.unidad;
+}
+
+// Progreso que tendría el indicador con otro valor
+function progForValue(ind, v) {
+  return calcProg({ ...ind, actual: { ...ind.actual, v } });
+}
+
+// ── CONFIGURACIÓN ────────────────────────────────────────────
+const LS_CONFIG = 'okr-etde27-config';
+const CONFIG_DEFAULT = {
+  fechaInicioEstrategia: '2023-01-01',
+  fechaFinEstrategia: '2027-12-31',
+  fechaUltimoComite: '2026-10-01',
+  usuarioActual: 'Administrador',
+  umbralAchieved: 100,
+  umbralOnTrack: 60,
+  umbralAtRisk: 30
+};
+let _cfgCache = null;
+function loadConfig() {
+  if (!_cfgCache) {
+    try { _cfgCache = { ...CONFIG_DEFAULT, ...JSON.parse(localStorage.getItem(LS_CONFIG) || '{}') }; }
+    catch { _cfgCache = { ...CONFIG_DEFAULT }; }
+  }
+  return { ..._cfgCache };
+}
+function saveConfig(cfg) {
+  localStorage.setItem(LS_CONFIG, JSON.stringify(cfg));
+  _cfgCache = null;
+  _thrCache = null;
+}
+let _thrCache = null;
+function statusThresholds() {
+  if (_thrCache) return _thrCache;
+  const c = loadConfig();
+  const num = (v, d) => { const n = parseFloat(v); return isNaN(n) ? d : n; };
+  _thrCache = {
+    achieved: num(c.umbralAchieved, 100),
+    on_track: num(c.umbralOnTrack, 60),
+    at_risk:  num(c.umbralAtRisk, 30)
+  };
+  return _thrCache;
+}
+function currentUser() { return loadConfig().usuarioActual || 'Administrador'; }
+
+// ── AUDITORÍA ────────────────────────────────────────────────
+const LS_AUDIT = 'okr-etde27-audit';
+function loadAudit() { return safeLoad(LS_AUDIT, []); }
+function logAudit(accion, detalle = '', indicadorId = null) {
+  try {
+    const a = loadAudit();
+    a.unshift({ id: uuid(), fecha: new Date().toISOString(), usuario: currentUser(), accion, detalle, indicadorId });
+    if (a.length > 500) a.splice(500);
+    localStorage.setItem(LS_AUDIT, JSON.stringify(a));
+  } catch (e) { console.error('audit', e); }
+}
+
+// ── NIVEL DE CONFIANZA ───────────────────────────────────────
+const LS_CONFIDENCE = 'okr-etde27-confidence';
+function loadConfidence() { try { return JSON.parse(localStorage.getItem(LS_CONFIDENCE) || '{}'); } catch { return {}; } }
+function setConfidence(id, level) {
+  const c = loadConfidence();
+  const prev = c[id] || 'pendiente';
+  c[id] = level;
+  localStorage.setItem(LS_CONFIDENCE, JSON.stringify(c));
+  if (prev !== level) logAudit('Nivel de confianza', `${CONFIDENCE_CONFIG[prev]?.label || prev} → ${CONFIDENCE_CONFIG[level]?.label || level}`, id);
+}
+function getConfidence(id) { return loadConfidence()[id] || 'pendiente'; }
+
+const CONFIDENCE_CONFIG = {
+  'validado':      { label: 'Validado',      color: '#059669', bg: '#ECFDF5', border: '#A7F3D0' },
+  'provisional':   { label: 'Provisional',   color: '#D97706', bg: '#FFFBEB', border: '#FDE68A' },
+  'pendiente':     { label: 'Pendiente',     color: '#6B7280', bg: '#F9FAFB', border: '#E5E7EB' },
+  'sin_evidencia': { label: 'Sin evidencia', color: '#DC2626', bg: '#FEF2F2', border: '#FECACA' }
+};
+
+// ── HISTÓRICO RICO ───────────────────────────────────────────
+const LS_HIST2 = 'okr-etde27-history2';
+function loadHistory2() { return safeLoad(LS_HIST2, []); }
+function addRichHistoryEntry(id, entry = {}) {
+  const all = loadHistory2();
+  all.push({
+    id,
+    v: entry.v,
+    fecha: entry.fecha || todayISO(),
+    cargadoEn: entry.cargadoEn || new Date().toISOString(),
+    usuario: entry.usuario || currentUser(),
+    comentario: entry.comentario || '',
+    confianza: entry.confianza || getConfidence(id),
+    origen: entry.origen || 'manual'
+  });
+  if (all.length > 3000) all.splice(0, all.length - 3000);
+  safeSave(LS_HIST2, all);
+}
+function getHistory2(id) {
+  return loadHistory2()
+    .filter(h => h.id === id)
+    .sort((a, b) => (b.fecha || '').localeCompare(a.fecha || '') || (b.cargadoEn || '').localeCompare(a.cargadoEn || ''));
+}
+
+// ── RITMO NECESARIO Y VIABILIDAD ─────────────────────────────
+const VIABILITY_CONFIG = {
+  alineado:              { label: 'Alineado',               color: '#059669', bg: '#ECFDF5', border: '#A7F3D0' },
+  requiere_aceleracion:  { label: 'Requiere aceleración',   color: '#D97706', bg: '#FFFBEB', border: '#FDE68A' },
+  riesgo_incumplimiento: { label: 'Riesgo de incumplimiento', color: '#DC2626', bg: '#FEF2F2', border: '#FECACA' },
+  sin_datos:             { label: 'Sin datos de ritmo',     color: '#6B7280', bg: '#F9FAFB', border: '#E5E7EB' }
+};
+
+function calcRhythm(ind) {
+  if (ind.bin) return null;
+  const a = +ind.actual.v, o = +ind.obj;
+  if (isNaN(a) || isNaN(o)) return null;
+  const p = calcProg(ind);
+  if (p >= 100) return { cumplido: true };
+
+  const MS_MES = 1000 * 60 * 60 * 24 * 30.5;
+  const end = parseDate(loadConfig().fechaFinEstrategia) || new Date(2027, 11, 31);
+  const mesesRestantes = Math.max(1, (end - todayDate()) / MS_MES);
+  const trimestresRestantes = mesesRestantes / 3;
+  // Todos los indicadores de la ETDE27 avanzan "hacia arriba" (también los invertidos,
+  // que miden un % de reducción): la brecha es siempre objetivo − actual.
+  const brechaRestante = o - a;
+  const ritmoNecesarioTrimestre = brechaRestante / trimestresRestantes;
+
+  // Ritmo real: 1) histórico rico si hay ≥2 registros; 2) si no, base → actual
+  let ritmoRealTrimestre = null, fuenteRitmo = null;
+  const hist = getHistory2(ind.id).filter(h => h.fecha && !isNaN(parseFloat(h.v)));
+  if (hist.length >= 2) {
+    const h1 = hist[0], h2 = hist[hist.length - 1];
+    const meses = (parseDate(h1.fecha) - parseDate(h2.fecha)) / MS_MES;
+    if (meses >= 0.5) {
+      ritmoRealTrimestre = ((parseFloat(h1.v) - parseFloat(h2.v)) / meses) * 3;
+      fuenteRitmo = 'historico';
+    }
+  }
+  if (ritmoRealTrimestre === null && ind.base.v !== null && ind.base.v !== undefined && ind.actual.fecha) {
+    const baseDate = new Date(ind.base.año || 2023, 11, 31); // base anual: se toma cierre del año
+    const meses = (parseDate(ind.actual.fecha) - baseDate) / MS_MES;
+    if (meses >= 1) {
+      ritmoRealTrimestre = ((a - ind.base.v) / meses) * 3;
+      fuenteRitmo = 'base';
+    }
+  }
+
+  let viabilidad = 'sin_datos';
+  if (ritmoRealTrimestre !== null) {
+    if (ritmoRealTrimestre >= ritmoNecesarioTrimestre) viabilidad = 'alineado';
+    else if (ritmoRealTrimestre >= ritmoNecesarioTrimestre * 0.6) viabilidad = 'requiere_aceleracion';
+    else viabilidad = 'riesgo_incumplimiento';
+  }
+  const proyeccion = ritmoRealTrimestre !== null ? a + ritmoRealTrimestre * trimestresRestantes : null;
+
+  return {
+    cumplido: false,
+    brechaRestante,
+    unidad: ind.unidad,
+    mesesRestantes: Math.round(mesesRestantes),
+    trimestresRestantes: Math.round(trimestresRestantes * 10) / 10,
+    ritmoNecesarioTrimestre,
+    ritmoRealTrimestre,
+    fuenteRitmo,
+    proyeccion,
+    viabilidad
+  };
+}
+
+// ── CALENDARIO DE ACTUALIZACIONES ────────────────────────────
+const PER_DAYS = { 'Mensual': 30, 'Trimestral': 90, 'Semestral': 180, 'Anual': 365 };
+const UPDATE_STATUS_CONFIG = {
+  vencido:   { label: 'Vencido',          color: '#DC2626', bg: '#FEF2F2', border: '#FECACA' },
+  proximo:   { label: 'Próximo a vencer', color: '#D97706', bg: '#FFFBEB', border: '#FDE68A' },
+  al_dia:    { label: 'Al día',           color: '#059669', bg: '#ECFDF5', border: '#A7F3D0' },
+  sin_fecha: { label: 'Sin fecha',        color: '#6B7280', bg: '#F9FAFB', border: '#E5E7EB' }
+};
+
+// Indicadores sin periodicidad definida (p.ej. 'n/a') no generan vencimiento
+function nextUpdateDate(ind) {
+  if (!ind.actual.fecha) return null;
+  const days = PER_DAYS[ind.per];
+  if (!days) return null;
+  return addDaysISO(ind.actual.fecha, days);
+}
+function daysToNextUpdate(ind) {
+  const next = nextUpdateDate(ind);
+  if (!next) return null;
+  return Math.round((parseDate(next) - todayDate()) / 86400000);
+}
+function updateStatus(ind) {
+  const diffDays = daysToNextUpdate(ind);
+  if (diffDays === null) return 'sin_fecha';
+  if (diffDays < 0) return 'vencido';
+  if (diffDays <= 30) return 'proximo';
+  return 'al_dia';
+}
+
+// ── TAREAS ───────────────────────────────────────────────────
+const LS_TASKS = 'okr-etde27-tasks';
+const TASK_STATES = {
+  pendiente:  { label: 'Pendiente',  color: '#6B7280' },
+  en_curso:   { label: 'En curso',   color: '#2563EB' },
+  bloqueada:  { label: 'Bloqueada',  color: '#DC2626' },
+  completada: { label: 'Completada', color: '#059669' }
+};
+const PRIORITY_CONFIG = {
+  alta:  { label: 'Alta',  color: '#DC2626', bg: '#FEF2F2', border: '#FECACA' },
+  media: { label: 'Media', color: '#D97706', bg: '#FFFBEB', border: '#FDE68A' },
+  baja:  { label: 'Baja',  color: '#2563EB', bg: '#EFF6FF', border: '#BFDBFE' }
+};
+function loadTasks() { const t = safeLoad(LS_TASKS, []); return Array.isArray(t) ? t : []; }
+function saveTasks(arr) { return safeSave(LS_TASKS, arr); }
+function addTask(t) {
+  const arr = loadTasks();
+  const task = {
+    id: uuid(), titulo: '', indicadorId: null, responsable: '', fechaLimite: '',
+    prioridad: 'media', estado: 'pendiente', comentarios: '',
+    ...t, creadaEn: new Date().toISOString()
+  };
+  arr.push(task);
+  saveTasks(arr);
+  logAudit('Tarea creada', task.titulo, task.indicadorId);
+  return task;
+}
+function updateTaskStatus(id, estado) {
+  const arr = loadTasks();
+  const t = arr.find(x => x.id === id);
+  if (!t) return;
+  const prev = t.estado;
+  t.estado = estado;
+  if (estado === 'completada') t.completadaEn = new Date().toISOString();
+  saveTasks(arr);
+  logAudit('Tarea: cambio de estado', `${t.titulo}: ${TASK_STATES[prev]?.label || prev} → ${TASK_STATES[estado]?.label || estado}`, t.indicadorId);
+}
+function deleteTask(id) {
+  const arr = loadTasks();
+  const t = arr.find(x => x.id === id);
+  saveTasks(arr.filter(x => x.id !== id));
+  if (t) logAudit('Tarea eliminada', t.titulo, t.indicadorId);
+}
+// Tareas abiertas que vencen en ≤ n días (incluye vencidas)
+function tasksDueSoon(n = 7) {
+  const today = todayDate();
+  return loadTasks()
+    .filter(t => t.estado !== 'completada' && t.fechaLimite)
+    .map(t => ({ ...t, _dias: Math.round((parseDate(t.fechaLimite) - today) / 86400000) }))
+    .filter(t => t._dias <= n)
+    .sort((a, b) => a._dias - b._dias);
+}
+
+// ── DECISIONES REQUERIDAS ────────────────────────────────────
+const LS_DECISIONS = 'okr-etde27-decisions';
+const DECISION_STATES = {
+  abierta:    { label: 'Abierta',    color: '#DC2626', bg: '#FEF2F2', border: '#FECACA' },
+  en_proceso: { label: 'En proceso', color: '#D97706', bg: '#FFFBEB', border: '#FDE68A' },
+  resuelta:   { label: 'Resuelta',   color: '#059669', bg: '#ECFDF5', border: '#A7F3D0' }
+};
+function loadDecisions() { const d = safeLoad(LS_DECISIONS, []); return Array.isArray(d) ? d : []; }
+function saveDecisions(arr) { return safeSave(LS_DECISIONS, arr); }
+function addDecision(d) {
+  const arr = loadDecisions();
+  const dec = {
+    id: uuid(), problema: '', decision: '', responsable: '', fecha: '', contexto: '',
+    estado: 'abierta', indicadorId: null,
+    ...d, creadaEn: new Date().toISOString()
+  };
+  arr.push(dec);
+  saveDecisions(arr);
+  logAudit('Decisión registrada', dec.problema, dec.indicadorId);
+  return dec;
+}
+function updateDecisionStatus(id, estado) {
+  const arr = loadDecisions();
+  const d = arr.find(x => x.id === id);
+  if (!d) return;
+  const prev = d.estado;
+  d.estado = estado;
+  if (estado === 'resuelta') d.resueltaEn = new Date().toISOString();
+  saveDecisions(arr);
+  logAudit('Decisión: cambio de estado', `${d.problema}: ${DECISION_STATES[prev]?.label || prev} → ${DECISION_STATES[estado]?.label || estado}`, d.indicadorId);
+}
+function deleteDecision(id) {
+  const arr = loadDecisions();
+  const d = arr.find(x => x.id === id);
+  saveDecisions(arr.filter(x => x.id !== id));
+  if (d) logAudit('Decisión eliminada', d.problema, d.indicadorId);
+}
+
+// ── SNAPSHOTS ────────────────────────────────────────────────
+const LS_SNAPSHOTS = 'okr-etde27-snapshots';
+function loadSnapshots() { const s = safeLoad(LS_SNAPSHOTS, []); return Array.isArray(s) ? s : []; }
+function saveSnapshots(arr) { return safeSave(LS_SNAPSHOTS, arr); }
+function stateDataFrom(list) {
+  return list.map(i => ({ id: i.id, v: i.actual.v, fecha: i.actual.fecha, prog: calcProg(i), status: getStatus(i) }));
+}
+function currentStateData()  { return stateDataFrom(DATA); }
+function originalStateData() { return stateDataFrom(INDICADORES_ORIGINAL); }
+function createSnapshot(nombre, nota, esComite) {
+  const arr = loadSnapshots();
+  const snap = {
+    id: uuid(),
+    nombre: nombre || ('Snapshot ' + fmtDate(todayISO())),
+    fecha: new Date().toISOString(),
+    nota: nota || '',
+    esComite: !!esComite,
+    data: currentStateData()
+  };
+  arr.push(snap);
+  if (!saveSnapshots(arr)) return null;
+  if (snap.esComite) {
+    const cfg = loadConfig();
+    cfg.fechaUltimoComite = todayISO();
+    saveConfig(cfg);
+  }
+  logAudit('Snapshot creado', snap.nombre + (snap.esComite ? ' (comité)' : ''));
+  return snap;
+}
+function deleteSnapshot(id) {
+  const arr = loadSnapshots();
+  const s = arr.find(x => x.id === id);
+  saveSnapshots(arr.filter(x => x.id !== id));
+  if (s) logAudit('Snapshot eliminado', s.nombre);
+}
+function sortedSnapshots() {
+  return loadSnapshots().slice().sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''));
+}
+// Último snapshot marcado como comité; si no hay, el más reciente
+function getLastComiteSnapshot() {
+  const s = sortedSnapshots();
+  return s.find(x => x.esComite) || s[0] || null;
+}
+function snapshotStats(snap) {
+  const d = snap.data || [];
+  const counts = { achieved: 0, on_track: 0, at_risk: 0, critical: 0 };
+  d.forEach(x => { if (counts[x.status] !== undefined) counts[x.status]++; });
+  const avgP = d.length ? d.reduce((s, x) => s + Math.min(x.prog || 0, 100), 0) / d.length : 0;
+  return { counts, avgP, total: d.length };
+}
+
+// Compara dos estados (arrays {id,v,fecha,prog,status})
+function compareStates(dataA, dataB) {
+  const mapA = Object.fromEntries((dataA || []).map(x => [x.id, x]));
+  const mapB = Object.fromEntries((dataB || []).map(x => [x.id, x]));
+  const STO = { critical: 0, at_risk: 1, on_track: 2, achieved: 3 };
+  return DATA.map(ind => {
+    const a = mapA[ind.id] || null, b = mapB[ind.id] || null;
+    const changed = !!(a && b && (String(a.v) !== String(b.v) || a.fecha !== b.fecha));
+    const dProg = a && b ? Math.min(b.prog, 100) - Math.min(a.prog, 100) : 0;
+    const dRaw  = a && b ? b.prog - a.prog : 0;
+    const deltaV = a && b && !ind.bin && !isNaN(parseFloat(a.v)) && !isNaN(parseFloat(b.v)) ? parseFloat(b.v) - parseFloat(a.v) : null;
+    const mejora  = !!(a && b) && (dRaw > 0.05 || (ind.bin && String(a.v) !== String(b.v) && String(b.v) === String(ind.obj)));
+    const empeora = !!(a && b) && (dRaw < -0.05 || (ind.bin && String(a.v) !== String(b.v) && String(a.v) === String(ind.obj)));
+    const cambiaEstado = !!(a && b && a.status !== b.status);
+    const alcanza = !!(a && b && a.status !== 'achieved' && b.status === 'achieved');
+    const dirEstado = cambiaEstado ? Math.sign(STO[b.status] - STO[a.status]) : 0;
+    return { ind, a, b, changed, deltaV, dProg, mejora, empeora, cambiaEstado, alcanza, dirEstado };
+  });
+}
+
+// ── COMENTARIOS ──────────────────────────────────────────────
+const LS_COMMENTS = 'okr-etde27-comments';
+function loadComments() { const c = safeLoad(LS_COMMENTS, []); return Array.isArray(c) ? c : []; }
+function getComments(indId) {
+  return loadComments().filter(c => c.indId === indId).sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''));
+}
+function addComment(indId, texto) {
+  const arr = loadComments();
+  arr.push({ id: uuid(), indId, texto, fecha: new Date().toISOString(), usuario: currentUser() });
+  safeSave(LS_COMMENTS, arr);
+  logAudit('Comentario añadido', texto.substring(0, 80), indId);
+}
+function deleteComment(id) {
+  const arr = loadComments();
+  const c = arr.find(x => x.id === id);
+  safeSave(LS_COMMENTS, arr.filter(x => x.id !== id));
+  if (c) logAudit('Comentario eliminado', c.texto.substring(0, 80), c.indId);
+}
+
+// ── EVIDENCIAS ───────────────────────────────────────────────
+const LS_EVIDENCES = 'okr-etde27-evidences';
+function loadEvidences() { const e = safeLoad(LS_EVIDENCES, []); return Array.isArray(e) ? e : []; }
+function getEvidences(indId) {
+  return loadEvidences().filter(e => e.indId === indId).sort((a, b) => (b.creadaEn || '').localeCompare(a.creadaEn || ''));
+}
+function addEvidence(indId, ev) {
+  const arr = loadEvidences();
+  const item = { id: uuid(), indId, fuente: '', nombre: '', url: '', referencia: '', nota: '', ...ev, creadaEn: new Date().toISOString(), usuario: currentUser() };
+  arr.push(item);
+  safeSave(LS_EVIDENCES, arr);
+  logAudit('Evidencia añadida', item.nombre || item.fuente, indId);
+}
+function deleteEvidence(id) {
+  const arr = loadEvidences();
+  const e = arr.find(x => x.id === id);
+  safeSave(LS_EVIDENCES, arr.filter(x => x.id !== id));
+  if (e) logAudit('Evidencia eliminada', e.nombre || e.fuente, e.indId);
+}
+// Solo se enlazan URLs http(s)
+function safeUrl(u) {
+  const s = String(u || '').trim();
+  return /^https?:\/\//i.test(s) ? s : '';
+}
+
+// ── FILTROS GUARDADOS ────────────────────────────────────────
+const LS_SAVEDFILTERS = 'okr-etde27-savedfilters';
+function loadSavedFilters() { const f = safeLoad(LS_SAVEDFILTERS, []); return Array.isArray(f) ? f : []; }
+function saveSavedFilters(arr) { return safeSave(LS_SAVEDFILTERS, arr); }
+
+// ── INDICADORES DESTACADOS ───────────────────────────────────
+const LS_HIGHLIGHTS = 'okr-etde27-highlights';
+function loadHighlights() { const h = safeLoad(LS_HIGHLIGHTS, []); return Array.isArray(h) ? h : []; }
+function saveHighlights(arr) { return safeSave(LS_HIGHLIGHTS, arr); }
+
+// ── COPIA DE SEGURIDAD COMPLETA ──────────────────────────────
+const LS_ALL_KEYS = [
+  LS_KEY, LS_HIST, LS_HIST2, LS_SNAPSHOTS, LS_TASKS, LS_DECISIONS, LS_COMMENTS,
+  LS_EVIDENCES, LS_AUDIT, LS_CONFIG, LS_CONFIDENCE, LS_SAVEDFILTERS, LS_HIGHLIGHTS
+];
+function exportBackup() {
+  const out = { source: 'OKR ETDE27', tipo: 'backup-completo', version: OKR_META.version, exportedAt: new Date().toISOString(), data: {} };
+  LS_ALL_KEYS.forEach(k => {
+    const raw = localStorage.getItem(k);
+    if (raw !== null) { try { out.data[k] = JSON.parse(raw); } catch { /* clave corrupta: se omite */ } }
+  });
+  downloadFile('okr-etde27-backup-' + todayISO() + '.json', JSON.stringify(out, null, 2), 'application/json');
+  logAudit('Copia de seguridad exportada', Object.keys(out.data).length + ' claves');
+}
+function importBackup(jsonStr) {
+  try {
+    const obj = JSON.parse(jsonStr);
+    if (!obj || obj.tipo !== 'backup-completo' || typeof obj.data !== 'object') {
+      toast('El archivo no es una copia de seguridad completa de esta herramienta', 'error');
+      return false;
+    }
+    let n = 0;
+    Object.entries(obj.data).forEach(([k, v]) => {
+      if (LS_ALL_KEYS.includes(k)) { localStorage.setItem(k, JSON.stringify(v)); n++; }
+    });
+    _cfgCache = null; _thrCache = null;
+    refreshData();
+    logAudit('Copia de seguridad restaurada', n + ' claves');
+    toast('Copia de seguridad restaurada (' + n + ' bloques de datos)', 'success');
+    return true;
+  } catch {
+    toast('Error al leer la copia de seguridad', 'error');
+    return false;
+  }
+}

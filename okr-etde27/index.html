@@ -29,6 +29,12 @@
           <span>Resumen ejecutivo</span>
         </a>
       </li>
+      <li>
+        <a href="#" data-view="comite">
+          <span class="sb-icon">🎯</span>
+          <span>Preparar comité</span>
+        </a>
+      </li>
     </ul>
 
     <div class="sb-section">Ejes estratégicos</div>
@@ -79,6 +85,12 @@
           <span>Alertas y prioridades</span>
         </a>
       </li>
+      <li>
+        <a href="#" data-view="calendario">
+          <span class="sb-icon">📅</span>
+          <span>Calendario</span>
+        </a>
+      </li>
     </ul>
 
     <div class="sb-section">Gestión</div>
@@ -90,6 +102,30 @@
         </a>
       </li>
       <li>
+        <a href="#" data-view="tareas">
+          <span class="sb-icon">✅</span>
+          <span>Tareas</span>
+        </a>
+      </li>
+      <li>
+        <a href="#" data-view="decisiones">
+          <span class="sb-icon">⚡</span>
+          <span>Decisiones</span>
+        </a>
+      </li>
+      <li>
+        <a href="#" data-view="snapshots">
+          <span class="sb-icon">📷</span>
+          <span>Snapshots</span>
+        </a>
+      </li>
+      <li>
+        <a href="#" data-view="comparar">
+          <span class="sb-icon">⇄</span>
+          <span>Comparar</span>
+        </a>
+      </li>
+      <li>
         <a href="#" data-view="informe">
           <span class="sb-icon">⎙</span>
           <span>Informe ejecutivo</span>
@@ -97,10 +133,28 @@
       </li>
     </ul>
 
+    <div class="sb-section">Sistema</div>
+    <ul class="sb-nav">
+      <li>
+        <a href="#" data-view="config">
+          <span class="sb-icon">⚙</span>
+          <span>Configuración</span>
+        </a>
+      </li>
+      <li>
+        <a href="#" data-view="metodologia">
+          <span class="sb-icon">📖</span>
+          <span>Metodología</span>
+        </a>
+      </li>
+    </ul>
+
+    <div class="sb-search-hint" onclick="openSearch()">🔍 Buscar <kbd>Ctrl</kbd>+<kbd>K</kbd></div>
+
     <div class="sb-footer">
       OTID — Oficina de Transformación e Innovación Digital<br>
       Accenture · Junta de Extremadura<br>
-      Versión 1.0 · Octubre 2026
+      Versión 2.0 · Octubre 2026
     </div>
   </aside>
 
@@ -117,6 +171,8 @@
         <div class="page-hd-right">
           <span class="meta-tag" id="pill-last-update">—</span>
           <span class="meta-tag" id="pill-total">—</span>
+          <button class="btn btn-ghost btn-sm" onclick="openSearch()" title="Ctrl+K">🔍 Buscar</button>
+          <button class="btn btn-primary btn-sm" onclick="toggleComiteMode()">🎯 Modo comité</button>
         </div>
       </div>
       <div class="view-inner">
@@ -262,27 +318,284 @@
       </div>
     </div>
 
+    <!-- ── PREPARAR COMITÉ ─────────────────────────────────── -->
+    <div id="v-comite" class="view">
+      <div class="page-hd">
+        <div class="page-hd-left">
+          <h1>Preparar comité de seguimiento</h1>
+          <p>Dossier generado automáticamente: avance, cambios desde el último comité, logros, alertas, decisiones, tareas y vencimientos</p>
+        </div>
+        <div class="page-hd-right">
+          <button class="btn btn-ghost btn-sm" onclick="comiteSnapshotPrompt()">📷 Registrar snapshot de comité</button>
+          <button class="btn btn-ghost btn-sm" onclick="toggleComiteMode()">🎯 Modo comité</button>
+          <button class="btn btn-primary btn-sm" onclick="window.print()">🖨 Imprimir</button>
+        </div>
+      </div>
+      <div class="view-inner">
+        <div id="v-comite-inner"></div>
+      </div>
+    </div>
+
+    <!-- ── CALENDARIO ──────────────────────────────────────── -->
+    <div id="v-calendario" class="view">
+      <div class="page-hd">
+        <div class="page-hd-left">
+          <h1>Calendario de actualizaciones</h1>
+          <p>Próxima actualización prevista de cada indicador según la fecha del último dato y su periodicidad</p>
+        </div>
+      </div>
+      <div class="view-inner">
+        <div id="v-calendario-inner"></div>
+      </div>
+    </div>
+
+    <!-- ── TAREAS ──────────────────────────────────────────── -->
+    <div id="v-tareas" class="view">
+      <div class="page-hd">
+        <div class="page-hd-left">
+          <h1>Tareas</h1>
+          <p>Acciones de seguimiento vinculadas a indicadores, con responsable, fecha límite y prioridad</p>
+        </div>
+      </div>
+      <div class="view-inner">
+        <div id="v-tareas-inner"></div>
+      </div>
+    </div>
+
+    <!-- ── DECISIONES ──────────────────────────────────────── -->
+    <div id="v-decisiones" class="view">
+      <div class="page-hd">
+        <div class="page-hd-left">
+          <h1>Decisiones requeridas</h1>
+          <p>Problemas que necesitan una decisión de dirección, con su contexto, responsable y estado</p>
+        </div>
+      </div>
+      <div class="view-inner">
+        <div id="v-decisiones-inner"></div>
+      </div>
+    </div>
+
+    <!-- ── SNAPSHOTS ───────────────────────────────────────── -->
+    <div id="v-snapshots" class="view">
+      <div class="page-hd">
+        <div class="page-hd-left">
+          <h1>Snapshots</h1>
+          <p>Fotografías del estado de todos los indicadores en un momento dado, para comparar la evolución entre comités</p>
+        </div>
+      </div>
+      <div class="view-inner">
+        <div id="v-snapshots-inner"></div>
+      </div>
+    </div>
+
+    <!-- ── COMPARAR ────────────────────────────────────────── -->
+    <div id="v-comparar" class="view">
+      <div class="page-hd">
+        <div class="page-hd-left">
+          <h1>Comparar estados</h1>
+          <p>Diferencias indicador a indicador entre dos snapshots, los datos originales o el estado actual</p>
+        </div>
+      </div>
+      <div class="view-inner">
+        <div id="v-comparar-inner"></div>
+      </div>
+    </div>
+
+    <!-- ── CONFIGURACIÓN ───────────────────────────────────── -->
+    <div id="v-config" class="view">
+      <div class="page-hd">
+        <div class="page-hd-left">
+          <h1>Configuración</h1>
+          <p>Parámetros de la estrategia, umbrales del semáforo, indicadores destacados, auditoría y copias de seguridad</p>
+        </div>
+      </div>
+      <div class="view-inner">
+        <div id="v-config-inner"></div>
+      </div>
+    </div>
+
+    <!-- ── METODOLOGÍA ─────────────────────────────────────── -->
+    <div id="v-metodologia" class="view">
+      <div class="page-hd">
+        <div class="page-hd-left">
+          <h1>Metodología de cálculo</h1>
+          <p>Cómo se calculan el avance, el semáforo, el ritmo necesario, la viabilidad, el estado de actualización y la confianza</p>
+        </div>
+      </div>
+      <div class="view-inner">
+        <div class="metodo">
+
+          <section class="metodo-sec">
+            <h2><span class="metodo-n">1</span> Fórmula de avance</h2>
+            <p>El avance mide qué parte del camino entre la situación de partida (base 2023) y la meta 2027 se ha recorrido.</p>
+            <div class="metodo-formula">Avance (%) = (Valor actual − Base 2023) / (Objetivo 2027 − Base 2023) × 100</div>
+            <div class="metodo-ej">
+              <div class="metodo-ej-hd">Ejemplo · E3-04 Estudiantes que eligen ingenierías informáticas</div>
+              <div class="metodo-steps">
+                <span>Base <strong>498</strong></span><span class="metodo-arrow">→</span>
+                <span>Actual <strong>571</strong></span><span class="metodo-arrow">→</span>
+                <span>Objetivo <strong>600</strong></span>
+              </div>
+              <div class="metodo-calc">(571 − 498) / (600 − 498) × 100 = 73 / 102 × 100 = <strong>71,6 %</strong> → En seguimiento</div>
+              <div class="pb-wrap pb-8"><div class="pb-fill pb-on_track" style="width:71.6%"></div></div>
+            </div>
+            <p class="metodo-note">El avance no se recorta por arriba en el cálculo individual (un indicador puede superar el 100 %), pero en las medias globales y por eje cada indicador aporta como máximo un 100 %.</p>
+          </section>
+
+          <section class="metodo-sec">
+            <h2><span class="metodo-n">2</span> Indicadores sin base</h2>
+            <p>Cuando no existe valor de partida registrado, el avance se calcula directamente contra el objetivo, con un máximo del 100 %.</p>
+            <div class="metodo-formula">Avance (%) = mín(Valor actual / Objetivo 2027 × 100 ; 100)</div>
+            <div class="metodo-ej">
+              <div class="metodo-ej-hd">Ejemplo · E1-07 Integración de tecnologías innovadoras</div>
+              <div class="metodo-calc">Actual <strong>9</strong> actuaciones / Objetivo <strong>15</strong> × 100 = <strong>60 %</strong> → En seguimiento</div>
+              <div class="pb-wrap pb-8"><div class="pb-fill pb-on_track" style="width:60%"></div></div>
+            </div>
+          </section>
+
+          <section class="metodo-sec">
+            <h2><span class="metodo-n">3</span> Indicadores invertidos</h2>
+            <p>Son indicadores que expresan una <em>reducción</em> (p. ej. % de reducción de tiempos). Una mayor reducción supone mayor avance; se mide contra el objetivo de reducción.</p>
+            <div class="metodo-formula">Si actual ≥ objetivo → 100 % · en otro caso: Valor actual / Objetivo × 100</div>
+            <div class="metodo-ej">
+              <div class="metodo-ej-hd">Ejemplo · E1-03 Reducción del tiempo de resolución de procedimientos</div>
+              <div class="metodo-calc">Reducción conseguida <strong>45 %</strong> ≥ objetivo de reducción <strong>30 %</strong> → <strong>100 %</strong> · Objetivo cumplido</div>
+              <div class="metodo-calc">Si la reducción hubiera sido del 21 %: 21 / 30 × 100 = <strong>70 %</strong></div>
+            </div>
+          </section>
+
+          <section class="metodo-sec">
+            <h2><span class="metodo-n">4</span> Indicadores binarios</h2>
+            <p>Miden hitos que se cumplen o no (Sí/No). No admiten avances parciales.</p>
+            <div class="metodo-ej">
+              <div class="metodo-ej-hd">Ejemplo · E2-07 Comisión de Seguimiento Interinstitucional sobre Ciberseguridad</div>
+              <div class="metodo-calc">Valor «No» con objetivo «Sí» → <strong>0 %</strong> · Atención urgente</div>
+              <div class="metodo-calc">Valor «Sí» → <strong>100 %</strong> · Objetivo cumplido</div>
+            </div>
+            <p class="metodo-note">A los indicadores binarios no se les calcula ritmo necesario ni proyección.</p>
+          </section>
+
+          <section class="metodo-sec">
+            <h2><span class="metodo-n">5</span> Semáforo de estados</h2>
+            <table class="metodo-table">
+              <thead><tr><th>Estado</th><th>Umbral de avance (por defecto)</th><th>Lectura</th></tr></thead>
+              <tbody>
+                <tr><td><span class="badge badge-achieved">Objetivo cumplido</span></td><td>≥ 100 %</td><td>Alcanza o supera el objetivo 2027</td></tr>
+                <tr><td><span class="badge badge-on_track">En seguimiento</span></td><td>≥ 60 % y &lt; 100 %</td><td>Evolución alineada con la meta</td></tr>
+                <tr><td><span class="badge badge-at_risk">En riesgo</span></td><td>≥ 30 % y &lt; 60 %</td><td>Desviación moderada: requiere foco</td></tr>
+                <tr><td><span class="badge badge-critical">Atención urgente</span></td><td>&lt; 30 %</td><td>Desviación significativa: acción inmediata</td></tr>
+              </tbody>
+            </table>
+            <p class="metodo-note">Los umbrales pueden ajustarse en <a href="#" onclick="navigate('config');return false">Configuración</a>. El avance global es la media simple del avance de los 28 indicadores (cada uno con un máximo de 100 %).</p>
+          </section>
+
+          <section class="metodo-sec">
+            <h2><span class="metodo-n">6</span> Ritmo necesario</h2>
+            <p>Indica cuánto debe mejorar el indicador cada trimestre, desde hoy hasta la fecha de fin de la estrategia (31 dic 2027 por defecto), para alcanzar el objetivo.</p>
+            <div class="metodo-formula">Ritmo necesario / trimestre = (Objetivo − Valor actual) / (Meses restantes / 3)</div>
+            <div class="metodo-ej">
+              <div class="metodo-ej-hd">Ejemplo · E1-04 Conjuntos de datos abiertos publicados (a octubre de 2026)</div>
+              <div class="metodo-calc">Brecha: 200 − 51 = <strong>149</strong> conjuntos · Meses restantes ≈ <strong>15</strong> (≈ 5 trimestres)</div>
+              <div class="metodo-calc">Ritmo necesario ≈ 149 / 4,9 ≈ <strong>30 conjuntos por trimestre</strong></div>
+            </div>
+          </section>
+
+          <section class="metodo-sec">
+            <h2><span class="metodo-n">7</span> Viabilidad del objetivo</h2>
+            <p>Compara el ritmo real observado con el ritmo necesario. El ritmo real se obtiene, por orden de preferencia:</p>
+            <ul class="metodo-ul">
+              <li><strong>Histórico registrado</strong>: si el indicador tiene 2 o más registros en el histórico, variación entre el registro más antiguo y el más reciente.</li>
+              <li><strong>Base → actual</strong>: si no hay histórico suficiente y existe base, variación desde la base (cierre del año base) hasta la fecha del dato actual.</li>
+            </ul>
+            <table class="metodo-table">
+              <thead><tr><th>Viabilidad</th><th>Condición</th></tr></thead>
+              <tbody>
+                <tr><td><span class="viab-badge viab-alineado">Alineado</span></td><td>Ritmo real ≥ ritmo necesario</td></tr>
+                <tr><td><span class="viab-badge viab-requiere_aceleracion">Requiere aceleración</span></td><td>Ritmo real ≥ 60 % del ritmo necesario</td></tr>
+                <tr><td><span class="viab-badge viab-riesgo_incumplimiento">Riesgo de incumplimiento</span></td><td>Ritmo real &lt; 60 % del ritmo necesario</td></tr>
+                <tr><td><span class="viab-badge viab-sin_datos">Sin datos de ritmo</span></td><td>Sin base ni histórico suficiente</td></tr>
+              </tbody>
+            </table>
+            <div class="metodo-ej">
+              <div class="metodo-ej-hd">Ejemplo · E1-04 (continuación)</div>
+              <div class="metodo-calc">Base 13 (dic 2023) → 51 (abr 2026): +38 en ≈ 28 meses ≈ <strong>4 conjuntos por trimestre</strong></div>
+              <div class="metodo-calc">4 &lt; 60 % × 30 → <span class="viab-badge viab-riesgo_incumplimiento">Riesgo de incumplimiento</span></div>
+            </div>
+          </section>
+
+          <section class="metodo-sec">
+            <h2><span class="metodo-n">8</span> Estado de actualización</h2>
+            <p>La próxima actualización prevista se calcula sumando a la fecha del último dato el intervalo de su periodicidad: Mensual 30 días · Trimestral 90 · Semestral 180 · Anual 365. Los indicadores sin periodicidad definida («n/a») no generan vencimientos.</p>
+            <table class="metodo-table">
+              <thead><tr><th>Estado</th><th>Condición</th></tr></thead>
+              <tbody>
+                <tr><td><span class="upd-badge upd-vencido">Vencido</span></td><td>La fecha prevista ya ha pasado</td></tr>
+                <tr><td><span class="upd-badge upd-proximo">Próximo a vencer</span></td><td>Faltan 30 días o menos</td></tr>
+                <tr><td><span class="upd-badge upd-al_dia">Al día</span></td><td>Faltan más de 30 días</td></tr>
+                <tr><td><span class="upd-badge upd-sin_fecha">Sin fecha</span></td><td>Sin fecha de dato o sin periodicidad</td></tr>
+              </tbody>
+            </table>
+            <div class="metodo-ej">
+              <div class="metodo-ej-hd">Ejemplo · E2-04 Pueblos inteligentes (semestral)</div>
+              <div class="metodo-calc">Último dato 28 ene 2026 + 180 días = <strong>27 jul 2026</strong> → en octubre de 2026 el dato está <span class="upd-badge upd-vencido">Vencido</span></div>
+            </div>
+          </section>
+
+          <section class="metodo-sec">
+            <h2><span class="metodo-n">9</span> Nivel de confianza del dato</h2>
+            <p>Cada indicador lleva un nivel de confianza, editable desde su ficha 360°, que indica la solidez del valor reportado.</p>
+            <table class="metodo-table">
+              <thead><tr><th>Nivel</th><th>Significado</th></tr></thead>
+              <tbody>
+                <tr><td><span class="conf-badge conf-validado">Validado</span></td><td>Dato contrastado con la fuente oficial y con evidencia documental</td></tr>
+                <tr><td><span class="conf-badge conf-provisional">Provisional</span></td><td>Dato avanzado por el responsable, pendiente de confirmación oficial</td></tr>
+                <tr><td><span class="conf-badge conf-pendiente">Pendiente</span></td><td>Nivel por defecto: aún no se ha revisado la calidad del dato</td></tr>
+                <tr><td><span class="conf-badge conf-sin_evidencia">Sin evidencia</span></td><td>No existe soporte documental que respalde el valor</td></tr>
+              </tbody>
+            </table>
+          </section>
+
+        </div>
+      </div>
+    </div>
+
   </main><!-- /#main -->
 
 </div><!-- /#layout -->
 
 <!-- ══ MODAL DE ACTUALIZACIÓN ═══════════════════════════════ -->
 <div class="modal-overlay" id="modal-overlay">
-  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="modal-heading">
+  <div class="modal-box" id="modal-box" role="dialog" aria-modal="true" aria-labelledby="modal-heading">
     <div class="modal-hd">
       <div class="modal-title" id="modal-heading">Actualizar indicador</div>
       <button class="modal-close" onclick="closeModal()" aria-label="Cerrar">✕</button>
     </div>
     <div class="modal-body" id="modal-body"></div>
     <div class="modal-ft">
-      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-ghost" id="modal-cancel-btn" onclick="closeModal()">Cerrar</button>
       <button class="btn btn-primary" id="modal-save-btn" onclick="saveModal()">Guardar cambios</button>
     </div>
   </div>
 </div>
 
+<!-- ══ MODO COMITÉ ═══════════════════════════════════════════ -->
+<div id="comite-overlay" class="comite-overlay" style="display:none" role="dialog" aria-modal="true" aria-label="Modo comité"></div>
+
 <!-- ══ TOASTS ════════════════════════════════════════════════ -->
 <div id="toasts" aria-live="polite"></div>
+
+<!-- ══ BUSCADOR GLOBAL (Ctrl+K) ══════════════════════════════ -->
+<div id="search-overlay" class="search-overlay" style="display:none">
+  <div class="search-backdrop" onclick="closeSearch()"></div>
+  <div class="search-box">
+    <div class="search-input-wrap">
+      <span>🔍</span>
+      <input type="text" id="search-input" placeholder="Buscar indicador, eje, responsable... (Esc para cerrar)" autocomplete="off">
+    </div>
+    <div id="search-results" class="search-results"></div>
+    <div class="search-footer">Ctrl+K para abrir · Esc para cerrar · Enter para navegar · ↑↓ para moverse</div>
+  </div>
+</div>
 
 <!-- ══ SCRIPTS ══════════════════════════════════════════════ -->
 <script src="js/data.js"></script>
