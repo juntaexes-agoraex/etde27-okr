@@ -154,7 +154,7 @@ function indCard(ind, colorAccent = null) {
     ${ind.obs ? `<div class="ind-obs">${ind.obs}</div>` : ''}
     <div class="ind-actions">
       <button class="btn btn-ghost btn-sm" onclick="openFicha('${ind.id}')">Ficha 360°</button>
-      ${INE_SERIES[ind.id] ? `<button class="btn btn-ine btn-sm" id="ine-btn-${ind.id}" onclick="fetchFromINE('${ind.id}')" title="Obtener dato actualizado del INE">📊 INE</button>` : ''}
+      ${INE_SERIES[ind.id] ? `<button class="btn btn-ine btn-sm" id="ine-btn-${ind.id}" onclick="fetchFromINE('${ind.id}')" title="Obtener dato actualizado">${INE_SERIES[ind.id].btnLabel || '📊 INE'}</button>` : ''}
       <button class="btn btn-primary btn-sm" onclick="openQuickUpdate('${ind.id}')">⚡ Actualizar</button>
     </div>
   </div>`;
@@ -902,10 +902,20 @@ async function fetchFromINE(id) {
   const setBtns = (disabled, label) => {
     [btnCard, btnFicha].forEach(b => { if (!b) return; b.disabled = disabled; if (label) b.innerHTML = label; });
   };
-  setBtns(true, '⏳ Consultando INE…');
+  setBtns(true, '⏳ Consultando…');
   try {
     let valor, fechaStr, source;
-    if (series.type === 'tabla') {
+    if (series.type === 'sparql') {
+      const url = `${series.endpoint}?query=${encodeURIComponent(series.query)}&format=json`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`datos.gob.es HTTP ${res.status}`);
+      const json = await res.json();
+      const bindings = json.results?.bindings;
+      if (!bindings?.length) throw new Error('datos.gob.es no devuelve resultados');
+      valor = parseInt(bindings[0].c.value, 10);
+      fechaStr = new Date().toISOString().slice(0, 10);
+      source = `${series.label} · consultado hoy`;
+    } else if (series.type === 'tabla') {
       const url = `https://servicios.ine.es/wstempus/js/ES/DATOS_TABLA/${series.tabla}?nult=1`;
       const res = await fetch(url);
       if (!res.ok) throw new Error(`INE HTTP ${res.status}`);
@@ -921,7 +931,7 @@ async function fetchFromINE(id) {
       valor = latest.Valor;
       const anyo = latest.Anyo || (latest.Fecha ? new Date(latest.Fecha).getFullYear() : new Date().getFullYear() - 1);
       fechaStr = `${anyo}-12-31`;
-      source = `${series.label} · ${anyo}`;
+      source = series.label;
     } else if (series.type === 'tabla_sum') {
       const url = `https://servicios.ine.es/wstempus/js/ES/DATOS_TABLA/${series.tabla}?nult=1`;
       const res = await fetch(url);
@@ -942,7 +952,7 @@ async function fetchFromINE(id) {
       }
       valor = Math.round(suma * 10) / 10;
       fechaStr = `${anyo}-12-31`;
-      source = `${series.label} · ${anyo}`;
+      source = series.label;
     } else {
       const url = `https://servicios.ine.es/wstempus/js/ES/DATOS_SERIE/${series.serie}?nult=1`;
       const res = await fetch(url);
@@ -956,15 +966,15 @@ async function fetchFromINE(id) {
       valor = latest.Valor;
       const anyo = latest.Anyo || new Date(latest.Fecha).getFullYear();
       fechaStr = `${anyo}-12-31`;
-      source = `${series.label} · ${latest.Periodo || ''} ${anyo}`;
+      source = series.label;
     }
     renderINEConfirmModal(id, valor, fechaStr, source);
   } catch (e) {
-    toast(`Error INE: ${e.message}`, 'error');
+    toast(`Error auto-fetch: ${e.message}`, 'error');
   } finally {
     setBtns(false, null);
-    if (btnCard)  btnCard.innerHTML  = '📊 INE';
-    if (btnFicha) btnFicha.innerHTML = '🔄 Actualizar desde INE';
+    if (btnCard)  btnCard.innerHTML  = series.btnLabel   || '📊 INE';
+    if (btnFicha) btnFicha.innerHTML = series.fichaLabel || '🔄 Actualizar desde INE';
   }
 }
 
@@ -1224,7 +1234,6 @@ function fichaSituacion(i) {
         <div class="bao-box">
           <div class="fm-k">Base ${i.base.año || ''}</div>
           <div class="bao-v">${fmtBase(i)}</div>
-          <div class="bao-pct">0%</div>
           <div class="pb-wrap pb-6"><div class="pb-fill" style="width:0"></div></div>
           <div class="fm-sub">${m.hasBase ? 'Punto de partida' : 'Sin base registrada'}</div>
         </div>
@@ -1232,7 +1241,6 @@ function fichaSituacion(i) {
         <div class="bao-box" style="border-color:${sc.border};background:${sc.bg}">
           <div class="fm-k">Actual</div>
           <div class="bao-v" style="color:${sc.color}">${fmtActual(i)}</div>
-          <div class="bao-pct" style="color:${sc.color}">${Math.round(m.p)}%</div>
           ${progBar(i, 'pb-6')}
           <div class="fm-sub">${fmtDate(i.actual.fecha)}</div>
         </div>
@@ -1240,7 +1248,6 @@ function fichaSituacion(i) {
         <div class="bao-box">
           <div class="fm-k">Objetivo 2027</div>
           <div class="bao-v">${fmtObj(i)}</div>
-          <div class="bao-pct">100%</div>
           <div class="pb-wrap pb-6"><div class="pb-fill pb-achieved" style="width:100%"></div></div>
           <div class="fm-sub">Meta</div>
         </div>
@@ -1422,7 +1429,7 @@ function fichaActualizar(i) {
           <div class="ine-fetch-desc">Este indicador se obtiene de la API pública del INE. Pulsa el botón para obtener el dato más reciente sin buscarlo manualmente.</div>
         </div>
       </div>
-      <button class="btn btn-ine" id="ine-ficha-btn-${i.id}" onclick="fetchFromINE('${i.id}')">🔄 Actualizar desde INE</button>
+      <button class="btn btn-ine" id="ine-ficha-btn-${i.id}" onclick="fetchFromINE('${i.id}')">${INE_SERIES[i.id]?.fichaLabel || '🔄 Actualizar desde INE'}</button>
     </div>` : ''}
     <div class="ficha-bao-mini">
       <span>Base: <strong>${fmtBase(i)}</strong></span><span class="metodo-arrow">→</span>

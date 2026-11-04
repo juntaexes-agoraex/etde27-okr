@@ -400,11 +400,21 @@ function resetAll() {
   toast('Todos los datos restaurados a los valores originales');
 }
 
-// ── INE AUTO-FETCH CONFIG ────────────────────────────────────
-// type:'serie'     → DATOS_SERIE/{serie}?nult=1
-// type:'tabla'     → DATOS_TABLA/{tabla}?nult=1, filtramos por Nombre (includes)
+// ── AUTO-FETCH CONFIG ───────────────────────────────────────
+// type:'serie'     → INE DATOS_SERIE/{serie}?nult=1
+// type:'tabla'     → INE DATOS_TABLA/{tabla}?nult=1, filtramos por Nombre (includes)
 // type:'tabla_sum' → igual que tabla pero suma varios Nombre y devuelve el total
+// type:'sparql'    → SPARQL endpoint (datos.gob.es), query devuelve ?c (count)
+// btnLabel / fichaLabel: texto del botón (por defecto '📊 INE' / '🔄 Actualizar desde INE')
 const INE_SERIES = {
+  'E1-04': {
+    type: 'sparql',
+    endpoint: 'https://datos.gob.es/virtuoso/sparql',
+    query: 'SELECT COUNT(*) as ?c WHERE { ?s <http://purl.org/dc/terms/publisher> <http://datos.gob.es/recurso/sector-publico/org/Organismo/A11002926> }',
+    btnLabel: '📊 OD',
+    fichaLabel: '🔄 Actualizar desde datos.gob.es',
+    label: 'datos.gob.es · Junta de Extremadura · Datasets publicados'
+  },
   'E2-01': {
     type: 'serie', serie: 'DCS448',
     label: 'TIC Hogares · Extremadura · Viviendas con conexión a internet'
