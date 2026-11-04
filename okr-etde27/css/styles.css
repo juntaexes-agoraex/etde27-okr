@@ -822,7 +822,7 @@ kbd {
   display: flex; flex-direction: column; gap: .3rem;
 }
 .bao-v { font-size: 1.35rem; font-weight: 800; letter-spacing: -.02em; line-height: 1.1; }
-.bao-pct { font-size: 1.9rem; font-weight: 800; letter-spacing: -.04em; line-height: 1; color: var(--ink3); }
+.bao-pct { display: none; }
 .bao-arrow { align-self: center; color: var(--muted); font-size: 1.2rem; }
 @media (max-width: 640px) { .ficha-bao { flex-direction: column; } .bao-arrow { transform: rotate(90deg); } }
 
