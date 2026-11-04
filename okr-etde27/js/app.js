@@ -10,11 +10,33 @@ let tableFilters = { search: '', eje: '', linea: '', status: '', per: '', respon
 let modalEditId = null;
 
 // ── ROUTER ───────────────────────────────────────────────────
-function navigate(view) {
+// v2.3: vistas fusionadas. Las vistas con varias secciones usan pestañas (viewTab).
+const viewTab = { prioridades: 'alertas', tareas: 'tareas', snapshots: 'snapshots', config: 'parametros' };
+
+// Rutas antiguas → vista + pestaña actuales (no rompe enlaces ni llamadas previas)
+const VIEW_ALIASES = {
+  alertas:     ['prioridades', 'alertas'],
+  calendario:  ['prioridades', 'calendario'],
+  decisiones:  ['tareas', 'decisiones'],
+  comparar:    ['snapshots', 'comparar'],
+  metodologia: ['config', 'metodologia'],
+  informe:     ['comite', null],
+  evolucion:   ['indicadores', null]
+};
+
+function navigate(view, tab) {
+  if (VIEW_ALIASES[view]) {
+    const [v, t] = VIEW_ALIASES[view];
+    view = v;
+    if (!tab && t) tab = t;
+  }
+  if (tab && viewTab[view] !== undefined) viewTab[view] = tab;
   currentView = view;
+  // Las vistas de eje cuelgan de «Indicadores» en la barra lateral
+  const navKey = view.startsWith('eje-') ? 'indicadores' : view;
   document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('#sidebar a[data-view]').forEach(a => {
-    a.classList.toggle('active', a.dataset.view === view);
+    a.classList.toggle('active', a.dataset.view === navKey);
   });
   const viewEl = document.getElementById('v-' + view);
   if (viewEl) viewEl.classList.add('active');
@@ -23,30 +45,42 @@ function navigate(view) {
 
   try {
     switch (view) {
-      case 'dashboard':   renderDashboard();  break;
-      case 'eje-1':       renderEje(1);       break;
-      case 'eje-2':       renderEje(2);       break;
-      case 'eje-3':       renderEje(3);       break;
-      case 'eje-4':       renderEje(4);       break;
-      case 'indicadores': renderTabla();      break;
-      case 'evolucion':   renderEvolucion();  break;
-      case 'alertas':     renderAlertas();    break;
-      case 'actualizar':  renderActualizar(); break;
-      case 'informe':     renderInforme();    break;
-      // v2.0
+      case 'dashboard':   renderDashboard();   break;
+      case 'eje-1':       renderEje(1);        break;
+      case 'eje-2':       renderEje(2);        break;
+      case 'eje-3':       renderEje(3);        break;
+      case 'eje-4':       renderEje(4);        break;
+      case 'indicadores': renderTabla();       break;
+      case 'prioridades': renderPrioridades(); break;
+      case 'tareas':      renderTareasView();  break;
       case 'comite':      renderComite();      break;
-      case 'calendario':  renderCalendario();  break;
-      case 'tareas':      renderTareas();      break;
-      case 'decisiones':  renderDecisiones();  break;
-      case 'snapshots':   renderSnapshots();   break;
-      case 'comparar':    renderComparar();    break;
+      case 'actualizar':  renderActualizar();  break;
+      case 'snapshots':   renderHistorico();   break;
       case 'config':      renderConfig();      break;
-      case 'metodologia': break; // contenido estático
     }
   } catch (e) {
     console.error('Error al renderizar la vista', view, e);
     toast('Error al mostrar la vista. Revisa la consola.', 'error');
   }
+}
+
+// Barra de pestañas de una vista. tabs: [[clave, etiqueta, contador?], ...]
+function viewTabsHTML(view, tabs) {
+  const cur = viewTab[view];
+  return `<div class="vtabs" role="tablist">${tabs.map(([k, l, n]) => `
+    <button class="vtab${k === cur ? ' active' : ''}" role="tab" onclick="navigate('${view}','${k}')">${l}${n !== undefined && n !== null ? ` <span class="vtab-n">${n}</span>` : ''}</button>`).join('')}
+  </div>`;
+}
+
+// Pestañas de la sección Indicadores: tabla + 4 ejes
+const EJE_SHORT = { 1: 'Administración digital', 2: 'Conectividad', 3: 'Sociedad digital', 4: 'Innovación empresarial' };
+function indTabsHTML(active) {
+  const tab = (view, label, dot = '') => `
+    <button class="vtab${view === active ? ' active' : ''}" role="tab" onclick="navigate('${view}')">${dot}${label}</button>`;
+  return `<div class="vtabs" role="tablist">
+    ${tab('indicadores', 'Todos · tabla')}
+    ${EJES.map(e => tab('eje-' + e.id, `Eje ${e.id} · ${EJE_SHORT[e.id]}`, `<span class="vtab-dot" style="background:${e.color}"></span>`)).join('')}
+  </div>`;
 }
 
 // ── TEMPLATE HELPERS ─────────────────────────────────────────
@@ -85,10 +119,11 @@ function indCard(ind, colorAccent = null) {
           ${updBadge(updateStatus(ind))}
         </small>
       </div>
-      <div class="badge-stack">${badge(st)}${confBadge(ind.id)}</div>
+      <div class="badge-stack">${badge(st)}</div>
     </div>
     <div style="margin:.5rem 0">${progBar(ind)}</div>
-    <div style="font-size:.72rem;font-weight:700;color:${sc.color};margin-bottom:.65rem">${Math.round(p)}% del objetivo alcanzado</div>
+    <div style="font-size:.72rem;font-weight:700;color:${sc.color};margin-bottom:.4rem">${Math.round(p)}% del objetivo alcanzado</div>
+    ${proyBadgeHTML(ind)}
     <div class="ind-vals">
       <div class="ind-val">
         <div class="ind-val-label">Partida</div>
@@ -112,138 +147,116 @@ function indCard(ind, colorAccent = null) {
       </div>
     </div>
     <div class="ind-meta">
-      <span class="ind-meta-item">📅 ${fmtDate(ind.actual.fecha)}</span>
-      <span class="ind-meta-sep">·</span>
       <span class="ind-meta-item">🔄 ${ind.per}</span>
       <span class="ind-meta-sep">·</span>
       <span class="ind-meta-item">📌 ${ind.fuente}</span>
-      <span class="ind-meta-sep">·</span>
-      <span class="ind-meta-item">${ind.linea}</span>
-      ${ind.responsable ? `<span class="ind-meta-sep">·</span><span class="ind-meta-item">👤 ${ind.responsable}</span>` : ''}
     </div>
     ${ind.obs ? `<div class="ind-obs">${ind.obs}</div>` : ''}
     <div class="ind-actions">
-      <button class="btn btn-ghost btn-sm" onclick="openModal('${ind.id}')">✎ Actualizar indicador</button>
-      <button class="btn btn-ghost btn-sm" onclick="openFicha('${ind.id}','historico')">🕘 Histórico</button>
-      <button class="btn btn-ghost btn-sm" onclick="quickTask('${ind.id}')">＋ Tarea</button>
-      ${ind._mod ? `<button class="btn btn-sm" style="background:var(--crit-lt);color:var(--crit);border:1px solid var(--crit-bd)" onclick="resetOne('${ind.id}');navigate(currentView)">↺ Restaurar original</button>` : ''}
+      <button class="btn btn-ghost btn-sm" onclick="openFicha('${ind.id}')">Ficha 360°</button>
+      ${INE_SERIES[ind.id] ? `<button class="btn btn-ine btn-sm" id="ine-btn-${ind.id}" onclick="fetchFromINE('${ind.id}')" title="Obtener dato actualizado del INE">📊 INE</button>` : ''}
+      <button class="btn btn-primary btn-sm" onclick="openQuickUpdate('${ind.id}')">⚡ Actualizar</button>
     </div>
   </div>`;
 }
 
 // ── DASHBOARD ────────────────────────────────────────────────
+// v2.3: 4 bloques fijos (Situación · Por eje · Cambios · Atención) + destacados si se han configurado.
 function renderDashboard() {
   const el = document.getElementById('v-dashboard-inner');
   if (!el) return;
   const gs = globalStats();
   const last = lastUpdateDate();
 
-  // KPIs
+  // 1 · Situación: 5 KPIs (el total de indicadores va en la píldora de cabecera)
+  const kpi = (v, l, sub, c = '') => `
+      <div class="kpi"><div class="kpi-val"${c ? ` style="color:${c}"` : ''}>${v}</div>
+        <div class="kpi-label">${l}</div><div class="kpi-sub">${sub}</div></div>`;
   const kpiHTML = `
     <div class="kpi-grid">
-      <div class="kpi"><div class="kpi-val" style="color:#2563EB">${Math.round(gs.avgP)}%</div>
-        <div class="kpi-label">Avance global</div><div class="kpi-sub">Media de ${gs.total} indicadores</div></div>
-      <div class="kpi"><div class="kpi-val">${gs.total}</div>
-        <div class="kpi-label">Total indicadores</div><div class="kpi-sub">4 ejes estratégicos</div></div>
-      <div class="kpi"><div class="kpi-val" style="color:#059669">${gs.counts.achieved}</div>
-        <div class="kpi-label">Objetivos cumplidos</div><div class="kpi-sub">Alcanzan o superan obj. 2027</div></div>
-      <div class="kpi"><div class="kpi-val" style="color:#2563EB">${gs.counts.on_track}</div>
-        <div class="kpi-label">En seguimiento</div><div class="kpi-sub">Evolución alineada con meta</div></div>
-      <div class="kpi"><div class="kpi-val" style="color:#D97706">${gs.counts.at_risk}</div>
-        <div class="kpi-label">En riesgo</div><div class="kpi-sub">Desviación moderada — foco</div></div>
-      <div class="kpi"><div class="kpi-val" style="color:#DC2626">${gs.counts.critical}</div>
-        <div class="kpi-label">Atención urgente</div><div class="kpi-sub">Desviación significativa</div></div>
-      <div class="kpi"><div class="kpi-val">${gs.counts.achieved + gs.counts.on_track}</div>
-        <div class="kpi-label">Estado favorable</div><div class="kpi-sub">Cumplidos + en seguimiento</div></div>
-      <div class="kpi"><div class="kpi-val">${gs.modified}</div>
-        <div class="kpi-label">Actualizados localmente</div><div class="kpi-sub">Editados en esta sesión</div></div>
+      ${kpi(Math.round(gs.avgP) + '%', 'Avance global', `Media de ${gs.total} indicadores`, '#2563EB')}
+      ${kpi(gs.counts.achieved, 'Objetivos cumplidos', 'Alcanzan o superan obj. 2027', '#059669')}
+      ${kpi(gs.counts.on_track, 'En seguimiento', 'Evolución alineada con meta', '#2563EB')}
+      ${kpi(gs.counts.at_risk, 'En riesgo', 'Desviación moderada — foco', '#D97706')}
+      ${kpi(gs.counts.critical, 'Atención urgente', 'Desviación significativa', '#DC2626')}
     </div>`;
 
-  // Semáforo
-  const thr = statusThresholds();
-  const semHTML = `
-    <div class="card card-p">
-      <div class="flex items-center justify-between flex-wrap gap-sm" style="margin-bottom:.75rem">
-        <div class="card-header-title">Semáforo de estado</div>
-        <div class="sem-legend">
-          <div class="sem-item"><div class="sem-dot" style="background:#059669"></div> Cumplido ≥ ${thr.achieved}%</div>
-          <div class="sem-item"><div class="sem-dot" style="background:#2563EB"></div> En seguimiento ≥ ${thr.on_track}%</div>
-          <div class="sem-item"><div class="sem-dot" style="background:#D97706"></div> En riesgo ≥ ${thr.at_risk}%</div>
-          <div class="sem-item"><div class="sem-dot" style="background:#DC2626"></div> Urgente &lt; ${thr.at_risk}%</div>
-        </div>
-      </div>
-      <div style="font-size:.72rem;color:var(--muted)">
-        Fórmula: (Valor actual − Base 2023) / (Objetivo 2027 − Base 2023) × 100. Para indicadores sin base: Valor actual / Objetivo × 100.
-        Indicadores invertidos (mejor = menor): Valor actual / Objetivo × 100 si actual ≥ objetivo → 100%.
-      </div>
-    </div>`;
-
-  // Ejes
+  // 2 · Por eje: la tarjeta completa lleva a la vista del eje
   const ejesHTML = `
     <div class="eje-grid">
       ${EJES.map(e => {
         const s = ejeStats(e.id);
         const p = Math.round(s.avg);
         return `
-          <div class="eje-card" data-eje="${e.id}" onclick="navigate('eje-${e.id}')">
+          <div class="eje-card" data-eje="${e.id}" onclick="navigate('eje-${e.id}')" title="Ver indicadores del eje ${e.id}">
             <div class="eje-card-num">Eje ${e.id}</div>
             <div class="eje-card-name">${e.nombre}</div>
             <div class="eje-card-pct">${p}%</div>
             <div style="margin:.4rem 0 .6rem">${progBar({actual:{v:p},obj:100,base:{v:0},bin:false,inv:false,unidad:'%'})}</div>
             <div class="eje-card-stats">
-              <span class="eje-stat es-a">✓ ${s.counts.achieved}</span>
-              <span class="eje-stat es-g">→ ${s.counts.on_track}</span>
-              <span class="eje-stat es-y">! ${s.counts.at_risk}</span>
-              <span class="eje-stat es-r">!! ${s.counts.critical}</span>
+              <span class="eje-stat es-a" title="Cumplidos">✓ ${s.counts.achieved}</span>
+              <span class="eje-stat es-g" title="En seguimiento">→ ${s.counts.on_track}</span>
+              <span class="eje-stat es-y" title="En riesgo">! ${s.counts.at_risk}</span>
+              <span class="eje-stat es-r" title="Atención urgente">!! ${s.counts.critical}</span>
             </div>
             <div class="eje-card-meta">${s.inds.length} indicadores · ${e.lineas.length} líneas</div>
-            <div class="eje-card-link">Ver detalle →</div>
           </div>`;
       }).join('')}
     </div>`;
 
-  // Charts
-  const chartsHTML = `
-    <div class="charts-grid">
-      <div class="card card-p">
-        <div class="chart-title">Distribución por estado (${gs.total} indicadores)</div>
-        <div class="chart-h"><canvas id="ch-donut"></canvas></div>
-      </div>
-      <div class="card card-p">
-        <div class="chart-title">Avance medio por eje estratégico (%)</div>
-        <div class="chart-h"><canvas id="ch-ejes"></canvas></div>
-      </div>
-    </div>
-    <div class="charts-grid">
-      <div class="card card-p">
-        <div class="chart-title">Indicadores por estado y eje</div>
-        <div class="chart-h"><canvas id="ch-stacked"></canvas></div>
-      </div>
-      <div class="card card-p">
-        <div class="chart-title">Cobertura estratégica por eje (radar)</div>
-        <div class="chart-h"><canvas id="ch-radar"></canvas></div>
-      </div>
-    </div>`;
-
-  // v2.0 — Qué ha cambiado + destacados
-  let changesHTML = '', highlightsHTML = '';
-  try { changesHTML = changesBlockHTML(); } catch (e) { console.error('changesBlock', e); }
+  // 3 · Cambios: solo si existe algún snapshot de referencia
+  let changesHTML = '', attentionHTML = '', highlightsHTML = '';
+  try { if (getLastComiteSnapshot()) changesHTML = changesBlockHTML(); } catch (e) { console.error('changesBlock', e); }
+  // 4 · Atención requerida: solo si hay algo que atender
+  try { attentionHTML = attentionBlockHTML(99); } catch (e) { console.error('attention', e); }
+  // Opcional: destacados elegidos en Configuración (vacío por defecto → no se muestra)
   try { highlightsHTML = highlightsBlockHTML(); } catch (e) { console.error('highlights', e); }
 
-  el.innerHTML = `<div class="section-gap">${kpiHTML}${semHTML}${ejesHTML}${changesHTML}${highlightsHTML}${chartsHTML}</div>`;
+  el.innerHTML = `<div class="section-gap">${kpiHTML}${ejesHTML}${changesHTML}${attentionHTML}${highlightsHTML}</div>`;
 
   // Actualizar cabecera
-  const pillEl = document.getElementById('pill-last-update');
-  if (pillEl) pillEl.textContent = 'Últ. actualización: ' + (fmtDate(last) || '—');
   const pillTotal = document.getElementById('pill-total');
   if (pillTotal) pillTotal.textContent = gs.total + ' indicadores';
+}
 
-  setTimeout(() => {
-    renderDonut('ch-donut', gs.counts);
-    renderEjesBar('ch-ejes');
-    renderIndCountBar('ch-stacked');
-    renderRadar('ch-radar');
-  }, 80);
+// Indicadores que requieren atención: críticos (peor avance primero) + en riesgo con dato
+// vencido hace ≥ 30 días. Se excluyen "en seguimiento" y "objetivo cumplido".
+function attentionBlockHTML() {
+  const pct = i => Math.round(Math.min(calcProg(i), 100));
+  const daysOverdue = i => Math.abs(daysToNextUpdate(i));
+  const vencTxt = i => `dato vencido hace ${daysOverdue(i)} días`;
+  const crit = DATA.filter(i => getStatus(i) === 'critical').sort((a, b) => calcProg(a) - calcProg(b))
+    .map(i => ({ i, tab: 'situacion', color: '#DC2626',
+      reason: `Avance del ${pct(i)}% · atención urgente${updateStatus(i) === 'vencido' ? ' · ' + vencTxt(i) : ''}` }));
+  // Solo "en riesgo" con dato vencido ≥ 30 días (14 días en semestral no es urgente)
+  const venc = DATA.filter(i => getStatus(i) === 'at_risk'
+      && updateStatus(i) === 'vencido'
+      && daysOverdue(i) >= 30)
+    .sort((a, b) => daysToNextUpdate(a) - daysToNextUpdate(b))
+    .map(i => ({ i, tab: 'actualizar', color: '#9A3412',
+      reason: `${vencTxt(i).charAt(0).toUpperCase() + vencTxt(i).slice(1)} (${i.per.toLowerCase()}) · avance del ${pct(i)}%` }));
+  const list = [...crit, ...venc];
+  if (!list.length) return '';
+  return `
+    <div class="card card-p">
+      <div class="flex items-center justify-between flex-wrap gap-sm" style="margin-bottom:.5rem">
+        <div class="card-header-title">⚑ Atención requerida <span class="text-xs text-muted" style="font-weight:500">· ${list.length} indicadores</span></div>
+        <button class="btn btn-ghost btn-sm" onclick="navigate('prioridades','alertas')">Ver todas las prioridades →</button>
+      </div>
+      ${list.map(({ i, tab, color, reason }) => {
+        const st = getStatus(i);
+        return `
+          <div class="alert-item">
+            <div class="alert-dot" style="background:${color}"></div>
+            <div>
+              <div class="alert-name ind-link" onclick="openFicha('${i.id}','${tab}')">${i.nombre}</div>
+              <div class="alert-reason">${reason}</div>
+              <div class="alert-meta">${i.id} · Eje ${i.eje} · Actual: <strong>${fmtActual(i)}</strong> → Objetivo: <strong>${fmtObj(i)}</strong></div>
+            </div>
+            <div class="alert-pct">${badge(st)}</div>
+          </div>`;
+      }).join('')}
+    </div>`;
 }
 
 // ── EJE VIEW ─────────────────────────────────────────────────
@@ -314,7 +327,7 @@ function renderEje(n) {
       </div>`;
   }).join('');
 
-  el.innerHTML = `<div class="section-gap">${header}${lineasHTML}</div>`;
+  el.innerHTML = `<div class="section-gap">${indTabsHTML('eje-' + n)}${header}${lineasHTML}</div>`;
 }
 
 function toggleLinea(hd) {
@@ -337,9 +350,9 @@ function renderTabla() {
   const lineaOpts  = EJES.flatMap(e => e.lineas).map(l => `<option value="${l.id}"${sel(l.id, f0.linea)}>${l.id} — ${l.nombre}</option>`).join('');
   const statusOpts = Object.entries(STATUS_CONFIG).map(([k,v]) => `<option value="${k}"${sel(k, f0.status)}>${v.label}</option>`).join('');
   const perOpts    = [...new Set(INDICADORES_ORIGINAL.map(i => i.per))].map(p => `<option value="${p}"${sel(p, f0.per)}>${p}</option>`).join('');
-  const respOpts   = [...new Set(INDICADORES_ORIGINAL.map(i => i.responsable).filter(Boolean))].map(r => `<option value="${r}"${sel(r, f0.responsable)}>${r}</option>`).join('');
 
   el.innerHTML = `
+    ${indTabsHTML('indicadores')}
     <div class="card" style="overflow:hidden">
       ${savedFiltersBarHTML()}
       <div class="table-toolbar">
@@ -359,15 +372,9 @@ function renderTabla() {
         <select class="filter-sel" onchange="tblFilter('per',this.value)">
           <option value="">Todas las periodicidades</option>${perOpts}
         </select>
-        <select class="filter-sel" onchange="tblFilter('responsable',this.value)">
-          <option value="">Todos los responsables</option>${respOpts}
-        </select>
         <div class="toolbar-sep"></div>
         <label style="font-size:.75rem;color:var(--ink2);display:flex;align-items:center;gap:.35rem;cursor:pointer">
           <input type="checkbox" ${tableFilters.soloRiesgo ? 'checked' : ''} onchange="tblFilter('soloRiesgo',this.checked)"> Solo en riesgo/urgente
-        </label>
-        <label style="font-size:.75rem;color:var(--ink2);display:flex;align-items:center;gap:.35rem;cursor:pointer">
-          <input type="checkbox" ${tableFilters.soloSinDatos ? 'checked' : ''} onchange="tblFilter('soloSinDatos',this.checked)"> Sin base
         </label>
         <button class="btn btn-ghost btn-sm" onclick="clearTblFilters()">✕ Limpiar</button>
         <div class="toolbar-count" id="tbl-count"></div>
@@ -386,8 +393,6 @@ function renderTabla() {
             <th onclick="tblSort('status')">Estado <span class="th-sort" id="ts-status"></span></th>
             <th onclick="tblSort('fecha')">Actualización <span class="th-sort" id="ts-fecha"></span></th>
             <th>Periodicidad</th>
-            <th>Responsable</th>
-            <th style="width:60px"></th>
           </tr></thead>
           <tbody id="tbl-body"></tbody>
         </table>
@@ -409,7 +414,6 @@ function applyTblFilters() {
   if (f.linea)      rows = rows.filter(i => i.linea === f.linea);
   if (f.status)     rows = rows.filter(i => getStatus(i) === f.status);
   if (f.per)        rows = rows.filter(i => i.per === f.per);
-  if (f.responsable)rows = rows.filter(i => i.responsable === f.responsable);
   if (f.soloRiesgo) rows = rows.filter(i => ['at_risk','critical'].includes(getStatus(i)));
   if (f.soloSinDatos) rows = rows.filter(i => i.base.v === null || i.base.v === undefined);
 
@@ -447,11 +451,11 @@ function applyTblFilters() {
     const st = getStatus(i);
     const p  = Math.min(calcProg(i), 100);
     const sc = STATUS_CONFIG[st];
-    return `<tr>
+    return `<tr class="tr-link" onclick="openFicha('${i.id}')" title="Abrir ficha 360°">
       <td class="td-id">${i.id}</td>
       <td>${ejePill(i.eje)}</td>
       <td>
-        <div class="td-name ind-link" onclick="openFicha('${i.id}')" title="Abrir ficha 360°">${i.nombre}${i.nuevo?'<span class="badge badge-nuevo" style="margin-left:.3rem;font-size:.58rem">N</span>':''}${i._mod?'<span class="badge badge-updated" style="margin-left:.3rem;font-size:.58rem">✎</span>':''}</div>
+        <div class="td-name ind-link">${i.nombre}${i.nuevo?'<span class="badge badge-nuevo" style="margin-left:.3rem;font-size:.58rem">N</span>':''}${i._mod?'<span class="badge badge-updated" style="margin-left:.3rem;font-size:.58rem">✎</span>':''}</div>
         <div class="td-linea">${i.linea}</div>
       </td>
       <td class="td-num">${fmtBase(i)}</td>
@@ -464,11 +468,9 @@ function applyTblFilters() {
           <span class="prog-pct">${Math.round(p)}%</span>
         </div>
       </td>
-      <td><div class="badge-stack">${badge(st)}${confBadge(i.id)}</div></td>
+      <td><div class="badge-stack">${badge(st)}</div></td>
       <td style="font-size:.74rem;white-space:nowrap;color:var(--muted)">${fmtDate(i.actual.fecha)}</td>
       <td style="font-size:.73rem;color:var(--ink3);white-space:nowrap">${i.per}</td>
-      <td style="font-size:.72rem;color:var(--ink3);max-width:140px">${i.responsable || '—'}</td>
-      <td class="td-actions"><button class="tbl-btn" onclick="openModal('${i.id}')" title="Abrir ficha 360°">✎</button></td>
     </tr>`;
   }).join('');
 
@@ -492,85 +494,40 @@ function clearTblFilters() {
   renderTabla();
 }
 
-// ── EVOLUCIÓN ────────────────────────────────────────────────
-function renderEvolucion() {
-  const el = document.getElementById('v-evolucion-inner');
-  if (!el) return;
-
-  const intro = `
-    <div class="card card-p" style="font-size:.8rem;color:var(--ink2)">
-      La barra muestra el progreso desde la base 2023 hasta el objetivo 2027, con el valor actual de 2026.
-      <strong>Gris claro</strong>: base de partida. <strong>Color</strong>: valor actual. <strong>Línea vertical</strong>: objetivo 2027.
-      No se muestran series históricas inventadas; únicamente base → actual → objetivo.
-    </div>`;
-
-  const ejesHTML = EJES.map(e => {
-    const inds = DATA.filter(i => i.eje === e.id);
-    return `
-      <div>
-        <div style="font-size:.82rem;font-weight:700;color:${e.color};margin-bottom:.5rem;padding-left:.25rem">
-          EJE ${e.id} · ${e.nombre}
-        </div>
-        <div class="evol-grid">
-          ${inds.map(i => evolItem(i, e.color)).join('')}
-        </div>
-      </div>`;
-  }).join('');
-
-  el.innerHTML = `<div class="section-gap">${intro}${ejesHTML}</div>`;
+// ── PRIORIDADES (alertas + calendario) ───────────────────────
+// v2.3: fusiona las antiguas vistas «Alertas y prioridades» y «Calendario».
+function renderPrioridades() {
+  if (viewTab.prioridades === 'calendario') renderCalendario();
+  else renderAlertas();
 }
 
-function evolItem(i, color) {
-  if (i.bin) {
-    return `
-      <div class="evol-item">
-        <div class="evol-name">${i.nombre}</div>
-        <div style="display:flex;align-items:center;gap:.5rem">
-          ${badge(getStatus(i))}
-          <span style="font-size:.75rem;color:var(--ink3)">Indicador binario · Actual: <strong>${i.actual.v}</strong> → Objetivo: <strong>${i.obj}</strong></span>
-        </div>
-      </div>`;
-  }
-  const a = +i.actual.v, o = +i.obj;
-  const b = i.base.v !== null && i.base.v !== undefined ? +i.base.v : null;
-  const hasBase = b !== null;
-  const st = getStatus(i);
-  const sc = STATUS_CONFIG[st];
-  const minV = hasBase ? Math.min(b, a, o) : Math.min(a, o) * 0.9;
-  const maxV = Math.max(hasBase ? Math.max(b, a, o) : Math.max(a, o), o) * 1.05;
-  const range = maxV - minV || 1;
-  const clamp = v => Math.max(0, Math.min(((v - minV) / range) * 100, 100));
-  const aPct = clamp(i.inv ? (a >= o ? 100 : (a / o) * 100) : a);
-  const bPct = hasBase ? clamp(b) : 0;
-  const oPct = clamp(o);
-
+// Resumen común a las dos pestañas: cada contador lleva a su grupo o aplica su filtro
+function prioHeadHTML() {
+  const n = st => DATA.filter(i => getStatus(i) === st).length;
+  const nUpd = st => DATA.filter(i => updateStatus(i) === st).length;
+  const summary = [
+    { n: n('critical'),  l: 'Urgentes',         c: '#DC2626', go: "prioGo('alertas','al-critical')" },
+    { n: n('at_risk'),   l: 'En riesgo',        c: '#D97706', go: "prioGo('alertas','al-atrisk')" },
+    { n: nUpd('vencido'),l: 'Datos vencidos',   c: '#DC2626', go: "prioGo('calendario',null,'vencido')" },
+    { n: nUpd('proximo'),l: 'Vencen ≤ 30 días', c: '#D97706', go: "prioGo('calendario',null,'proximo')" },
+    { n: n('achieved'),  l: 'Logros',           c: '#059669', go: "prioGo('alertas','al-achieved')" }
+  ];
   return `
-    <div class="evol-item">
-      <div class="evol-name">${i.nombre}</div>
-      <div class="evol-track">
-        ${hasBase ? `<div class="evol-base-fill" style="width:${bPct}%"></div>` : ''}
-        <div class="evol-fill pb-${st}" style="width:${aPct}%;border-radius:99px">
-          <span>${fmtActual(i)}</span>
-        </div>
-        <div class="evol-target-line" style="left:${oPct}%"></div>
-      </div>
-      <div class="evol-labels">
-        <span>${hasBase ? fmtBase(i) + ' (base ' + i.base.año + ')' : '—'}</span>
-        <span>🎯 ${fmtObj(i)} (2027)</span>
-      </div>
-      <div class="evol-numbers">
-        ${hasBase ? `Base: <strong>${fmtBase(i)}</strong> · ` : ''}
-        Actual: <strong style="color:${sc.color}">${fmtActual(i)}</strong> ·
-        Objetivo: <strong>${fmtObj(i)}</strong> ·
-        Avance: <strong>${fmtProg(i)}</strong>
-        ${!i.bin && b !== null ? ` · Variación: <strong style="color:${fmtVar(i).startsWith('+')?'var(--achieved)':'var(--crit)'}">${fmtVar(i)}</strong>` : ''}
-      </div>
-    </div>`;
+    <div class="alert-summary">
+      ${summary.map(s => `<a class="alert-sum-item" href="#" onclick="${s.go};return false">
+        <span class="alert-sum-n" style="color:${s.c}">${s.n}</span><span class="alert-sum-l">${s.l}</span></a>`).join('')}
+    </div>
+    ${viewTabsHTML('prioridades', [['alertas', 'Alertas por estado'], ['calendario', 'Calendario de actualizaciones']])}`;
 }
 
-// ── ALERTAS ──────────────────────────────────────────────────
+function prioGo(tab, anchor, calEstado) {
+  if (calEstado) calFilter.estado = calEstado;
+  navigate('prioridades', tab);
+  if (anchor) setTimeout(() => document.getElementById(anchor)?.scrollIntoView({ behavior: 'smooth' }), 60);
+}
+
 function renderAlertas() {
-  const el = document.getElementById('v-alertas-inner');
+  const el = document.getElementById('v-prioridades-inner');
   if (!el) return;
 
   const t = statusThresholds();
@@ -605,35 +562,20 @@ function renderAlertas() {
       }
     }
   });
-  // TIEMPO
-  const vencidos = DATA.filter(i => updateStatus(i) === 'vencido')
-    .sort((a, b) => daysToNextUpdate(a) - daysToNextUpdate(b))
-    .map(i => R(i, `Dato de ${fmtDate(i.actual.fecha)} con periodicidad ${i.per.toLowerCase()}: actualización prevista el ${fmtDate(nextUpdateDate(i))} (hace ${Math.abs(daysToNextUpdate(i))} días).`));
-  const proximos = DATA.filter(i => { const d = daysToNextUpdate(i); return d !== null && d >= 0 && d <= 15; })
-    .sort((a, b) => daysToNextUpdate(a) - daysToNextUpdate(b))
-    .map(i => R(i, `Próxima actualización prevista el ${fmtDate(nextUpdateDate(i))} (en ${daysToNextUpdate(i)} días).`));
-  // CALIDAD
-  const sinFuente = DATA.filter(i => !i.fuente || !String(i.fuente).trim())
-    .map(i => R(i, 'No tiene fuente de información asignada.'));
-  const sinEvid = DATA.filter(i => getConfidence(i.id) === 'sin_evidencia')
-    .map(i => R(i, `Marcado como «sin evidencia»: el valor ${fmtActual(i)} no tiene soporte documental.`));
-  const pendientes = DATA.filter(i => getConfidence(i.id) === 'pendiente');
-  const sinBase = DATA.filter(i => (i.base.v === null || i.base.v === undefined) && !i.bin && !i.nuevo)
-    .map(i => R(i, 'Sin valor de partida 2023: el avance se mide directamente contra el objetivo.'));
-  // INFORMATIVO
-  const nuevos = DATA.filter(i => i.nuevo).map(i => R(i, 'OKR incorporado en la revisión de 2026.'));
+  const nuevos = [];
 
+  // Los grupos vacíos se reducen a su cabecera, sin caja vacía
   const grp = (title, dotColor, items, showProg = true, anchor = '') => {
+    const id = anchor ? ` id="${anchor}"` : '';
     if (!items.length) return `
-      <div class="alert-group"${anchor ? ` id="${anchor}"` : ''}>
+      <div class="alert-group alert-group-empty"${id}>
         <div class="alert-group-hd" style="color:${dotColor}">
           <div class="alert-group-dot" style="background:${dotColor}"></div>
           ${title} (0)
         </div>
-        <div class="empty" style="padding:.75rem"><div class="empty-msg">Sin indicadores en esta categoría</div></div>
       </div>`;
     return `
-      <div class="alert-group"${anchor ? ` id="${anchor}"` : ''}>
+      <div class="alert-group"${id}>
         <div class="alert-group-hd" style="color:${dotColor}">
           <div class="alert-group-dot" style="background:${dotColor}"></div>
           ${title} (${items.length})
@@ -664,21 +606,9 @@ function renderAlertas() {
   };
   const cat = (name, desc) => `<div class="alert-cat"><span>${name}</span><small>${desc}</small></div>`;
 
-  const summary = [
-    { k: 'al-critical', n: critical.length, l: 'Urgentes', c: '#DC2626' },
-    { k: 'al-atrisk',   n: atRisk.length,   l: 'En riesgo', c: '#D97706' },
-    { k: 'al-vencidos', n: vencidos.length, l: 'Datos vencidos', c: '#DC2626' },
-    { k: 'al-proximos', n: proximos.length, l: 'Vencen ≤ 15 días', c: '#D97706' },
-    { k: 'al-sinevid',  n: sinEvid.length,  l: 'Sin evidencia', c: '#DC2626' },
-    { k: 'al-achieved', n: achieved.length, l: 'Logros', c: '#059669' }
-  ];
-
   el.innerHTML = `
     <div class="section-gap">
-      <div class="alert-summary">
-        ${summary.map(s => `<a class="alert-sum-item" href="#" onclick="document.getElementById('${s.k}')?.scrollIntoView({behavior:'smooth'});return false">
-          <span class="alert-sum-n" style="color:${s.c}">${s.n}</span><span class="alert-sum-l">${s.l}</span></a>`).join('')}
-      </div>
+      ${prioHeadHTML()}
 
       <div>
         ${cat('Resultado', 'Avance respecto a la meta 2027')}
@@ -689,94 +619,54 @@ function renderAlertas() {
       </div>
 
       <div>
-        ${cat('Tiempo', 'Vigencia de los datos según su periodicidad')}
-        ${grp('DATOS VENCIDOS — Actualización prevista ya superada', '#DC2626', vencidos, true, 'al-vencidos')}
-        ${grp('PRÓXIMOS A VENCER — En los próximos 15 días', '#D97706', proximos, true, 'al-proximos')}
-      </div>
-
-      <div>
-        ${cat('Calidad', 'Solidez y trazabilidad del dato')}
-        ${grp('SIN FUENTE — Indicadores sin fuente de información', '#DC2626', sinFuente)}
-        ${grp('SIN EVIDENCIA — Valor sin soporte documental', '#DC2626', sinEvid, true, 'al-sinevid')}
-        <div class="alert-group">
-          <div class="alert-group-hd" style="color:#6B7280">
-            <div class="alert-group-dot" style="background:#6B7280"></div>
-            CONFIANZA PENDIENTE — Calidad del dato aún no revisada (${pendientes.length})
-          </div>
-          ${pendientes.length ? `
-            <div class="alert-reason" style="margin:.25rem 0 .5rem">Nivel de confianza por defecto: revisa cada dato en su ficha 360° (pestaña Seguimiento) y márcalo como validado, provisional o sin evidencia.</div>
-            <div class="chip-list">${pendientes.map(i => `<span class="chip" onclick="openFicha('${i.id}','seguimiento')" title="${esc(i.nombre)}">${i.id}</span>`).join('')}</div>`
-          : `<div class="empty" style="padding:.75rem"><div class="empty-msg">Todos los indicadores tienen el nivel de confianza revisado</div></div>`}
-        </div>
-        ${sinBase.length ? grp('SIN BASE — Indicadores sin situación de partida registrada', '#6B7280', sinBase, true) : ''}
-      </div>
-
-      <div>
         ${cat('Positivo', 'Logros y mejoras recientes')}
         ${grp('LOGROS — Objetivos alcanzados', '#059669', achieved, false, 'al-achieved')}
         ${grp('MEJORA SIGNIFICATIVA — Más de 10 puntos de avance en el último registro', '#059669', mejoras)}
       </div>
 
-      ${nuevos.length ? `<div>
-        ${cat('Informativo', 'Cambios en el cuadro de mando')}
-        ${grp('INFORMATIVOS — Nuevos OKRs incorporados en 2026', '#0369A1', nuevos, true)}
-      </div>` : ''}
+
+      <div class="form-hint">Los datos vencidos y los próximos vencimientos están en la pestaña <a href="#" class="ind-link" onclick="navigate('prioridades','calendario');return false">Calendario de actualizaciones</a>.</div>
     </div>`;
 }
 
 // ── ACTUALIZAR DATOS ─────────────────────────────────────────
+// v2.3: una sola lista (antes: lista de modificados + lista completa). El formulario es
+// siempre el de la ficha 360° › Actualizar. Exportar/importar viven en Configuración.
+let updFilter = 'todos';
+
 function renderActualizar() {
   const el = document.getElementById('v-actualizar-inner');
   if (!el) return;
   const modified = DATA.filter(i => i._mod);
+  if (updFilter === 'modificados' && !modified.length) updFilter = 'todos';
+  const rows = updFilter === 'modificados' ? modified : DATA;
+  const chips = [['todos', 'Todos', DATA.length], ['modificados', 'Actualizados localmente', modified.length]];
 
   el.innerHTML = `
     <div class="section-gap">
-      ${modified.length ? `
-        <div class="card card-p">
-          <div style="font-size:.82rem;font-weight:700;margin-bottom:.75rem;color:var(--track)">✎ Indicadores con datos actualizados localmente (${modified.length})</div>
-          <div class="update-list">
-            ${modified.map(i => `
-              <div class="update-item modified">
-                <div class="update-item-info">
-                  <div class="update-item-name">${i.nombre}</div>
-                  <div class="update-item-meta">Eje ${i.eje} · ${i.linea} · Actualizado: ${i._modAt ? new Date(i._modAt).toLocaleString('es-ES') : '—'}</div>
-                </div>
-                <div class="update-item-actions">
-                  <span class="badge badge-updated">Valor: ${fmtActual(i)}</span>
-                  <button class="btn btn-ghost btn-sm" onclick="openFicha('${i.id}','actualizar')">✎ Editar</button>
-                  <button class="btn btn-sm" style="background:var(--crit-lt);color:var(--crit);border:1px solid var(--crit-bd)" onclick="resetOne('${i.id}');navigate('actualizar')">↺</button>
-                </div>
-              </div>`).join('')}
-          </div>
-          <div style="margin-top:.75rem;display:flex;gap:.5rem">
-            <button class="btn btn-danger btn-sm" onclick="if(confirm('¿Restaurar TODOS los indicadores a sus valores originales?')){resetAll();navigate('actualizar')}">↺ Restaurar todos los originales</button>
-          </div>
-        </div>` : ''}
-      <div class="card">
-        <div class="card-header">
-          <div class="card-header-title">Todos los indicadores (${DATA.length})</div>
-          <div class="flex gap-sm">
-            <button class="btn btn-ghost btn-sm" onclick="exportJSON()">⬇ Exportar JSON</button>
-            <button class="btn btn-ghost btn-sm" onclick="exportCSV()">⬇ Exportar CSV</button>
-            <button class="btn btn-ghost btn-sm" onclick="triggerImport()">⬆ Importar JSON</button>
-            <input type="file" id="import-file" accept=".json" style="display:none" onchange="handleImport(event)">
-          </div>
+      <div class="card" style="overflow:hidden">
+        <div class="table-toolbar">
+          ${chips.map(([k, l, n]) => `<button class="fchip${updFilter === k ? ' active' : ''}" onclick="updFilter='${k}';renderActualizar()">${l} <span>${n}</span></button>`).join('')}
+          ${modified.length ? `<button class="btn btn-danger btn-sm" onclick="if(confirm('¿Restaurar TODOS los indicadores a sus valores originales?')){resetAll();updFilter='todos';navigate('actualizar')}">↺ Restaurar todos los originales</button>` : ''}
+          <div class="toolbar-count">${rows.length} de ${DATA.length} indicadores</div>
         </div>
         <div class="update-list" style="padding:.5rem">
-          ${DATA.map(i => `
+          ${rows.map(i => `
             <div class="update-item ${i._mod ? 'modified' : ''}">
               <div class="update-item-info">
-                <div class="update-item-name">${i.nombre}${i._mod ? '<span class="badge badge-updated" style="margin-left:.4rem">✎</span>' : ''}</div>
-                <div class="update-item-meta">Eje ${i.eje} · ${i.linea} · ${fmtActual(i)} → Obj: ${fmtObj(i)} · ${Math.round(calcProg(i))}%</div>
+                <div class="update-item-name ind-link" onclick="openFicha('${i.id}')">${i.nombre}${i._mod ? '<span class="badge badge-updated" style="margin-left:.4rem">✎ Actualizado</span>' : ''}</div>
+                <div class="update-item-meta">${i.id} · Eje ${i.eje} · ${i.linea} · ${fmtActual(i)} → Obj: ${fmtObj(i)} · ${Math.round(calcProg(i))}%${i._mod && i._modAt ? ' · Actualizado: ' + new Date(i._modAt).toLocaleString('es-ES') : ''}</div>
               </div>
               <div class="update-item-actions">
-                ${badge(getStatus(i))}${confBadge(i.id)}${updBadge(updateStatus(i))}
-                <button class="btn btn-ghost btn-sm" onclick="openFicha('${i.id}','actualizar')">✎ Actualizar</button>
+                ${badge(getStatus(i))}${updBadge(updateStatus(i))}
+                <button class="btn btn-primary btn-sm" onclick="openQuickUpdate('${i.id}')">⚡ Actualizar</button>
+                ${i._mod ? `<button class="btn btn-danger btn-sm" title="Restaurar el valor original" onclick="resetOne('${i.id}');navigate('actualizar')">↺</button>` : ''}
               </div>
             </div>`).join('')}
         </div>
       </div>
+      <div class="form-hint">Para exportar los indicadores (CSV/JSON), importar actualizaciones o hacer una copia de seguridad, ve a
+        <a href="#" class="ind-link" onclick="navigate('config','datos');return false">Configuración › Datos y copias</a>.</div>
     </div>`;
 }
 
@@ -787,110 +677,9 @@ function handleImport(e) {
   const file = e.target.files[0];
   if (!file) return;
   const r = new FileReader();
-  r.onload = ev => { if (importJSON(ev.target.result)) navigate('actualizar'); };
+  r.onload = ev => { if (importJSON(ev.target.result)) navigate('config', 'datos'); };
   r.readAsText(file);
   e.target.value = '';
-}
-
-// ── INFORME EJECUTIVO ────────────────────────────────────────
-function renderInforme() {
-  const el = document.getElementById('v-informe-inner');
-  if (!el) return;
-  const gs = globalStats();
-  const last = lastUpdateDate();
-  const logros  = DATA.filter(i => getStatus(i) === 'achieved');
-  const urgente = DATA.filter(i => getStatus(i) === 'critical');
-  const riesgo  = DATA.filter(i => getStatus(i) === 'at_risk');
-
-  const ejeRowsHTML = EJES.map(e => {
-    const s = ejeStats(e.id);
-    const p = Math.round(s.avg);
-    return `
-      <div class="report-eje-bar">
-        <div class="reb-name" style="color:${e.color}">Eje ${e.id} · ${e.nombre.split(' ').slice(0,3).join(' ')}</div>
-        <div class="reb-pb"><div class="pb-wrap pb-10"><div class="pb-fill" style="width:${p}%;background:${e.color}"></div></div></div>
-        <div class="reb-pct" style="color:${e.color}">${p}%</div>
-      </div>
-      <div style="font-size:.72rem;color:var(--muted);margin-bottom:.5rem;padding-left:220px">
-        ✓ ${s.counts.achieved} cumplidos · → ${s.counts.on_track} en seguimiento · ! ${s.counts.at_risk} en riesgo · !! ${s.counts.critical} urgentes
-      </div>`;
-  }).join('');
-
-  const topEje = EJES.reduce((best, e) => ejeStats(e.id).avg > ejeStats(best.id).avg ? e : best, EJES[0]);
-  const lowEje = EJES.reduce((worst, e) => ejeStats(e.id).avg < ejeStats(worst.id).avg ? e : worst, EJES[0]);
-
-  el.innerHTML = `
-    <div class="flex items-center gap-sm" style="margin-bottom:1.25rem">
-      <button class="btn btn-primary" onclick="window.print()">🖨 Imprimir / Guardar PDF</button>
-      <button class="btn btn-ghost" onclick="exportJSON()">⬇ Exportar JSON</button>
-      <button class="btn btn-ghost" onclick="exportCSV()">⬇ Exportar CSV</button>
-    </div>
-    <div class="report-paper">
-      <div class="report-logo">Junta de Extremadura · OTID — Oficina de Transformación e Innovación Digital · Accenture</div>
-      <div class="report-title">Informe de Seguimiento OKR</div>
-      <div class="report-subtitle">Estrategia de Transformación Digital de Extremadura 2027 (ETDE27)</div>
-      <div class="report-date">
-        Datos actualizados a: ${fmtDate(last)} · Informe generado el ${new Date().toLocaleDateString('es-ES', {day:'numeric',month:'long',year:'numeric'})}
-      </div>
-      <div class="report-divider"></div>
-
-      <div class="report-kpis">
-        <div class="rk"><div class="rk-val" style="color:#2563EB">${Math.round(gs.avgP)}%</div><div class="rk-label">Avance global</div></div>
-        <div class="rk"><div class="rk-val">${gs.total}</div><div class="rk-label">Indicadores</div></div>
-        <div class="rk"><div class="rk-val" style="color:#059669">${gs.counts.achieved}</div><div class="rk-label">Cumplidos</div></div>
-        <div class="rk"><div class="rk-val" style="color:#2563EB">${gs.counts.on_track}</div><div class="rk-label">En seguimiento</div></div>
-        <div class="rk"><div class="rk-val" style="color:#D97706">${gs.counts.at_risk}</div><div class="rk-label">En riesgo</div></div>
-        <div class="rk"><div class="rk-val" style="color:#DC2626">${gs.counts.critical}</div><div class="rk-label">Urgente</div></div>
-      </div>
-
-      <div class="report-section">
-        <h2>Situación general</h2>
-        <p>A ${fmtDate(last)}, la ETDE27 presenta un avance global del <strong>${Math.round(gs.avgP)}%</strong> sobre el conjunto de sus ${gs.total} indicadores de impacto estratégico. <strong>${gs.counts.achieved} indicadores</strong> han alcanzado o superado el objetivo 2027, ${gs.counts.on_track} evolucionan favorablemente, ${gs.counts.at_risk} presentan desviaciones moderadas que requieren seguimiento reforzado y ${gs.counts.critical} requieren acción inmediata. El eje con mayor avance es el <strong>Eje ${topEje.id} (${Math.round(ejeStats(topEje.id).avg)}%)</strong>, mientras que el eje que presenta mayores retos es el <strong>Eje ${lowEje.id} (${Math.round(ejeStats(lowEje.id).avg)}%)</strong>.</p>
-      </div>
-
-      <div class="report-section">
-        <h2>Avance por eje estratégico</h2>
-        ${ejeRowsHTML}
-      </div>
-
-      <div class="report-section">
-        <h2>Principales logros ✅ (${logros.length})</h2>
-        <ul class="report-ul">
-          ${logros.map(i => `<li><strong>${i.nombre}</strong> (Eje ${i.eje}) — Valor actual: ${fmtActual(i)} · Objetivo: ${fmtObj(i)} · Avance: ${fmtProg(i)}</li>`).join('')}
-        </ul>
-      </div>
-
-      <div class="report-section">
-        <h2>Indicadores que requieren atención urgente 🔴 (${urgente.length})</h2>
-        <ul class="report-ul">
-          ${urgente.map(i => `<li><strong>${i.nombre}</strong> (Eje ${i.eje}) — Avance: ${Math.round(calcProg(i))}% · Actual: ${fmtActual(i)} · Objetivo: ${fmtObj(i)}</li>`).join('')}
-        </ul>
-      </div>
-
-      ${riesgo.length ? `
-      <div class="report-section">
-        <h2>Indicadores en riesgo 🟡 (${riesgo.length})</h2>
-        <ul class="report-ul">
-          ${riesgo.map(i => `<li><strong>${i.nombre}</strong> (Eje ${i.eje}) — Avance: ${Math.round(calcProg(i))}% · Actual: ${fmtActual(i)} · Objetivo: ${fmtObj(i)}</li>`).join('')}
-        </ul>
-      </div>` : ''}
-
-      ${informeGestionHTML()}
-
-      <div class="report-section">
-        <h2>Prioridades para el próximo periodo</h2>
-        <ul class="report-ul">
-          <li>Acelerar la creación del SOC (Centro Regional de Ciberseguridad): avance actual del 2% frente a objetivo del 100%.</li>
-          <li>Impulsar la constitución de la Comisión Interinstitucional de Ciberseguridad, aún no constituida.</li>
-          <li>Intensificar la publicación de conjuntos de datos abiertos: 51 de 200 objetivo (25.5% de avance).</li>
-          <li>Reforzar programas de competencias digitales ciudadanas: solo +0.6pp de mejora en 2 años.</li>
-          <li>Acelerar la construcción del nuevo CPD: avance del 7% sobre objetivo del 80%.</li>
-          <li>Incrementar el ritmo de campañas de ciberseguridad: 3 de 15 completadas (20%).</li>
-          <li>Consolidar la conectividad empresarial por fibra: estancamiento desde el 78% de base.</li>
-          <li>Mantener el impulso en el Eje 4 (Innovación empresarial), donde el 50% de los indicadores ya han alcanzado el objetivo 2027.</li>
-        </ul>
-      </div>
-    </div>`;
 }
 
 // ── MODAL DE ACTUALIZACIÓN ───────────────────────────────────
@@ -939,9 +728,24 @@ function saveModal() {
 
 // ── INIT ─────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
+  // Mobile sidebar toggle button + overlay
+  const sbToggle = document.createElement('button');
+  sbToggle.id = 'sb-toggle'; sbToggle.innerHTML = '☰'; sbToggle.title = 'Menú';
+  sbToggle.addEventListener('click', () => toggleSidebar());
+  document.body.prepend(sbToggle);
+
+  const sbOverlay = document.createElement('div');
+  sbOverlay.id = 'sb-overlay';
+  sbOverlay.addEventListener('click', () => toggleSidebar(false));
+  document.body.prepend(sbOverlay);
+
   // Sidebar nav
   document.querySelectorAll('#sidebar a[data-view]').forEach(a => {
-    a.addEventListener('click', e => { e.preventDefault(); navigate(a.dataset.view); });
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      navigate(a.dataset.view);
+      toggleSidebar(false); // cierra sidebar en móvil tras navegar
+    });
   });
 
   // Modal overlay click
@@ -959,13 +763,18 @@ document.addEventListener('DOMContentLoaded', () => {
   // Pills iniciales
   const gs = globalStats();
   const last = lastUpdateDate();
-  const pillUpdate = document.getElementById('pill-last-update');
   const pillTotal  = document.getElementById('pill-total');
-  if (pillUpdate) pillUpdate.textContent = 'Últ. actualización: ' + (fmtDate(last) || '—');
   if (pillTotal)  pillTotal.textContent  = gs.total + ' indicadores';
 
   // Vista inicial
   navigate('dashboard');
+
+  // Sincronización GitHub — carga datos remotos al inicio
+  ghLoad().then(() => {
+    // Si se actualizaron datos remotos, re-renderizar la vista actual
+    if (ghStatus === 'synced') navigate(currentView);
+    ghUpdateBadge();
+  });
 });
 
 
@@ -978,6 +787,214 @@ function confBadge(id) {
   const lvl = getConfidence(id);
   const c = CONFIDENCE_CONFIG[lvl] || CONFIDENCE_CONFIG.pendiente;
   return `<span class="conf-badge conf-${lvl}" title="Nivel de confianza del dato">◉ ${c.label}</span>`;
+}
+
+// ── SIDEBAR MOBILE TOGGLE ────────────────────────────────────
+function toggleSidebar(open) {
+  const sb  = document.getElementById('sidebar');
+  const ov  = document.getElementById('sb-overlay');
+  const isOpen = sb.classList.contains('sb-open');
+  const next = open !== undefined ? open : !isOpen;
+  sb.classList.toggle('sb-open', next);
+  ov.classList.toggle('sb-open', next);
+}
+
+// ── PROYECCIÓN 2027 ──────────────────────────────────────────
+function calcProyeccion(ind) {
+  if (ind.bin || ind.actual.v === null || ind.base.v === null) return null;
+  const baseDate   = new Date((ind.base.año || 2023) + '-01-01');
+  const actualDate = parseDate(ind.actual.fecha);
+  const endDate    = new Date('2027-12-31');
+  if (!actualDate) return null;
+  const msElapsed  = actualDate - baseDate;
+  const msToEnd    = endDate - actualDate;
+  if (msElapsed <= 0 || msToEnd <= 0) return null;
+  const rate = (ind.actual.v - ind.base.v) / msElapsed;
+  const projV = ind.actual.v + rate * msToEnd;
+  const projProg = Math.round(calcProg({ ...ind, actual: { v: projV, fecha: '2027-12-31' } }));
+  return { v: projV, prog: projProg };
+}
+
+function proyBadgeHTML(ind) {
+  const p = calcProyeccion(ind);
+  if (!p) return '';
+  const cls = p.prog >= 100 ? 'ind-proy-ok' : p.prog >= 60 ? 'ind-proy-warn' : 'ind-proy-bad';
+  const icon = p.prog >= 100 ? '✓' : p.prog >= 60 ? '→' : '⚠';
+  return `<div class="ind-proy" title="Proyección al ritmo de avance actual">
+    ${icon} Al ritmo actual: <span class="ind-proy-val ${cls}">${p.prog}% en 2027</span>
+  </div>`;
+}
+
+// ── ACTUALIZACIÓN RÁPIDA ─────────────────────────────────────
+function openQuickUpdate(id) {
+  const ind = DATA.find(i => i.id === id);
+  if (!ind) return;
+  document.getElementById('qupd-overlay')?.remove();
+  const today = todayISO();
+  const overlay = document.createElement('div');
+  overlay.id = 'qupd-overlay';
+  overlay.className = 'qupd-overlay';
+  overlay.innerHTML = `
+    <div class="qupd-box">
+      <div class="qupd-name">${esc(ind.nombre)}</div>
+      <div class="qupd-id">${ind.id} · Fuente: ${esc(ind.fuente)} · ${ind.per}</div>
+      <div class="qupd-current">
+        <span class="qupd-cur-val">${fmtActual(ind)}</span>
+        <span class="qupd-cur-meta">valor actual · ${fmtDate(ind.actual.fecha)}</span>
+        ${ind.bin ? '' : `<span class="qupd-cur-meta" style="margin-left:auto">Objetivo: ${fmtObj(ind)}</span>`}
+      </div>
+      ${ind.bin ? `
+        <div class="form-group">
+          <label class="form-label">Nuevo valor</label>
+          <select class="form-input" id="qupd-val">
+            <option value="Sí" ${ind.actual.v === 'Sí' ? 'selected' : ''}>Sí — completado</option>
+            <option value="No" ${ind.actual.v !== 'Sí' ? 'selected' : ''}>No — pendiente</option>
+          </select>
+        </div>` : `
+        <div class="qupd-row">
+          <div class="form-group">
+            <label class="form-label">Nuevo valor (${esc(ind.unidad)})</label>
+            <input class="form-input" id="qupd-val" type="number" step="any"
+              value="${ind.actual.v ?? ''}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Fecha del dato</label>
+            <input class="form-input" id="qupd-fecha" type="date" value="${today}">
+          </div>
+        </div>`}
+      <div class="form-group" style="margin-top:.6rem">
+        <label class="form-label">Nota o fuente (opcional)</label>
+        <input class="form-input" id="qupd-obs" type="text" placeholder="Fuente, contexto, referencia…">
+      </div>
+      <div class="qupd-actions">
+        <button class="btn btn-ghost" onclick="document.getElementById('qupd-overlay').remove()">Cancelar</button>
+        <button class="btn btn-primary" onclick="submitQuickUpdate('${id}')">✓ Guardar</button>
+      </div>
+    </div>`;
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+  setTimeout(() => document.getElementById('qupd-val')?.focus(), 50);
+}
+
+function submitQuickUpdate(id) {
+  const v     = document.getElementById('qupd-val')?.value?.trim();
+  const fecha = document.getElementById('qupd-fecha')?.value || todayISO();
+  const obs   = document.getElementById('qupd-obs')?.value?.trim() || '';
+  if (v === '' || v === undefined) { toast('Introduce un valor', 'error'); return; }
+  saveUpdate(id, v, fecha, obs);
+  refreshData();
+  toast('✓ Indicador actualizado', 'success');
+  try { ghPush(); } catch {}
+  document.getElementById('qupd-overlay')?.remove();
+  const cv = document.querySelector('.view.active')?.id?.replace('v-', '');
+  if (cv === 'indicadores') renderTabla();
+  else if (cv === 'prioridades') renderPrioridades();
+  else if (cv === 'dashboard') renderDashboard();
+  else if (cv === 'actualizar') renderActualizar();
+}
+
+// ── INE AUTO-FETCH ───────────────────────────────────────────
+async function fetchFromINE(id) {
+  const series = INE_SERIES[id];
+  if (!series) return;
+  const btnCard  = document.getElementById(`ine-btn-${id}`);
+  const btnFicha = document.getElementById(`ine-ficha-btn-${id}`);
+  const setBtns = (disabled, label) => {
+    [btnCard, btnFicha].forEach(b => { if (!b) return; b.disabled = disabled; if (label) b.innerHTML = label; });
+  };
+  setBtns(true, '⏳ Consultando INE…');
+  try {
+    let valor, fechaStr, source;
+    if (series.type === 'tabla') {
+      const url = `https://servicios.ine.es/wstempus/js/ES/DATOS_TABLA/${series.tabla}?nult=1`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`INE HTTP ${res.status}`);
+      const json = await res.json();
+      const { region, variable, sector } = series.filter;
+      const entry = json.find(d => d.Nombre && d.Nombre.includes(region) && d.Nombre.includes(variable) && d.Nombre.includes(sector));
+      if (!entry) throw new Error('Dato de Extremadura no encontrado en la tabla INE');
+      const data = entry.Data || [];
+      if (!data.length) throw new Error('La tabla aún no tiene datos publicados');
+      const latest = data[0];
+      if (latest.Secreto) throw new Error('Dato protegido (secreto estadístico)');
+      if (latest.Valor === null || latest.Valor === undefined) throw new Error('INE devuelve valor nulo para este periodo');
+      valor = latest.Valor;
+      const anyo = latest.Anyo || new Date(latest.Fecha).getFullYear();
+      fechaStr = `${anyo}-12-31`;
+      source = `${series.label} · ${anyo}`;
+    } else {
+      const url = `https://servicios.ine.es/wstempus/js/ES/DATOS_SERIE/${series.serie}?nult=1`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`INE HTTP ${res.status}`);
+      const json = await res.json();
+      const data = json.Data || json.data || [];
+      if (!data.length) throw new Error('La serie no tiene datos publicados aún');
+      const latest = data[0];
+      if (latest.Secreto) throw new Error('Dato protegido (secreto estadístico)');
+      if (latest.Valor === null || latest.Valor === undefined) throw new Error('INE devuelve valor nulo para este periodo');
+      valor = latest.Valor;
+      const anyo = latest.Anyo || new Date(latest.Fecha).getFullYear();
+      fechaStr = `${anyo}-12-31`;
+      source = `${series.label} · ${latest.Periodo || ''} ${anyo}`;
+    }
+    renderINEConfirmModal(id, valor, fechaStr, source);
+  } catch (e) {
+    toast(`Error INE: ${e.message}`, 'error');
+  } finally {
+    setBtns(false, null);
+    if (btnCard)  btnCard.innerHTML  = '📊 INE';
+    if (btnFicha) btnFicha.innerHTML = '🔄 Actualizar desde INE';
+  }
+}
+
+function renderINEConfirmModal(id, newVal, fecha, source) {
+  const ind = DATA.find(i => i.id === id);
+  if (!ind) return;
+  document.getElementById('ine-confirm-overlay')?.remove();
+  const overlay = document.createElement('div');
+  overlay.id = 'ine-confirm-overlay';
+  overlay.className = 'ine-confirm-overlay';
+  const diff = ind.actual.v !== null ? (newVal - parseFloat(ind.actual.v)) : null;
+  const diffStr = diff === null ? '' : (diff >= 0 ? `+${diff.toFixed(1)}` : diff.toFixed(1));
+  overlay.innerHTML = `
+    <div class="ine-confirm-box">
+      <div class="ine-confirm-hd">
+        <span class="ine-confirm-logo">📊</span>
+        <strong>Dato INE disponible</strong>
+      </div>
+      <div class="ine-confirm-ind">${esc(ind.nombre)}</div>
+      <div class="ine-confirm-compare">
+        <div class="ine-cmp-col">
+          <div class="ine-cmp-label">Valor actual</div>
+          <div class="ine-cmp-val">${fmtActual(ind)}</div>
+          <div class="ine-cmp-meta">${fmtDate(ind.actual.fecha)}</div>
+        </div>
+        <div class="ine-cmp-arrow">
+          ${diffStr ? `<span class="${parseFloat(diffStr) >= 0 ? 'txt-up' : 'txt-down'}">${diffStr} ${ind.unidad}</span>` : ''}
+          <span>→</span>
+        </div>
+        <div class="ine-cmp-col ine-cmp-new">
+          <div class="ine-cmp-label">INE publica</div>
+          <div class="ine-cmp-val">${fmtNum(ind, newVal)}</div>
+          <div class="ine-cmp-meta" style="font-size:.68rem">${esc(source)}</div>
+        </div>
+      </div>
+      <div class="ine-confirm-actions">
+        <button class="btn btn-ghost" onclick="document.getElementById('ine-confirm-overlay').remove()">Cancelar</button>
+        <button class="btn btn-primary" onclick="confirmINEUpdate('${id}', ${newVal}, '${fecha}')">✓ Guardar dato INE</button>
+      </div>
+    </div>`;
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+}
+
+function confirmINEUpdate(id, val, fecha) {
+  saveUpdate(id, val, fecha, 'Dato actualizado automáticamente desde la API pública del INE.', { comentario: 'Actualización automática INE', confianza: 'validado' });
+  refreshData();
+  document.getElementById('ine-confirm-overlay')?.remove();
+  toast('✓ Dato INE guardado', 'success');
+  try { ghPush(); } catch {}
+  navigate(currentView);
 }
 
 // compact=true: solo muestra el badge cuando hay algo que vigilar (vencido / próximo)
@@ -1101,7 +1118,7 @@ function fichaHTML(i) {
     <div class="ficha-title">
       <div class="ficha-name">${i.nombre}</div>
       <div class="ficha-badges">
-        ${badge(st)}${confBadge(i.id)}${updBadge(updateStatus(i), false)}
+        ${badge(st)}${updBadge(updateStatus(i), false)}
         ${i.nuevo ? '<span class="badge badge-nuevo">NUEVO</span>' : ''}
         ${i._mod ? '<span class="badge badge-updated">✎ Actualizado localmente</span>' : '<span class="badge badge-orig">Dato original</span>'}
         ${loadHighlights().includes(i.id) ? '<span class="badge badge-hl">★ Destacado</span>' : ''}
@@ -1130,7 +1147,6 @@ function fichaSituacion(i) {
     ['Unidad', i.unidad],
     ['Fuente', i.fuente || '<span style="color:var(--crit)">Sin fuente</span>'],
     ['Periodicidad', i.per],
-    ['Responsable', i.responsable || '—'],
     ['Tipo de cálculo', tipo]
   ];
 
@@ -1300,7 +1316,7 @@ function fichaSeguimiento(i) {
         ${Object.entries(CONFIDENCE_CONFIG).map(([k, c]) => `
           <button class="conf-opt${cur === k ? ' active' : ''}" style="--cc:${c.color};--cbg:${c.bg};--cbd:${c.border}" onclick="fichaSetConfidence('${i.id}','${k}')">${cur === k ? '● ' : '○ '}${c.label}</button>`).join('')}
       </div>
-      <div class="ficha-note">Se guarda al pulsar. Consulta el significado de cada nivel en <a href="#" onclick="closeModal();navigate('metodologia');return false">Metodología</a>.</div>
+      <div class="ficha-note">Se guarda al pulsar. Consulta el significado de cada nivel en <a href="#" onclick="closeModal();navigate('config','metodologia');return false">Configuración › Metodología</a>.</div>
     </div>
 
     <div class="ficha-block">
@@ -1376,6 +1392,17 @@ function fichaActualizar(i) {
        </select>`
     : `<input type="number" class="form-input" id="m-val" value="${i.actual.v}" step="any" min="0">`;
   return `
+    ${INE_SERIES[i.id] ? `
+    <div class="ine-fetch-row">
+      <div class="ine-fetch-info">
+        <span class="ine-fetch-icon">📊</span>
+        <div>
+          <strong>Fuente INE — actualizable automáticamente</strong>
+          <div class="ine-fetch-desc">Este indicador se obtiene de la API pública del INE. Pulsa el botón para obtener el dato más reciente sin buscarlo manualmente.</div>
+        </div>
+      </div>
+      <button class="btn btn-ine" id="ine-ficha-btn-${i.id}" onclick="fetchFromINE('${i.id}')">🔄 Actualizar desde INE</button>
+    </div>` : ''}
     <div class="ficha-bao-mini">
       <span>Base: <strong>${fmtBase(i)}</strong></span><span class="metodo-arrow">→</span>
       <span>Actual: <strong style="color:${STATUS_CONFIG[getStatus(i)].color}">${fmtActual(i)}</strong></span><span class="metodo-arrow">→</span>
@@ -1468,7 +1495,7 @@ function exportFichaTxt(id) {
     `Unidad:        ${i.unidad}`,
     `Fuente:        ${i.fuente || '—'}`,
     `Periodicidad:  ${i.per}`,
-    `Responsable:   ${i.responsable || '—'}`, sep);
+    sep);
   L.push('SITUACIÓN',
     `Base ${i.base.año || ''}:     ${fmtBase(i)}`,
     `Actual:        ${fmtActual(i)} (${fmtDate(i.actual.fecha)})${i._mod ? ' · actualizado localmente' : ''}`,
@@ -1536,7 +1563,6 @@ function doSearch(q) {
       String(i.eje).includes(ql) ||
       ('eje ' + i.eje).includes(ql) ||
       i.linea.toLowerCase().includes(ql) ||
-      (i.responsable || '').toLowerCase().includes(ql) ||
       i.fuente.toLowerCase().includes(ql)
     ).slice(0, 8);
     searchIdx = 0;
@@ -1548,7 +1574,7 @@ function doSearch(q) {
         <div class="sri-top"><div class="sri-id">${i.id}</div>
           <button class="btn btn-ghost btn-sm sri-btn" onclick="event.stopPropagation();closeSearch();openFicha('${i.id}')">Ficha 360°</button></div>
         <div class="sri-name">${i.nombre}</div>
-        <div class="sri-meta">Eje ${i.eje} · ${i.linea} · <span style="color:${sc.color}">${sc.label}</span> · ${Math.round(calcProg(i))}%${i.responsable ? ' · ' + i.responsable : ''}</div>
+        <div class="sri-meta">Eje ${i.eje} · ${i.linea} · <span style="color:${sc.color}">${sc.label}</span> · ${Math.round(calcProg(i))}%</div>
       </div>`;
     }).join('');
   } catch (e) { console.error('doSearch', e); }
@@ -1586,8 +1612,9 @@ function calDaysText(i, st, d) {
   return PER_DAYS[i.per] ? 'Sin fecha de dato' : 'Sin periodicidad';
 }
 
+// v2.3: pestaña «Calendario de actualizaciones» de Prioridades
 function renderCalendario() {
-  const el = document.getElementById('v-calendario-inner');
+  const el = document.getElementById('v-prioridades-inner');
   if (!el) return;
   const all = DATA.map(i => ({ i, st: updateStatus(i), next: nextUpdateDate(i), d: daysToNextUpdate(i) }));
   const cnt = { vencido: 0, proximo: 0, al_dia: 0, sin_fecha: 0 };
@@ -1614,7 +1641,7 @@ function renderCalendario() {
     if (!g.length) return '';
     const c = UPDATE_STATUS_CONFIG[st];
     return `
-      <div class="cal-group">
+      <div class="cal-group" id="cal-${st}">
         <div class="alert-group-hd" style="color:${c.color}"><div class="alert-group-dot" style="background:${c.color}"></div>${c.label} (${g.length})</div>
         <div class="cal-grid">
           ${g.map(({ i, st, next, d }) => `
@@ -1626,7 +1653,6 @@ function renderCalendario() {
                 <div><span class="fm-k">Último dato</span><br>${fmtDate(i.actual.fecha)}</div>
                 <div><span class="fm-k">Fecha esperada</span><br><strong>${next ? fmtDate(next) : '—'}</strong></div>
               </div>
-              <div class="cal-resp">👤 ${i.responsable || '—'}</div>
               <div class="cal-actions">
                 <button class="btn btn-ghost btn-sm" onclick="openFicha('${i.id}','actualizar')">✎ Actualizar</button>
                 ${badge(getStatus(i))}
@@ -1638,13 +1664,7 @@ function renderCalendario() {
 
   el.innerHTML = `
     <div class="section-gap">
-      <div class="cal-banner">
-        <span><strong style="color:#DC2626">${cnt.vencido}</strong> vencidos</span><span class="ind-meta-sep">·</span>
-        <span><strong style="color:#D97706">${cnt.proximo}</strong> próximos (&lt;30 días)</span><span class="ind-meta-sep">·</span>
-        <span><strong style="color:#059669">${cnt.al_dia}</strong> al día</span><span class="ind-meta-sep">·</span>
-        <span><strong style="color:#6B7280">${cnt.sin_fecha}</strong> sin fecha</span>
-        <span class="cal-banner-today">Hoy: ${fmtDate(todayISO())}</span>
-      </div>
+      ${prioHeadHTML()}
       <div class="card card-p">
         <div class="chart-title" style="margin-bottom:.6rem">Actualizaciones previstas por mes (próximos 6 meses)</div>
         <div class="cal-months">
@@ -1658,7 +1678,7 @@ function renderCalendario() {
           <option value="">Todos los ejes</option>
           ${EJES.map(e => `<option value="${e.id}"${String(calFilter.eje) === String(e.id) ? ' selected' : ''}>Eje ${e.id} — ${e.nombre.split(' ').slice(0, 3).join(' ')}</option>`).join('')}
         </select>
-        <div class="toolbar-count">${rows.length} indicadores</div>
+        <div class="toolbar-count">${rows.length} indicadores · Hoy: ${fmtDate(todayISO())}</div>
       </div>
       ${rows.length ? ['vencido', 'proximo', 'al_dia', 'sin_fecha'].map(groupHTML).join('') : emptyBox('Ningún indicador coincide con los filtros', '📅')}
     </div>`;
@@ -1671,11 +1691,23 @@ function quickTask(indId) {
   taskPrefill = indId;
   if (isModalOpen()) closeModal();
   if (isComiteOpen()) toggleComiteMode(false);
-  navigate('tareas');
+  navigate('tareas', 'tareas');
   setTimeout(() => document.getElementById('t-titulo')?.focus(), 60);
 }
 
+// v2.3: «Tareas» y «Decisiones» son pestañas de una misma vista
+function renderTareasView() {
+  if (viewTab.tareas === 'decisiones') renderDecisiones();
+  else renderTareas();
+}
+function tareasTabsHTML() {
+  const openT = loadTasks().filter(t => t.estado !== 'completada').length;
+  const openD = loadDecisions().filter(d => d.estado !== 'resuelta').length;
+  return viewTabsHTML('tareas', [['tareas', 'Tareas', openT], ['decisiones', 'Decisiones', openD]]);
+}
+
 function renderTareas() {
+  viewTab.tareas = 'tareas';
   const el = document.getElementById('v-tareas-inner');
   if (!el) return;
   const tasks = loadTasks();
@@ -1717,6 +1749,7 @@ function renderTareas() {
 
   el.innerHTML = `
     <div class="section-gap">
+      ${tareasTabsHTML()}
       <div class="card card-p">
         <div class="card-header-title" style="margin-bottom:.75rem">＋ Nueva tarea</div>
         <div class="form-grid-3">
@@ -1750,7 +1783,8 @@ function removeTask(id) { if (!confirm('¿Eliminar esta tarea?')) return; delete
 
 // ═══ F5 · DECISIONES ═════════════════════════════════════════
 function renderDecisiones() {
-  const el = document.getElementById('v-decisiones-inner');
+  viewTab.tareas = 'decisiones';
+  const el = document.getElementById('v-tareas-inner');
   if (!el) return;
   const decs = loadDecisions();
   const today = todayISO();
@@ -1792,6 +1826,7 @@ function renderDecisiones() {
 
   el.innerHTML = `
     <div class="section-gap">
+      ${tareasTabsHTML()}
       <div class="card card-p">
         <div class="card-header-title" style="margin-bottom:.75rem">＋ Nueva decisión requerida</div>
         <div class="form-grid-3">
@@ -1822,8 +1857,18 @@ function createDecisionFromForm() {
 function setDecisionStatus(id, estado) { updateDecisionStatus(id, estado); toast('Decisión: ' + DECISION_STATES[estado].label, 'success'); renderDecisiones(); }
 function removeDecision(id) { if (!confirm('¿Eliminar esta decisión?')) return; deleteDecision(id); renderDecisiones(); }
 
-// ═══ F6 · SNAPSHOTS ══════════════════════════════════════════
+// ═══ F6 · HISTÓRICO: SNAPSHOTS + COMPARAR ════════════════════
+// v2.3: «Snapshots» y «Comparar» son pestañas de la vista Histórico
+function renderHistorico() {
+  if (viewTab.snapshots === 'comparar') renderComparar();
+  else renderSnapshots();
+}
+function historicoTabsHTML() {
+  return viewTabsHTML('snapshots', [['snapshots', 'Snapshots', loadSnapshots().length], ['comparar', 'Comparar estados']]);
+}
+
 function renderSnapshots() {
+  viewTab.snapshots = 'snapshots';
   const el = document.getElementById('v-snapshots-inner');
   if (!el) return;
   const snaps = sortedSnapshots();
@@ -1831,6 +1876,7 @@ function renderSnapshots() {
 
   el.innerHTML = `
     <div class="section-gap">
+      ${historicoTabsHTML()}
       <div class="card card-p">
         <div class="card-header-title" style="margin-bottom:.75rem">📷 Crear snapshot del estado actual</div>
         <div class="form-grid-3">
@@ -1899,7 +1945,7 @@ function removeSnapshot(id) {
 function compareWithCurrent(id) {
   compareState = { a: id, b: 'actual', filter: 'todos' };
   if (isComiteOpen()) toggleComiteMode(false);
-  navigate('comparar');
+  navigate('snapshots', 'comparar');
 }
 
 // ═══ F6 · COMPARAR ═══════════════════════════════════════════
@@ -1913,7 +1959,8 @@ function stateByKey(key) {
 }
 
 function renderComparar() {
-  const el = document.getElementById('v-comparar-inner');
+  viewTab.snapshots = 'comparar';
+  const el = document.getElementById('v-snapshots-inner');
   if (!el) return;
   const snaps = sortedSnapshots();
   if (!compareState.a || !stateByKey(compareState.a)) {
@@ -1950,6 +1997,7 @@ function renderComparar() {
 
   el.innerHTML = `
     <div class="section-gap">
+      ${historicoTabsHTML()}
       <div class="card card-p">
         <div class="cmp-selectors">
           <div class="form-group" style="margin:0;flex:1"><label class="form-label">Estado A (referencia)</label>
@@ -1958,7 +2006,7 @@ function renderComparar() {
           <div class="form-group" style="margin:0;flex:1"><label class="form-label">Estado B (comparado)</label>
             <select class="form-input" onchange="compareState.b=this.value;renderComparar()">${opts(compareState.b)}</select></div>
         </div>
-        ${!snaps.length ? `<div class="form-hint" style="margin-top:.6rem">No hay snapshots todavía: se compara con los datos originales del informe. <a href="#" onclick="navigate('snapshots');return false">Crear snapshot →</a></div>` : ''}
+        ${!snaps.length ? `<div class="form-hint" style="margin-top:.6rem">No hay snapshots todavía: se compara con los datos originales del informe. <a href="#" onclick="navigate('snapshots','snapshots');return false">Crear snapshot →</a></div>` : ''}
         ${compareState.a === compareState.b ? '<div class="form-hint" style="margin-top:.6rem;color:var(--risk)">A y B son el mismo estado: no habrá diferencias.</div>' : ''}
       </div>
 
@@ -2031,7 +2079,7 @@ function changesBlockHTML(big = false) {
         <div class="card-header-title">Qué ha cambiado</div>
         <div class="changes-empty">
           ℹ️ Todavía no hay snapshots registrados. Crea un snapshot (idealmente al cerrar cada comité) y aquí verás qué indicadores se han actualizado, mejorado o empeorado desde entonces.
-          <button class="btn btn-ghost btn-sm" onclick="if(isComiteOpen())toggleComiteMode(false);navigate('snapshots')">📷 Crear snapshot</button>
+          <button class="btn btn-ghost btn-sm" onclick="if(isComiteOpen())toggleComiteMode(false);navigate('snapshots','snapshots')">📷 Crear snapshot</button>
         </div>
       </div>`;
   }
@@ -2073,7 +2121,7 @@ function highlightsBlockHTML() {
     <div class="card card-p">
       <div class="flex items-center justify-between" style="margin-bottom:.75rem">
         <div class="card-header-title">★ Indicadores estratégicos destacados (${inds.length})</div>
-        <button class="btn btn-ghost btn-sm" onclick="navigate('config');setTimeout(()=>document.getElementById('cfg-highlights')?.scrollIntoView({behavior:'smooth'}),80)">Editar selección</button>
+        <button class="btn btn-ghost btn-sm" onclick="navigate('config','parametros');setTimeout(()=>document.getElementById('cfg-highlights')?.scrollIntoView({behavior:'smooth'}),80)">Editar selección</button>
       </div>
       <div class="hl-grid">
         ${inds.map(i => {
@@ -2120,35 +2168,13 @@ function tareasProximasHTML(n = 7) {
 function vencidosHTML() {
   const v = DATA.filter(i => updateStatus(i) === 'vencido').sort((a, b) => daysToNextUpdate(a) - daysToNextUpdate(b));
   if (!v.length) return '<p class="cm-empty">Todos los indicadores con periodicidad tienen su dato vigente.</p>';
-  return `<ul class="report-ul">${v.map(i => `<li><span class="ind-link" onclick="openFicha('${i.id}','actualizar')"><strong>${i.nombre}</strong></span> (${i.id}) — Último dato ${fmtDate(i.actual.fecha)} · ${i.per} · previsto ${fmtDate(nextUpdateDate(i))} · <strong style="color:var(--crit)">vencido hace ${Math.abs(daysToNextUpdate(i))} días</strong> · ${i.responsable || ''}</li>`).join('')}</ul>`;
+  return `<ul class="report-ul">${v.map(i => `<li><span class="ind-link" onclick="openFicha('${i.id}','actualizar')"><strong>${i.nombre}</strong></span> (${i.id}) — Último dato ${fmtDate(i.actual.fecha)} · ${i.per} · previsto ${fmtDate(nextUpdateDate(i))} · <strong style="color:var(--crit)">vencido hace ${Math.abs(daysToNextUpdate(i))} días</strong></li>`).join('')}</ul>`;
 }
 
 function proximosVencHTML(n = 30) {
   const v = DATA.filter(i => { const d = daysToNextUpdate(i); return d !== null && d >= 0 && d <= n; }).sort((a, b) => daysToNextUpdate(a) - daysToNextUpdate(b));
   if (!v.length) return `<p class="cm-empty">No hay actualizaciones previstas en los próximos ${n} días.</p>`;
-  return `<ul class="report-ul">${v.map(i => `<li><span class="ind-link" onclick="openFicha('${i.id}','seguimiento')"><strong>${i.nombre}</strong></span> (${i.id}) — Prevista ${fmtDate(nextUpdateDate(i))} · en ${daysToNextUpdate(i)} días · ${i.responsable || ''}</li>`).join('')}</ul>`;
-}
-
-// ═══ F18 · INFORME — secciones de gestión ════════════════════
-function informeGestionHTML() {
-  try {
-    const nDec = loadDecisions().filter(d => d.estado === 'abierta').length;
-    const nTask = tasksDueSoon(7).length;
-    const nVenc = DATA.filter(i => updateStatus(i) === 'vencido').length;
-    return `
-      <div class="report-section">
-        <h2>Decisiones requeridas pendientes ⚡ (${nDec})</h2>
-        ${decisionesAbiertasHTML()}
-      </div>
-      <div class="report-section">
-        <h2>Tareas próximas a vencer — 7 días ✅ (${nTask})</h2>
-        ${tareasProximasHTML(7)}
-      </div>
-      <div class="report-section">
-        <h2>Indicadores con datos vencidos ⏰ (${nVenc})</h2>
-        ${vencidosHTML()}
-      </div>`;
-  } catch (e) { console.error('informeGestion', e); return ''; }
+  return `<ul class="report-ul">${v.map(i => `<li><span class="ind-link" onclick="openFicha('${i.id}','seguimiento')"><strong>${i.nombre}</strong></span> (${i.id}) — Prevista ${fmtDate(nextUpdateDate(i))} · en ${daysToNextUpdate(i)} días</li>`).join('')}</ul>`;
 }
 
 // ═══ F7 · MODO COMITÉ ════════════════════════════════════════
@@ -2265,58 +2291,81 @@ function comiteOverlayHTML() {
     </div>`;
 }
 
-// ═══ F8 · PREPARAR COMITÉ ════════════════════════════════════
+// ═══ F8 · COMITÉ E INFORME ═══════════════════════════════════
+// v2.3: un único documento imprimible que fusiona «Preparar comité» e «Informe ejecutivo».
 function renderComite() {
   const el = document.getElementById('v-comite-inner');
   if (!el) return;
   const gs = globalStats();
   const cfg = loadConfig();
+  const last = lastUpdateDate();
   const dates = DATA.map(i => i.actual.fecha).filter(Boolean).sort();
   const masReciente = dates[dates.length - 1], masAntiguo = dates[0];
   const logros = DATA.filter(i => getStatus(i) === 'achieved');
   const urgentes = DATA.filter(i => getStatus(i) === 'critical').sort((a, b) => calcProg(a) - calcProg(b));
+  const riesgo = DATA.filter(i => getStatus(i) === 'at_risk').sort((a, b) => calcProg(a) - calcProg(b));
   const nVenc = DATA.filter(i => updateStatus(i) === 'vencido').length;
+  const nDec = loadDecisions().filter(d => d.estado === 'abierta').length;
+  const nTask = tasksDueSoon(7).length;
   const lastSnap = getLastComiteSnapshot();
+  const topEje = EJES.reduce((best, e) => ejeStats(e.id).avg > ejeStats(best.id).avg ? e : best, EJES[0]);
+  const lowEje = EJES.reduce((worst, e) => ejeStats(e.id).avg < ejeStats(worst.id).avg ? e : worst, EJES[0]);
   const sec = (n, title, body) => `<div class="report-section"><h2><span class="metodo-n">${n}</span> ${title}</h2>${body}</div>`;
+  const rk = (v, l, c = '', small = false) => `<div class="rk"><div class="rk-val" style="${c ? 'color:' + c + ';' : ''}${small ? 'font-size:1.15rem' : ''}">${v}</div><div class="rk-label">${l}</div></div>`;
 
   el.innerHTML = `
     <div class="report-paper">
-      <div class="report-logo">Junta de Extremadura · OTID · Dossier de preparación de comité</div>
-      <div class="report-title">Preparación del Comité de Seguimiento ETDE27</div>
-      <div class="report-date">Generado el ${new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })} por ${esc(cfg.usuarioActual)} · Último comité: ${fmtDate(cfg.fechaUltimoComite)}</div>
+      <div class="report-logo">Junta de Extremadura · OTID — Oficina de Transformación e Innovación Digital</div>
+      <div class="report-title">Informe de Seguimiento OKR · Comité ETDE27</div>
+      <div class="report-subtitle">Estrategia de Transformación Digital de Extremadura 2027 (ETDE27)</div>
+      <div class="report-date">Datos actualizados a ${fmtDate(last)} · Generado el ${new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })} por ${esc(cfg.usuarioActual)} · Último comité: ${fmtDate(cfg.fechaUltimoComite)}</div>
       <div class="report-divider"></div>
 
-      ${sec(1, 'Estado de actualización', `
-        <div class="report-kpis">
-          <div class="rk"><div class="rk-val" style="font-size:1.15rem">${fmtDate(masReciente)}</div><div class="rk-label">Dato más reciente</div></div>
-          <div class="rk"><div class="rk-val" style="font-size:1.15rem">${fmtDate(masAntiguo)}</div><div class="rk-label">Dato más antiguo</div></div>
-          <div class="rk"><div class="rk-val" style="color:#DC2626">${nVenc}</div><div class="rk-label">Datos vencidos</div></div>
-          <div class="rk"><div class="rk-val">${gs.modified}</div><div class="rk-label">Actualizados localmente</div></div>
-          <div class="rk"><div class="rk-val">${DATA.filter(i => getConfidence(i.id) === 'validado').length}</div><div class="rk-label">Datos validados</div></div>
-        </div>`)}
+      <div class="report-kpis">
+        ${rk(Math.round(gs.avgP) + '%', 'Avance global', '#2563EB')}
+        ${rk(gs.total, 'Indicadores')}
+        ${rk(gs.counts.achieved, 'Cumplidos', '#059669')}
+        ${rk(gs.counts.on_track, 'En seguimiento', '#2563EB')}
+        ${rk(gs.counts.at_risk, 'En riesgo', '#D97706')}
+        ${rk(gs.counts.critical, 'Urgente', '#DC2626')}
+      </div>
 
-      ${sec(2, 'Avance global y por eje', `
-        <p>Avance global: <strong>${Math.round(gs.avgP)}%</strong> · ${gs.counts.achieved} cumplidos · ${gs.counts.on_track} en seguimiento · ${gs.counts.at_risk} en riesgo · ${gs.counts.critical} urgentes.</p>
+      ${sec(1, 'Situación general y avance por eje', `
+        <p>A ${fmtDate(last)}, la ETDE27 presenta un avance global del <strong>${Math.round(gs.avgP)}%</strong> sobre el conjunto de sus ${gs.total} indicadores de impacto estratégico. <strong>${gs.counts.achieved} indicadores</strong> han alcanzado o superado el objetivo 2027, ${gs.counts.on_track} evolucionan favorablemente, ${gs.counts.at_risk} presentan desviaciones moderadas que requieren seguimiento reforzado y ${gs.counts.critical} requieren acción inmediata. El eje con mayor avance es el <strong>Eje ${topEje.id} (${Math.round(ejeStats(topEje.id).avg)}%)</strong>, mientras que el eje que presenta mayores retos es el <strong>Eje ${lowEje.id} (${Math.round(ejeStats(lowEje.id).avg)}%)</strong>.</p>
         ${EJES.map(e => { const s = ejeStats(e.id); const p = Math.round(s.avg); return `
           <div class="report-eje-bar">
             <div class="reb-name" style="color:${e.color}">Eje ${e.id} · ${e.nombre.split(' ').slice(0, 3).join(' ')}</div>
             <div class="reb-pb"><div class="pb-wrap pb-10"><div class="pb-fill" style="width:${p}%;background:${e.color}"></div></div></div>
             <div class="reb-pct" style="color:${e.color}">${p}%</div>
+          </div>
+          <div style="font-size:.72rem;color:var(--muted);margin-bottom:.5rem;padding-left:220px">
+            ✓ ${s.counts.achieved} cumplidos · → ${s.counts.on_track} en seguimiento · ! ${s.counts.at_risk} en riesgo · !! ${s.counts.critical} urgentes
           </div>`; }).join('')}`)}
+
+      ${sec(2, 'Estado de actualización', `
+        <div class="report-kpis">
+          ${rk(fmtDate(masReciente), 'Dato más reciente', '', true)}
+          ${rk(fmtDate(masAntiguo), 'Dato más antiguo', '', true)}
+          ${rk(nVenc, 'Datos vencidos', '#DC2626')}
+          ${rk(gs.modified, 'Actualizados localmente')}
+          ${rk(DATA.filter(i => getConfidence(i.id) === 'validado').length, 'Datos validados')}
+        </div>`)}
 
       ${sec(3, 'Cambios desde el último comité', lastSnap ? changesBlockHTML() : `<p class="cm-empty">No hay snapshot de comité registrado. Usa «📷 Registrar snapshot de comité» al cerrar este comité para poder medir los cambios en el siguiente.</p>`)}
 
-      ${sec(4, `Logros (${logros.length})`, logros.length ? `<ul class="report-ul">${logros.map(i => indLiHTML(i)).join('')}</ul>` : '<p class="cm-empty">Ningún objetivo alcanzado todavía.</p>')}
+      ${sec(4, `Principales logros ✅ (${logros.length})`, logros.length ? `<ul class="report-ul">${logros.map(i => indLiHTML(i)).join('')}</ul>` : '<p class="cm-empty">Ningún objetivo alcanzado todavía.</p>')}
 
-      ${sec(5, `Atención urgente (${urgentes.length})`, urgentes.length ? `<ul class="report-ul">${urgentes.map(i => {
+      ${sec(5, `Atención urgente 🔴 (${urgentes.length})`, urgentes.length ? `<ul class="report-ul">${urgentes.map(i => {
         const r = calcRhythm(i);
         return indLiHTML(i, r && !r.cumplido ? ` · Ritmo necesario: ${fmtDiff(i, r.ritmoNecesarioTrimestre, false)}/trim. · ${viabBadge(r.viabilidad)}` : '');
       }).join('')}</ul>` : '<p class="cm-empty">Ningún indicador en estado urgente.</p>')}
 
-      ${sec(6, 'Decisiones pendientes', decisionesAbiertasHTML())}
-      ${sec(7, 'Tareas próximas a vencer (7 días)', tareasProximasHTML(7))}
-      ${sec(8, `Datos vencidos (${nVenc})`, vencidosHTML())}
-      ${sec(9, 'Próximos vencimientos (30 días)', proximosVencHTML(30))}
+      ${sec(6, `En riesgo 🟡 (${riesgo.length})`, riesgo.length ? `<ul class="report-ul">${riesgo.map(i => indLiHTML(i)).join('')}</ul>` : '<p class="cm-empty">Ningún indicador en riesgo.</p>')}
+
+      ${sec(7, `Decisiones pendientes ⚡ (${nDec})`, decisionesAbiertasHTML())}
+      ${sec(8, `Tareas próximas a vencer — 7 días (${nTask})`, tareasProximasHTML(7))}
+      ${sec(9, `Datos vencidos ⏰ (${nVenc})`, vencidosHTML())}
+      ${sec(10, 'Próximos vencimientos (30 días)', proximosVencHTML(30))}
     </div>`;
 }
 
@@ -2378,25 +2427,32 @@ function deleteSavedFilter(id) {
 }
 
 // ═══ F14 · CONFIGURACIÓN ═════════════════════════════════════
+// v2.3: pestañas Parámetros · Datos y copias · Auditoría · Metodología.
+// «Datos y copias» es el único lugar de exportación e importación de la herramienta.
 function renderConfig() {
   const el = document.getElementById('v-config-inner');
   if (!el) return;
+  const audit = loadAudit();
+  const tabs = viewTabsHTML('config', [
+    ['parametros', 'Parámetros'],
+    ['datos', 'Datos y copias'],
+    ['auditoria', 'Auditoría', audit.length],
+    ['metodologia', 'Metodología']
+  ]);
+  let body = '';
+  switch (viewTab.config) {
+    case 'datos':       body = configDatosHTML(); break;
+    case 'auditoria':   body = configAuditoriaHTML(audit); break;
+    case 'metodologia': body = document.getElementById('tpl-metodologia')?.innerHTML || ''; break;
+    default:            body = configParametrosHTML();
+  }
+  el.innerHTML = `<div class="section-gap">${tabs}${body}</div>`;
+}
+
+function configParametrosHTML() {
   const c = loadConfig();
   const hl = loadHighlights();
-  const audit = loadAudit();
-  const counts = [
-    ['Registros de histórico', loadHistory2().length],
-    ['Snapshots', loadSnapshots().length],
-    ['Tareas', loadTasks().length],
-    ['Decisiones', loadDecisions().length],
-    ['Comentarios', loadComments().length],
-    ['Evidencias', loadEvidences().length],
-    ['Filtros guardados', loadSavedFilters().length],
-    ['Entradas de auditoría', audit.length]
-  ];
-
-  el.innerHTML = `
-    <div class="section-gap">
+  return `
       <div class="card card-p">
         <div class="card-header-title" style="margin-bottom:.9rem">Parámetros generales</div>
         <div class="form-grid-3">
@@ -2434,24 +2490,58 @@ function renderConfig() {
                 </label>`).join('')}
             </div>`).join('')}
         </div>
+      </div>`;
+}
+
+function configDatosHTML() {
+  const counts = [
+    ['Indicadores actualizados', DATA.filter(i => i._mod).length],
+    ['Registros de histórico', loadHistory2().length],
+    ['Snapshots', loadSnapshots().length],
+    ['Tareas', loadTasks().length],
+    ['Decisiones', loadDecisions().length],
+    ['Comentarios', loadComments().length],
+    ['Evidencias', loadEvidences().length],
+    ['Filtros guardados', loadSavedFilters().length],
+    ['Entradas de auditoría', loadAudit().length]
+  ];
+  return `
+      <div class="card card-p">
+        <div class="card-header-title" style="margin-bottom:.75rem">Datos almacenados en este navegador</div>
+        <div class="cfg-counts">${counts.map(([l, n]) => `<div><strong>${n}</strong><span>${l}</span></div>`).join('')}</div>
       </div>
 
       <div class="card card-p">
-        <div class="card-header-title" style="margin-bottom:.75rem">Datos de la herramienta</div>
-        <div class="cfg-counts">${counts.map(([l, n]) => `<div><strong>${n}</strong><span>${l}</span></div>`).join('')}</div>
-        <div class="flex gap-sm flex-wrap" style="margin-top:.9rem">
-          <button class="btn btn-ghost btn-sm" onclick="exportBackup()">⬇ Exportar copia de seguridad completa</button>
-          <button class="btn btn-ghost btn-sm" onclick="document.getElementById('backup-file').click()">⬆ Restaurar copia de seguridad</button>
-          <input type="file" id="backup-file" accept=".json" style="display:none" onchange="handleBackupImport(event)">
-          <button class="btn btn-ghost btn-sm" onclick="exportAuditCSV()">⬇ Exportar auditoría (CSV)</button>
+        <div class="card-header-title" style="margin-bottom:.35rem">Indicadores</div>
+        <div class="form-hint" style="margin-bottom:.75rem">Valores actuales de los ${DATA.length} indicadores con su avance y estado. El JSON incluye además las actualizaciones locales y puede volver a importarse.</div>
+        <div class="flex gap-sm flex-wrap">
+          <button class="btn btn-ghost btn-sm" onclick="exportCSV()">⬇ Exportar indicadores (CSV)</button>
+          <button class="btn btn-ghost btn-sm" onclick="exportJSON()">⬇ Exportar indicadores (JSON)</button>
+          <button class="btn btn-ghost btn-sm" onclick="triggerImport()">⬆ Importar actualizaciones (JSON)</button>
+          <input type="file" id="import-file" accept=".json" style="display:none" onchange="handleImport(event)">
         </div>
-        <div class="form-hint" style="margin-top:.5rem">La copia completa incluye actualizaciones, histórico, snapshots, tareas, decisiones, comentarios, evidencias, confianza, configuración, filtros y destacados. Todo se almacena solo en este navegador.</div>
       </div>
 
+      <div class="card card-p">
+        <div class="card-header-title" style="margin-bottom:.35rem">Copia de seguridad completa</div>
+        <div class="form-hint" style="margin-bottom:.75rem">Incluye actualizaciones, histórico, snapshots, tareas, decisiones, comentarios, evidencias, confianza, configuración, filtros y destacados. Todo se almacena solo en este navegador.</div>
+        <div class="flex gap-sm flex-wrap">
+          <button class="btn btn-ghost btn-sm" onclick="exportBackup()">⬇ Exportar copia de seguridad</button>
+          <button class="btn btn-ghost btn-sm" onclick="document.getElementById('backup-file').click()">⬆ Restaurar copia de seguridad</button>
+          <input type="file" id="backup-file" accept=".json" style="display:none" onchange="handleBackupImport(event)">
+        </div>
+      </div>`;
+}
+
+function configAuditoriaHTML(audit) {
+  return `
       <div class="card" style="overflow:hidden">
-        <div class="card-header"><div class="card-header-title">Registro de auditoría (últimas ${Math.min(audit.length, 100)} de ${audit.length})</div></div>
+        <div class="card-header">
+          <div class="card-header-title">Registro de auditoría (últimas ${Math.min(audit.length, 100)} de ${audit.length})</div>
+          ${audit.length ? '<button class="btn btn-ghost btn-sm" onclick="exportAuditCSV()">⬇ Exportar auditoría (CSV)</button>' : ''}
+        </div>
         ${audit.length ? `
-          <div class="table-wrap" style="max-height:420px;overflow-y:auto">
+          <div class="table-wrap" style="max-height:520px;overflow-y:auto">
             <table class="data-table">
               <thead><tr><th>Fecha</th><th>Usuario</th><th>Acción</th><th>Indicador</th><th>Detalle</th></tr></thead>
               <tbody>${audit.slice(0, 100).map(a => `
@@ -2464,8 +2554,7 @@ function renderConfig() {
                 </tr>`).join('')}</tbody>
             </table>
           </div>` : emptyBox('Sin actividad registrada todavía')}
-      </div>
-    </div>`;
+      </div>`;
 }
 
 function saveConfigFromForm() {
@@ -2519,7 +2608,7 @@ function handleBackupImport(e) {
   if (!file) return;
   if (!confirm('Restaurar la copia sustituirá los datos actuales de la herramienta en este navegador. ¿Continuar?')) { e.target.value = ''; return; }
   const r = new FileReader();
-  r.onload = ev => { if (importBackup(ev.target.result)) navigate('config'); };
+  r.onload = ev => { if (importBackup(ev.target.result)) navigate('config', 'datos'); };
   r.readAsText(file);
   e.target.value = '';
 }
@@ -2529,4 +2618,182 @@ function exportAuditCSV() {
   const q = s => `"${String(s ?? '').replace(/"/g, '""')}"`;
   const rows = a.map(x => [q(x.fecha), q(x.usuario), q(x.accion), q(x.indicadorId || ''), q(x.detalle)].join(','));
   downloadFile('okr-etde27-auditoria.csv', ['Fecha,Usuario,Acción,Indicador,Detalle', ...rows].join('\n'), 'text/csv;charset=utf-8;');
+}
+
+// ═══ VISTA PÚBLICA ════════════════════════════════════════════
+function renderPortal() {
+  const el = document.getElementById('v-portal-inner');
+  if (!el) return;
+  refreshData();
+  const inds = DATA;
+
+  const intro = `
+    <div class="portal-intro-block">
+      <p>Estado de avance de los indicadores de la <strong>Estrategia de Transformación Digital de Extremadura 2027 (ETDE27)</strong>. El valor mostrado en cada tarjeta corresponde al último dato registrado. Pulsa cualquier tarjeta para ver su ficha completa.</p>
+      <p class="portal-fecha-corte">Fecha de corte: mayo 2026 · Fuente: OTID — Oficina de Transformación e Innovación Digital</p>
+    </div>`;
+
+  const ejesHTML = EJES.map(eje => {
+    const ejeInds = inds.filter(i => i.eje === eje.id);
+    const lineasHTML = eje.lineas.map(linea => {
+      const lineaInds = ejeInds.filter(i => i.linea === linea.id);
+      if (!lineaInds.length) return '';
+      return `
+        <div class="portal-linea">
+          <div class="portal-linea-hd">
+            <span class="portal-linea-id">${linea.id}</span>
+            <span class="portal-linea-nombre">${linea.nombre}</span>
+          </div>
+          <div class="portal-cards-grid">
+            ${lineaInds.map(i => portalCard(i)).join('')}
+          </div>
+        </div>`;
+    }).join('');
+
+    return `
+      <div class="portal-eje-section">
+        <div class="portal-eje-hd" style="border-color:${eje.color}">
+          <div class="portal-eje-label" style="color:${eje.color}">Eje ${eje.id}</div>
+          <div class="portal-eje-title">${eje.nombre}</div>
+        </div>
+        <div class="portal-eje-desc">${eje.descripcion}</div>
+        ${lineasHTML}
+      </div>`;
+  }).join('');
+
+  el.innerHTML = intro + ejesHTML;
+}
+
+function portalCard(ind) {
+  const prog     = Math.min(Math.max(calcProg(ind), 0), 100);
+  const status   = getStatus(ind);
+  const actualStr = fmtActual(ind);
+  const baseStr   = fmtBase(ind);
+  const objStr    = fmtObj(ind);
+  const fechaStr  = ind.actual?.fecha ? fmtDate(ind.actual.fecha) : '—';
+
+  // SVG donut
+  const r    = 44;
+  const circ = 2 * Math.PI * r;
+  const off  = circ * (1 - prog / 100);
+  const arcColor = { achieved:'#059669', on_track:'#2563EB', at_risk:'#D97706', critical:'#DC2626' }[status];
+
+  // Badge
+  let badge;
+  if (ind.bin) {
+    const met = ind.actual.v === ind.obj;
+    badge = met
+      ? `<div class="portal-badge pbl-achieved"><span class="pb-icon">✓</span>Objetivo cumplido</div>`
+      : `<div class="portal-badge pbl-critical"><span class="pb-icon">✗</span>Objetivo no cumplido</div>`;
+  } else if (status === 'achieved') {
+    badge = `<div class="portal-badge pbl-achieved"><span class="pb-icon">✓</span>Objetivo cumplido</div>`;
+  } else {
+    const varStr = fmtVar(ind);
+    const varOk  = varStr && varStr !== '—';
+    badge = varOk
+      ? `<div class="portal-badge pbl-var"><span class="pb-icon">↑</span>${varStr} del dato inicial</div>`
+      : `<div class="portal-badge pbl-neutral">En seguimiento</div>`;
+  }
+
+  // Centro del donut: valor para binarios muestra Sí/No, resto el valor numérico
+  const centerVal = ind.bin ? (ind.actual.v ? 'Sí' : 'No') : actualStr;
+  // Tamaño de fuente dinámico según longitud del texto
+  const fs = centerVal.length > 5 ? '1rem' : centerVal.length > 3 ? '1.25rem' : '1.6rem';
+
+  return `
+    <div class="portal-card" onclick="openFicha('${ind.id}')" title="Ver ficha completa">
+      <div class="portal-card-inner">
+        <div class="portal-card-title">${ind.nombre}</div>
+        <div class="portal-circle-wrap">
+          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <circle cx="50" cy="50" r="${r}" fill="none" stroke="#E8EEF6" stroke-width="9"/>
+            <circle cx="50" cy="50" r="${r}" fill="none" stroke="${arcColor}" stroke-width="9"
+              stroke-dasharray="${circ.toFixed(2)}" stroke-dashoffset="${off.toFixed(2)}"
+              stroke-linecap="round" transform="rotate(-90 50 50)"/>
+          </svg>
+          <div class="portal-circle-center">
+            <span class="portal-circle-val" style="font-size:${fs}">${centerVal}</span>
+          </div>
+        </div>
+        ${badge}
+        <div class="portal-meta">
+          <div class="portal-meta-row">
+            <span class="pm-label">Situación de partida ${ind.base?.año ?? ''}:</span>
+            <strong class="pm-val">${baseStr}</strong>
+          </div>
+          <div class="portal-meta-row">
+            <span class="pm-label">Objetivo 2027:</span>
+            <strong class="pm-val">${objStr}</strong>
+          </div>
+          <div class="portal-meta-row">
+            <span class="pm-label">Fecha del valor actual:</span>
+            <strong class="pm-val">${fechaStr}</strong>
+          </div>
+          <div class="portal-meta-row">
+            <span class="pm-label">Período de actualización:</span>
+            <strong class="pm-val">${ind.per}</strong>
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ═══ MODAL DE PIN / ACCESO EDITOR ═══════════════════════════════
+function openPinModal() {
+  const existing = document.getElementById('pin-modal-overlay');
+  if (existing) existing.remove();
+
+  const hasPat = !!ghGetPat();
+  const overlay = document.createElement('div');
+  overlay.id = 'pin-modal-overlay';
+  overlay.className = 'pin-overlay';
+  overlay.innerHTML = `
+    <div class="pin-box" role="dialog" aria-modal="true" aria-label="Acceso modo editor">
+      <div class="pin-hd">
+        <span class="pin-icon">🔑</span>
+        <div>
+          <div class="pin-title">Modo editor</div>
+          <div class="pin-sub">Introduce la contraseña para activar la edición y sincronización con GitHub.</div>
+        </div>
+      </div>
+      <input type="password" id="pin-input" class="pin-input" placeholder="Contraseña…" autocomplete="off">
+      ${!hasPat ? `
+      <div style="margin-top:.75rem">
+        <label style="font-size:.75rem;color:var(--muted);display:block;margin-bottom:.3rem">Token de GitHub (solo la primera vez)</label>
+        <input type="password" id="pin-pat" class="pin-input" style="letter-spacing:0;font-size:.8rem" placeholder="github_pat_…" autocomplete="off">
+        <div style="font-size:.7rem;color:var(--muted);margin-top:.3rem">Se guarda en este navegador. No se sube al repositorio.</div>
+      </div>` : ''}
+      <div id="pin-error" class="pin-error" style="display:none">Contraseña incorrecta. Inténtalo de nuevo.</div>
+      <div class="pin-actions">
+        <button class="btn btn-ghost" onclick="closePinModal()">Cancelar</button>
+        <button class="btn btn-primary" onclick="submitPin()">Acceder</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if (e.target === overlay) closePinModal(); });
+  setTimeout(() => document.getElementById('pin-input')?.focus(), 50);
+  document.getElementById('pin-input')?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') submitPin();
+    if (e.key === 'Escape') closePinModal();
+  });
+}
+
+function closePinModal() {
+  document.getElementById('pin-modal-overlay')?.remove();
+}
+
+function submitPin() {
+  const val = document.getElementById('pin-input')?.value || '';
+  if (ghCheckPin(val)) {
+    const patInput = document.getElementById('pin-pat');
+    if (patInput?.value?.trim()) ghSavePat(patInput.value.trim());
+    closePinModal();
+    toast('Modo editor activado. Los cambios se sincronizarán con GitHub.', 'success');
+    navigate(currentView);
+  } else {
+    const errEl = document.getElementById('pin-error');
+    if (errEl) errEl.style.display = 'block';
+    const inp = document.getElementById('pin-input');
+    if (inp) { inp.value = ''; inp.focus(); }
+  }
 }

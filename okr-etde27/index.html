@@ -5,8 +5,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>OKR ETDE27 — Seguimiento Estratégico · Extremadura 2027</title>
   <meta name="description" content="Herramienta de seguimiento de OKRs de la Estrategia de Transformación Digital de Extremadura 2027 (ETDE27). 4 ejes estratégicos, 28 indicadores.">
-  <link rel="stylesheet" href="css/styles.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0B1E3D">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="OKR ETDE27">
+  <link rel="apple-touch-icon" href="assets/icon-192.png">
+  <link rel="stylesheet" href="css/styles.css?v=2.6">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/etde27-okr/sw.js', { scope: '/etde27-okr/' });
+      });
+    }
+  </script>
 </head>
 <body>
 
@@ -16,12 +29,16 @@
   <aside id="sidebar">
 
     <div class="sb-logo">
+      <div class="sb-logo-junta">
+        <img src="assets/logo-junta-oficial.png" alt="Junta de Extremadura" class="sb-logo-img">
+      </div>
+      <div class="sb-logo-divider"></div>
       <div class="sb-logo-badge">ETDE27</div>
       <div class="sb-logo-title">Seguimiento OKR</div>
-      <div class="sb-logo-sub">Estrategia de Transformación Digital de Extremadura 2027</div>
+      <div class="sb-logo-sub">Estrategia de Transformación Digital · Extremadura 2027</div>
     </div>
 
-    <div class="sb-section">Panel de control</div>
+    <div class="sb-section">Resumen</div>
     <ul class="sb-nav">
       <li>
         <a href="#" data-view="dashboard">
@@ -29,66 +46,14 @@
           <span>Resumen ejecutivo</span>
         </a>
       </li>
-      <li>
-        <a href="#" data-view="comite">
-          <span class="sb-icon">🎯</span>
-          <span>Preparar comité</span>
-        </a>
-      </li>
     </ul>
 
-    <div class="sb-section">Ejes estratégicos</div>
-    <ul class="sb-nav">
-      <li>
-        <a href="#" data-view="eje-1">
-          <span class="sb-eje-dot" style="background:#1D4ED8"></span>
-          <span>Eje 1 · Administración digital</span>
-        </a>
-      </li>
-      <li>
-        <a href="#" data-view="eje-2">
-          <span class="sb-eje-dot" style="background:#7C3AED"></span>
-          <span>Eje 2 · Conectividad</span>
-        </a>
-      </li>
-      <li>
-        <a href="#" data-view="eje-3">
-          <span class="sb-eje-dot" style="background:#059669"></span>
-          <span>Eje 3 · Sociedad digital</span>
-        </a>
-      </li>
-      <li>
-        <a href="#" data-view="eje-4">
-          <span class="sb-eje-dot" style="background:#D97706"></span>
-          <span>Eje 4 · Innovación empresarial</span>
-        </a>
-      </li>
-    </ul>
-
-    <div class="sb-section">Análisis</div>
+    <div class="sb-section">Seguimiento</div>
     <ul class="sb-nav">
       <li>
         <a href="#" data-view="indicadores">
           <span class="sb-icon">≡</span>
-          <span>Todos los indicadores</span>
-        </a>
-      </li>
-      <li>
-        <a href="#" data-view="evolucion">
-          <span class="sb-icon">↗</span>
-          <span>Evolución base→objetivo</span>
-        </a>
-      </li>
-      <li>
-        <a href="#" data-view="alertas">
-          <span class="sb-icon">⚑</span>
-          <span>Alertas y prioridades</span>
-        </a>
-      </li>
-      <li>
-        <a href="#" data-view="calendario">
-          <span class="sb-icon">📅</span>
-          <span>Calendario</span>
+          <span>Indicadores</span>
         </a>
       </li>
     </ul>
@@ -96,72 +61,68 @@
     <div class="sb-section">Gestión</div>
     <ul class="sb-nav">
       <li>
-        <a href="#" data-view="actualizar">
-          <span class="sb-icon">✎</span>
-          <span>Actualización de datos</span>
+        <a href="#" data-view="prioridades">
+          <span class="sb-icon">⚑</span>
+          <span>Prioridades</span>
         </a>
       </li>
       <li>
         <a href="#" data-view="tareas">
           <span class="sb-icon">✅</span>
-          <span>Tareas</span>
+          <span>Tareas y decisiones</span>
         </a>
       </li>
+    </ul>
+
+    <div class="sb-section">Reporting</div>
+    <ul class="sb-nav">
       <li>
-        <a href="#" data-view="decisiones">
-          <span class="sb-icon">⚡</span>
-          <span>Decisiones</span>
+        <a href="#" data-view="comite">
+          <span class="sb-icon">🎯</span>
+          <span>Comité e informe</span>
+        </a>
+      </li>
+    </ul>
+
+    <div class="sb-section">Administración</div>
+    <ul class="sb-nav">
+      <li>
+        <a href="#" data-view="actualizar">
+          <span class="sb-icon">✎</span>
+          <span>Actualizar datos</span>
         </a>
       </li>
       <li>
         <a href="#" data-view="snapshots">
           <span class="sb-icon">📷</span>
-          <span>Snapshots</span>
+          <span>Histórico</span>
         </a>
       </li>
-      <li>
-        <a href="#" data-view="comparar">
-          <span class="sb-icon">⇄</span>
-          <span>Comparar</span>
-        </a>
-      </li>
-      <li>
-        <a href="#" data-view="informe">
-          <span class="sb-icon">⎙</span>
-          <span>Informe ejecutivo</span>
-        </a>
-      </li>
-    </ul>
-
-    <div class="sb-section">Sistema</div>
-    <ul class="sb-nav">
       <li>
         <a href="#" data-view="config">
           <span class="sb-icon">⚙</span>
           <span>Configuración</span>
         </a>
       </li>
-      <li>
-        <a href="#" data-view="metodologia">
-          <span class="sb-icon">📖</span>
-          <span>Metodología</span>
-        </a>
-      </li>
     </ul>
 
     <div class="sb-search-hint" onclick="openSearch()">🔍 Buscar <kbd>Ctrl</kbd>+<kbd>K</kbd></div>
 
+    <div id="gh-sync-badge" class="gh-sync-badge" style="display:none"></div>
+
+    <div class="sb-cofinanciado">
+      <img src="assets/logo-cofinanciado.png" alt="Logos cofinanciado" class="sb-cofinanciado-img">
+    </div>
+
     <div class="sb-footer">
-      OTID — Oficina de Transformación e Innovación Digital<br>
-      Accenture · Junta de Extremadura<br>
-      Versión 2.0 · Octubre 2026
+      OTID — Oficina de Transformación e Innovación Digital
     </div>
   </aside>
 
   <!-- ══ MAIN CONTENT ══════════════════════════════════════════ -->
   <main id="main">
 
-    <!-- ── DASHBOARD ──────────────────────────────────────── -->
+    <!-- ── RESUMEN EJECUTIVO ─────────────────────────────────── -->
     <div id="v-dashboard" class="view">
       <div class="page-hd">
         <div class="page-hd-left">
@@ -169,10 +130,7 @@
           <p>Estado global de los 28 indicadores de los 4 ejes estratégicos</p>
         </div>
         <div class="page-hd-right">
-          <span class="meta-tag" id="pill-last-update">—</span>
           <span class="meta-tag" id="pill-total">—</span>
-          <button class="btn btn-ghost btn-sm" onclick="openSearch()" title="Ctrl+K">🔍 Buscar</button>
-          <button class="btn btn-primary btn-sm" onclick="toggleComiteMode()">🎯 Modo comité</button>
         </div>
       </div>
       <div class="view-inner">
@@ -180,80 +138,12 @@
       </div>
     </div>
 
-    <!-- ── EJE 1 ───────────────────────────────────────────── -->
-    <div id="v-eje-1" class="view">
-      <div class="page-hd">
-        <div class="page-hd-left">
-          <h1>Eje 1 · Administración al servicio de la ciudadanía</h1>
-          <p>Indicadores de transformación de la Administración extremeña</p>
-        </div>
-        <div class="page-hd-right">
-          <button class="btn btn-ghost btn-sm" onclick="navigate('dashboard')">← Volver al resumen</button>
-        </div>
-      </div>
-      <div class="view-inner">
-        <div id="v-eje-1-inner"></div>
-      </div>
-    </div>
-
-    <!-- ── EJE 2 ───────────────────────────────────────────── -->
-    <div id="v-eje-2" class="view">
-      <div class="page-hd">
-        <div class="page-hd-left">
-          <h1>Eje 2 · Conectividad para un territorio más inteligente y seguro</h1>
-          <p>Indicadores de infraestructura digital, conectividad y ciberseguridad</p>
-        </div>
-        <div class="page-hd-right">
-          <button class="btn btn-ghost btn-sm" onclick="navigate('dashboard')">← Volver al resumen</button>
-        </div>
-      </div>
-      <div class="view-inner">
-        <div id="v-eje-2-inner"></div>
-      </div>
-    </div>
-
-    <!-- ── EJE 3 ───────────────────────────────────────────── -->
-    <div id="v-eje-3" class="view">
-      <div class="page-hd">
-        <div class="page-hd-left">
-          <h1>Eje 3 · Hacia una sociedad digital</h1>
-          <p>Indicadores de competencias, inclusión digital y talento</p>
-        </div>
-        <div class="page-hd-right">
-          <button class="btn btn-ghost btn-sm" onclick="navigate('dashboard')">← Volver al resumen</button>
-        </div>
-      </div>
-      <div class="view-inner">
-        <div id="v-eje-3-inner"></div>
-      </div>
-    </div>
-
-    <!-- ── EJE 4 ───────────────────────────────────────────── -->
-    <div id="v-eje-4" class="view">
-      <div class="page-hd">
-        <div class="page-hd-left">
-          <h1>Eje 4 · Construyendo una región competitiva e innovadora</h1>
-          <p>Indicadores de digitalización empresarial e innovación regional</p>
-        </div>
-        <div class="page-hd-right">
-          <button class="btn btn-ghost btn-sm" onclick="navigate('dashboard')">← Volver al resumen</button>
-        </div>
-      </div>
-      <div class="view-inner">
-        <div id="v-eje-4-inner"></div>
-      </div>
-    </div>
-
-    <!-- ── INDICADORES ─────────────────────────────────────── -->
+    <!-- ── INDICADORES (TABLA) ───────────────────────────────── -->
     <div id="v-indicadores" class="view">
       <div class="page-hd">
         <div class="page-hd-left">
-          <h1>Todos los indicadores</h1>
-          <p>Tabla completa con filtros, búsqueda y ordenación por cualquier columna</p>
-        </div>
-        <div class="page-hd-right">
-          <button class="btn btn-ghost btn-sm" onclick="exportJSON()">⬇ JSON</button>
-          <button class="btn btn-ghost btn-sm" onclick="exportCSV()">⬇ CSV</button>
+          <h1>Indicadores</h1>
+          <p>Tabla completa con filtros y ordenación, o detalle por eje y línea de actuación</p>
         </div>
       </div>
       <div class="view-inner">
@@ -261,100 +151,77 @@
       </div>
     </div>
 
-    <!-- ── EVOLUCIÓN ───────────────────────────────────────── -->
-    <div id="v-evolucion" class="view">
+    <!-- ── EJE 1 ─────────────────────────────────────────────── -->
+    <div id="v-eje-1" class="view">
       <div class="page-hd">
         <div class="page-hd-left">
-          <h1>Evolución base → actual → objetivo</h1>
-          <p>Visualización del progreso de cada indicador desde la situación de partida hasta la meta 2027</p>
+          <h1>Eje 1 · Administración al servicio de la ciudadanía</h1>
+          <p>Indicadores de transformación de la Administración extremeña</p>
         </div>
       </div>
       <div class="view-inner">
-        <div id="v-evolucion-inner"></div>
+        <div id="v-eje-1-inner"></div>
       </div>
     </div>
 
-    <!-- ── ALERTAS ─────────────────────────────────────────── -->
-    <div id="v-alertas" class="view">
+    <!-- ── EJE 2 ─────────────────────────────────────────────── -->
+    <div id="v-eje-2" class="view">
       <div class="page-hd">
         <div class="page-hd-left">
-          <h1>Alertas y prioridades</h1>
-          <p>Indicadores clasificados por estado: urgente, en riesgo, en seguimiento y logros</p>
+          <h1>Eje 2 · Conectividad para un territorio más inteligente y seguro</h1>
+          <p>Indicadores de infraestructura digital, conectividad y ciberseguridad</p>
         </div>
       </div>
       <div class="view-inner">
-        <div id="v-alertas-inner"></div>
+        <div id="v-eje-2-inner"></div>
       </div>
     </div>
 
-    <!-- ── ACTUALIZAR ──────────────────────────────────────── -->
-    <div id="v-actualizar" class="view">
+    <!-- ── EJE 3 ─────────────────────────────────────────────── -->
+    <div id="v-eje-3" class="view">
       <div class="page-hd">
         <div class="page-hd-left">
-          <h1>Actualización de datos</h1>
-          <p>Edita los valores actuales de los indicadores. Los cambios se guardan en el navegador (localStorage).</p>
-        </div>
-        <div class="page-hd-right">
-          <button class="btn btn-ghost btn-sm" onclick="exportJSON()">⬇ Exportar JSON</button>
-          <button class="btn btn-ghost btn-sm" onclick="exportCSV()">⬇ Exportar CSV</button>
-          <button class="btn btn-ghost btn-sm" onclick="triggerImport()">⬆ Importar JSON</button>
+          <h1>Eje 3 · Hacia una sociedad digital</h1>
+          <p>Indicadores de competencias, inclusión digital y talento</p>
         </div>
       </div>
       <div class="view-inner">
-        <div id="v-actualizar-inner"></div>
+        <div id="v-eje-3-inner"></div>
       </div>
     </div>
 
-    <!-- ── INFORME ─────────────────────────────────────────── -->
-    <div id="v-informe" class="view">
+    <!-- ── EJE 4 ─────────────────────────────────────────────── -->
+    <div id="v-eje-4" class="view">
       <div class="page-hd">
         <div class="page-hd-left">
-          <h1>Informe ejecutivo</h1>
-          <p>Resumen generado automáticamente con los datos actuales. Use Ctrl+P para imprimir o guardar como PDF.</p>
+          <h1>Eje 4 · Construyendo una región competitiva e innovadora</h1>
+          <p>Indicadores de digitalización empresarial e innovación regional</p>
         </div>
       </div>
       <div class="view-inner">
-        <div id="v-informe-inner"></div>
+        <div id="v-eje-4-inner"></div>
       </div>
     </div>
 
-    <!-- ── PREPARAR COMITÉ ─────────────────────────────────── -->
-    <div id="v-comite" class="view">
+    <!-- ── PRIORIDADES (alertas + calendario) ────────────────── -->
+    <div id="v-prioridades" class="view">
       <div class="page-hd">
         <div class="page-hd-left">
-          <h1>Preparar comité de seguimiento</h1>
-          <p>Dossier generado automáticamente: avance, cambios desde el último comité, logros, alertas, decisiones, tareas y vencimientos</p>
-        </div>
-        <div class="page-hd-right">
-          <button class="btn btn-ghost btn-sm" onclick="comiteSnapshotPrompt()">📷 Registrar snapshot de comité</button>
-          <button class="btn btn-ghost btn-sm" onclick="toggleComiteMode()">🎯 Modo comité</button>
-          <button class="btn btn-primary btn-sm" onclick="window.print()">🖨 Imprimir</button>
+          <h1>Prioridades</h1>
+          <p>Qué requiere atención: alertas por resultado y calidad del dato, y calendario de actualizaciones</p>
         </div>
       </div>
       <div class="view-inner">
-        <div id="v-comite-inner"></div>
+        <div id="v-prioridades-inner"></div>
       </div>
     </div>
 
-    <!-- ── CALENDARIO ──────────────────────────────────────── -->
-    <div id="v-calendario" class="view">
-      <div class="page-hd">
-        <div class="page-hd-left">
-          <h1>Calendario de actualizaciones</h1>
-          <p>Próxima actualización prevista de cada indicador según la fecha del último dato y su periodicidad</p>
-        </div>
-      </div>
-      <div class="view-inner">
-        <div id="v-calendario-inner"></div>
-      </div>
-    </div>
-
-    <!-- ── TAREAS ──────────────────────────────────────────── -->
+    <!-- ── TAREAS Y DECISIONES ───────────────────────────────── -->
     <div id="v-tareas" class="view">
       <div class="page-hd">
         <div class="page-hd-left">
-          <h1>Tareas</h1>
-          <p>Acciones de seguimiento vinculadas a indicadores, con responsable, fecha límite y prioridad</p>
+          <h1>Tareas y decisiones</h1>
+          <p>Acciones de seguimiento y decisiones de dirección vinculadas a los indicadores</p>
         </div>
       </div>
       <div class="view-inner">
@@ -362,25 +229,43 @@
       </div>
     </div>
 
-    <!-- ── DECISIONES ──────────────────────────────────────── -->
-    <div id="v-decisiones" class="view">
+    <!-- ── COMITÉ E INFORME ──────────────────────────────────── -->
+    <div id="v-comite" class="view">
       <div class="page-hd">
         <div class="page-hd-left">
-          <h1>Decisiones requeridas</h1>
-          <p>Problemas que necesitan una decisión de dirección, con su contexto, responsable y estado</p>
+          <h1>Comité e informe</h1>
+          <p>Informe de seguimiento generado con los datos actuales: sirve como dossier del comité y como informe ejecutivo imprimible</p>
+        </div>
+        <div class="page-hd-right">
+          <button class="btn btn-ghost btn-sm" onclick="comiteSnapshotPrompt()">📷 Registrar snapshot de comité</button>
+          <button class="btn btn-ghost btn-sm" onclick="window.print()">🖨 Imprimir / PDF</button>
+          <button class="btn btn-primary btn-sm" onclick="toggleComiteMode()">🎯 Presentar (modo comité)</button>
         </div>
       </div>
       <div class="view-inner">
-        <div id="v-decisiones-inner"></div>
+        <div id="v-comite-inner"></div>
       </div>
     </div>
 
-    <!-- ── SNAPSHOTS ───────────────────────────────────────── -->
+    <!-- ── ACTUALIZAR DATOS ──────────────────────────────────── -->
+    <div id="v-actualizar" class="view">
+      <div class="page-hd">
+        <div class="page-hd-left">
+          <h1>Actualizar datos</h1>
+          <p>Carga de nuevos valores: cada indicador se actualiza desde su ficha 360°. Los cambios se guardan en este navegador.</p>
+        </div>
+      </div>
+      <div class="view-inner">
+        <div id="v-actualizar-inner"></div>
+      </div>
+    </div>
+
+    <!-- ── HISTÓRICO (snapshots + comparar) ──────────────────── -->
     <div id="v-snapshots" class="view">
       <div class="page-hd">
         <div class="page-hd-left">
-          <h1>Snapshots</h1>
-          <p>Fotografías del estado de todos los indicadores en un momento dado, para comparar la evolución entre comités</p>
+          <h1>Histórico estratégico</h1>
+          <p>Fotografías del estado de todos los indicadores y comparación entre dos momentos (comités, datos originales o estado actual)</p>
         </div>
       </div>
       <div class="view-inner">
@@ -388,25 +273,12 @@
       </div>
     </div>
 
-    <!-- ── COMPARAR ────────────────────────────────────────── -->
-    <div id="v-comparar" class="view">
-      <div class="page-hd">
-        <div class="page-hd-left">
-          <h1>Comparar estados</h1>
-          <p>Diferencias indicador a indicador entre dos snapshots, los datos originales o el estado actual</p>
-        </div>
-      </div>
-      <div class="view-inner">
-        <div id="v-comparar-inner"></div>
-      </div>
-    </div>
-
-    <!-- ── CONFIGURACIÓN ───────────────────────────────────── -->
+    <!-- ── CONFIGURACIÓN ─────────────────────────────────────── -->
     <div id="v-config" class="view">
       <div class="page-hd">
         <div class="page-hd-left">
           <h1>Configuración</h1>
-          <p>Parámetros de la estrategia, umbrales del semáforo, indicadores destacados, auditoría y copias de seguridad</p>
+          <p>Parámetros de la estrategia, exportación y copias de seguridad, auditoría y metodología de cálculo</p>
         </div>
       </div>
       <div class="view-inner">
@@ -414,15 +286,9 @@
       </div>
     </div>
 
-    <!-- ── METODOLOGÍA ─────────────────────────────────────── -->
-    <div id="v-metodologia" class="view">
-      <div class="page-hd">
-        <div class="page-hd-left">
-          <h1>Metodología de cálculo</h1>
-          <p>Cómo se calculan el avance, el semáforo, el ritmo necesario, la viabilidad, el estado de actualización y la confianza</p>
-        </div>
-      </div>
-      <div class="view-inner">
+
+<!-- Metodología: se muestra en Configuración › Metodología -->
+    <template id="tpl-metodologia">
         <div class="metodo">
 
           <section class="metodo-sec">
@@ -486,7 +352,7 @@
                 <tr><td><span class="badge badge-critical">Atención urgente</span></td><td>&lt; 30 %</td><td>Desviación significativa: acción inmediata</td></tr>
               </tbody>
             </table>
-            <p class="metodo-note">Los umbrales pueden ajustarse en <a href="#" onclick="navigate('config');return false">Configuración</a>. El avance global es la media simple del avance de los 28 indicadores (cada uno con un máximo de 100 %).</p>
+            <p class="metodo-note">Los umbrales pueden ajustarse en <a href="#" onclick="navigate('config','parametros');return false">Configuración › Parámetros</a>. El avance global es la media simple del avance de los 28 indicadores (cada uno con un máximo de 100 %).</p>
           </section>
 
           <section class="metodo-sec">
@@ -556,8 +422,7 @@
           </section>
 
         </div>
-      </div>
-    </div>
+    </template>
 
   </main><!-- /#main -->
 
@@ -598,9 +463,9 @@
 </div>
 
 <!-- ══ SCRIPTS ══════════════════════════════════════════════ -->
-<script src="js/data.js"></script>
-<script src="js/charts.js"></script>
-<script src="js/app.js"></script>
+<script src="js/data.js?v=2.6"></script>
+<script src="js/charts.js?v=2.5"></script>
+<script src="js/app.js?v=2.6"></script>
 
 </body>
 </html>

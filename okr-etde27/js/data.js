@@ -176,7 +176,7 @@ const INDICADORES_ORIGINAL = [
   { id:'E2-08', eje:2, linea:'L2.3', nuevo:false, inv:false, bin:false,
     nombre:'Campañas de sensibilización y capacitación en materia de ciberseguridad',
     descripcion:'Número de campañas de sensibilización y capacitación realizadas en materia de ciberseguridad.',
-    unidad:'nº', base:{v:null,año:2023}, actual:{v:3,fecha:'2026-01-28'}, obj:15,
+    unidad:'nº', base:{v:0,año:2023}, actual:{v:3,fecha:'2026-01-28'}, obj:15,
     per:'Semestral', fuente:'Junta de Extremadura', responsable:'Agencia Extremeña de Ciberseguridad',
     obs:'Solo 3 de las 15 campañas previstas (20%). Ritmo insuficiente para alcanzar el objetivo en 2027.' },
 
@@ -211,7 +211,7 @@ const INDICADORES_ORIGINAL = [
   { id:'E3-05', eje:3, linea:'L3.1', nuevo:false, inv:false, bin:false,
     nombre:'Campañas para la atracción de nómadas digitales en entornos rurales de Extremadura',
     descripcion:'Número de campañas o actuaciones realizadas para atraer nómadas digitales al entorno rural extremeño.',
-    unidad:'nº', base:{v:null,año:2023}, actual:{v:3,fecha:'2026-05-08'}, obj:10,
+    unidad:'nº', base:{v:0,año:2023}, actual:{v:3,fecha:'2026-05-08'}, obj:10,
     per:'Anual', fuente:'Junta de Extremadura', responsable:'Consejería de Economía',
     obs:'3 actuaciones impulsadas para atraer nómadas digitales al entorno rural, combatiendo la despoblación y reforzando la economía local.' },
 
@@ -246,14 +246,14 @@ const INDICADORES_ORIGINAL = [
   { id:'E4-05', eje:4, linea:'L4.3', nuevo:false, inv:false, bin:false,
     nombre:'Empresas agroindustriales que han adoptado nuevas tecnologías',
     descripcion:'Porcentaje de empresas agroindustriales extremeñas que han adoptado nuevas tecnologías digitales.',
-    unidad:'%', base:{v:null,año:2023}, actual:{v:20.3,fecha:'2026-05-20'}, obj:20,
+    unidad:'%', base:{v:0,año:2023}, actual:{v:20.3,fecha:'2026-05-20'}, obj:20,
     per:'Anual', fuente:'Observatorio TIC', responsable:'Consejería de Agricultura',
     obs:'OBJETIVO CUMPLIDO. 20.3% con digitalización avanzada. Calculado con CNAEs INE 2025 (1.219 empresas; 248 con servicios).' },
 
   { id:'E4-06', eje:4, linea:'L4.2', nuevo:false, inv:false, bin:false,
     nombre:'Iniciativas apoyadas a través de instrumentos regionales de impulso a la Industria 4.0',
     descripcion:'Número de iniciativas empresariales apoyadas a través de instrumentos regionales de impulso a la Industria 4.0.',
-    unidad:'nº', base:{v:null,año:2023}, actual:{v:65,fecha:'2026-01-19'}, obj:40,
+    unidad:'nº', base:{v:0,año:2023}, actual:{v:65,fecha:'2026-01-19'}, obj:40,
     per:'Semestral', fuente:'Observatorio TIC', responsable:'Consejería de Economía',
     obs:'OBJETIVO SUPERADO. 65 iniciativas vs. objetivo de 40 (162.5%). Incluye 46 ayudas para digitalización industrial.' }
 ];
@@ -381,6 +381,7 @@ function saveUpdate(id, v, fecha, obs, extra = {}) {
   } catch (e) { console.error('Histórico v2', e); }
   refreshData();
   toast('Indicador actualizado correctamente', 'success');
+  ghPush(); // publica en GitHub si hay sesión de editor activa
 }
 
 function resetOne(id) {
@@ -398,6 +399,27 @@ function resetAll() {
   try { logAudit('Restauración global', 'Todos los indicadores vuelven a sus valores originales'); } catch (e) { console.error(e); }
   toast('Todos los datos restaurados a los valores originales');
 }
+
+// ── INE AUTO-FETCH CONFIG ────────────────────────────────────
+// type:'tabla' → DATOS_TABLA/{tabla}?nult=1, filtramos por Nombre en cliente
+// type:'serie' → DATOS_SERIE/{serie}?nult=1 (respuesta mínima)
+const INE_SERIES = {
+  'E4-01': {
+    type: 'tabla', tabla: '82399',
+    filter: { region: 'Extremadura', variable: ', B.7 ', sector: 'Total Empresas' },
+    label: 'ETICCE · Extremadura · % empresas con web corporativa'
+  },
+  'E4-02': {
+    type: 'tabla', tabla: '82405',
+    filter: { region: 'Extremadura', variable: ', E.1 ', sector: 'Total Empresas' },
+    label: 'ETICCE · Extremadura · Cloud computing de pago · Total'
+  },
+  'E4-03': {
+    type: 'tabla', tabla: '82404',
+    filter: { region: 'Extremadura', variable: ', D.1 ', sector: 'Total Empresas' },
+    label: 'ETICCE · Extremadura · Inteligencia Artificial · Total'
+  }
+};
 
 // ── DATOS ACTIVOS ────────────────────────────────────────────
 let DATA = [];
@@ -1009,4 +1031,137 @@ function importBackup(jsonStr) {
     toast('Error al leer la copia de seguridad', 'error');
     return false;
   }
+}
+
+// ════════════════════════════════════════════════════════════════
+// SINCRONIZACIÓN GITHUB
+// Configurar estos valores tras crear el repositorio
+// ════════════════════════════════════════════════════════════════
+const GH = {
+  owner:    'juntaexes-agoraex',
+  repo:     'etde27-okr',
+  branch:   'main',
+  dataPath: 'data/actualizaciones.json',
+  pin:      'ETDE2027',
+  _pat:     '',          // No se guarda en código — se lee de localStorage tras login
+};
+
+// Estado de la sincronización
+let ghStatus = 'init'; // 'init' | 'synced' | 'offline' | 'error' | 'syncing' | 'disabled'
+let ghEditorMode = false;
+
+const LS_PAT = 'okr-etde27-pat';
+function ghGetPat()    { return GH._pat || localStorage.getItem(LS_PAT) || ''; }
+function ghSavePat(p)  { localStorage.setItem(LS_PAT, p); GH._pat = p; }
+function ghClearPat()  { localStorage.removeItem(LS_PAT); GH._pat = ''; }
+function ghConfigured(){ return !!(GH.owner && GH.repo && ghGetPat()); }
+
+function ghRawUrl() {
+  return `https://raw.githubusercontent.com/${GH.owner}/${GH.repo}/${GH.branch}/${GH.dataPath}`;
+}
+
+// Cargar datos remotos al iniciar — fusiona con localStorage (remoto gana en caso de conflicto por fecha)
+async function ghLoad() {
+  if (!GH.owner || !GH.repo) { ghStatus = 'disabled'; ghUpdateBadge(); return; }
+  ghStatus = 'syncing'; ghUpdateBadge();
+  try {
+    const r = await fetch(ghRawUrl() + '?t=' + Date.now());
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const remote = await r.json();
+    // Fusión: para cada indicador, gana el más reciente por _at
+    const local = loadUpdates();
+    const merged = { ...local };
+    Object.entries(remote).forEach(([id, ru]) => {
+      const lu = local[id];
+      if (!lu || !lu._at || (ru._at && ru._at > lu._at)) merged[id] = ru;
+    });
+    localStorage.setItem(LS_KEY, JSON.stringify(merged));
+    _cfgCache = null; refreshData();
+    ghStatus = 'synced';
+  } catch (e) {
+    console.warn('GitHub load:', e.message);
+    ghStatus = 'offline';
+  }
+  ghUpdateBadge();
+}
+
+// Publicar actualizaciones en GitHub tras cada guardado
+async function ghPush() {
+  if (!ghConfigured() || !ghEditorMode) return;
+  ghStatus = 'syncing'; ghUpdateBadge();
+  try {
+    const updates = loadUpdates();
+    const content = btoa(unescape(encodeURIComponent(JSON.stringify(updates, null, 2))));
+    const headers = {
+      'Authorization': 'token ' + ghGetPat(),
+      'Accept': 'application/vnd.github.v3+json',
+      'Content-Type': 'application/json'
+    };
+    // Obtener SHA actual del archivo
+    let sha = null;
+    try {
+      const getR = await fetch(
+        `https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.dataPath}`,
+        { headers }
+      );
+      if (getR.ok) sha = (await getR.json()).sha;
+    } catch { /* archivo nuevo */ }
+    // Escribir
+    const cfg = loadConfig();
+    const body = {
+      message: `Actualización ${todayISO()} · ${cfg.usuarioActual || 'Editor'}`,
+      content, branch: GH.branch
+    };
+    if (sha) body.sha = sha;
+    const putR = await fetch(
+      `https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.dataPath}`,
+      { method: 'PUT', headers, body: JSON.stringify(body) }
+    );
+    if (!putR.ok) throw new Error('PUT ' + putR.status);
+    ghStatus = 'synced';
+    logAudit('Sincronización GitHub', 'Cambios publicados en el repositorio');
+  } catch (e) {
+    console.error('GitHub push:', e.message);
+    ghStatus = 'error';
+    toast('No se pudo sincronizar con GitHub. Los cambios están guardados localmente.', 'error');
+  }
+  ghUpdateBadge();
+}
+
+function ghCheckPin(pin) {
+  if (pin === GH.pin) {
+    ghEditorMode = true;
+    ghUpdateBadge();
+    return true;
+  }
+  return false;
+}
+
+function ghLock() {
+  ghEditorMode = false;
+  ghUpdateBadge();
+}
+
+function ghUpdateBadge() {
+  const el = document.getElementById('gh-sync-badge');
+  if (!el) return;
+  if (ghStatus === 'disabled' || !GH.owner) {
+    el.style.display = 'none';
+    return;
+  }
+  el.style.display = 'flex';
+  const configs = {
+    init:     { icon: '⏳', label: 'Iniciando…',      cls: 'sync-loading' },
+    syncing:  { icon: '⏳', label: 'Sincronizando…',  cls: 'sync-loading' },
+    synced:   { icon: '🟢', label: 'Sincronizado',    cls: 'sync-ok'      },
+    offline:  { icon: '⚫', label: 'Sin conexión',    cls: 'sync-off'     },
+    error:    { icon: '🔴', label: 'Error de sync',   cls: 'sync-error'   },
+    disabled: { icon: '',   label: '',                cls: ''              },
+  };
+  const c = configs[ghStatus] || configs.offline;
+  el.className = 'gh-sync-badge ' + c.cls;
+  el.innerHTML = `<span>${c.icon}</span><span>${c.label}</span>` +
+    (ghEditorMode
+      ? `<span class="sync-editor-tag">✎ Editor</span><button class="sync-login-btn" onclick="ghLock()" style="margin-left:.3rem">🔒</button>`
+      : `<button class="sync-login-btn" onclick="openPinModal()">🔑 Editar</button>`);
 }
