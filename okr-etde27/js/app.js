@@ -919,7 +919,28 @@ async function fetchFromINE(id) {
       if (latest.Secreto) throw new Error('Dato protegido (secreto estadístico)');
       if (latest.Valor === null || latest.Valor === undefined) throw new Error('INE devuelve valor nulo para este periodo');
       valor = latest.Valor;
-      const anyo = latest.Anyo || new Date(latest.Fecha).getFullYear();
+      const anyo = latest.Anyo || (latest.Fecha ? new Date(latest.Fecha).getFullYear() : new Date().getFullYear() - 1);
+      fechaStr = `${anyo}-12-31`;
+      source = `${series.label} · ${anyo}`;
+    } else if (series.type === 'tabla_sum') {
+      const url = `https://servicios.ine.es/wstempus/js/ES/DATOS_TABLA/${series.tabla}?nult=1`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`INE HTTP ${res.status}`);
+      const json = await res.json();
+      let suma = 0;
+      let anyo = null;
+      for (const f of series.filtros) {
+        const entry = json.find(d => d.Nombre && d.Nombre.includes(f.region) && d.Nombre.includes(f.variable) && d.Nombre.includes(f.sector));
+        if (!entry) throw new Error(`Dato INE no encontrado: "${f.variable}"`);
+        const data = entry.Data || [];
+        if (!data.length) throw new Error('La tabla aún no tiene datos publicados');
+        const latest = data[0];
+        if (latest.Secreto) throw new Error('Dato protegido (secreto estadístico)');
+        if (latest.Valor === null || latest.Valor === undefined) throw new Error('INE devuelve valor nulo');
+        suma += latest.Valor;
+        if (!anyo) anyo = latest.Anyo || (latest.Fecha ? new Date(latest.Fecha).getFullYear() : new Date().getFullYear() - 1);
+      }
+      valor = Math.round(suma * 10) / 10;
       fechaStr = `${anyo}-12-31`;
       source = `${series.label} · ${anyo}`;
     } else {

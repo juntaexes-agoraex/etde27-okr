@@ -401,13 +401,25 @@ function resetAll() {
 }
 
 // ── INE AUTO-FETCH CONFIG ────────────────────────────────────
-// type:'tabla' → DATOS_TABLA/{tabla}?nult=1, filtramos por Nombre en cliente
-// type:'serie' → DATOS_SERIE/{serie}?nult=1 (respuesta mínima)
+// type:'serie'     → DATOS_SERIE/{serie}?nult=1
+// type:'tabla'     → DATOS_TABLA/{tabla}?nult=1, filtramos por Nombre (includes)
+// type:'tabla_sum' → igual que tabla pero suma varios Nombre y devuelve el total
 const INE_SERIES = {
+  'E2-01': {
+    type: 'serie', serie: 'DCS448',
+    label: 'TIC Hogares · Extremadura · Viviendas con conexión a internet'
+  },
+  'E3-01': {
+    type: 'tabla_sum', tabla: '76631',
+    filtros: [
+      { region: 'Extremadura', variable: 'Habilidades Digitales: Habilidad Básica',    sector: 'Total Personas' },
+      { region: 'Extremadura', variable: 'Habilidades Digitales: Habilidad Avanzada',  sector: 'Total Personas' }
+    ],
+    label: 'TIC Hogares · Extremadura · Competencias digitales al menos básicas'
+  },
   'E4-01': {
-    type: 'tabla', tabla: '82399',
-    filter: { region: 'Extremadura', variable: ', B.7 ', sector: 'Total Empresas' },
-    label: 'ETICCE · Extremadura · % empresas con web corporativa'
+    type: 'serie', serie: 'DCC535',
+    label: 'ETICCE · Extremadura · Empresas con sitio/página web'
   },
   'E4-02': {
     type: 'tabla', tabla: '82405',
