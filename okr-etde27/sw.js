@@ -1,4 +1,4 @@
-const CACHE = 'etde27-okr-v2';
+const CACHE = 'etde27-okr-v3';
 
 // Solo cacheamos assets estáticos que no cambian (imágenes, Chart.js)
 const STATIC = [
