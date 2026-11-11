@@ -169,8 +169,18 @@ function buildEmail(nombre, indicadores) {
 </html>`;
 }
 
+// ── Leer log de notificaciones existente ─────────────────────────────────
+const NOTIF_PATH = path.join(__dirname, '..', 'data', 'notificaciones.json');
+let notificaciones = [];
+try {
+  notificaciones = JSON.parse(fs.readFileSync(NOTIF_PATH, 'utf8'));
+  if (!Array.isArray(notificaciones)) notificaciones = [];
+} catch { notificaciones = []; }
+
 // ── Enviar un email por persona ───────────────────────────────────────────
 async function main() {
+  const fechaHoy = hoy.toISOString().slice(0, 10);
+
   for (const [email, { nombre, indicadores }] of Object.entries(pendientesPorEmail)) {
     const hayVencidos = indicadores.some(i => i.estado === 'VENCIDO');
     const n           = indicadores.length;
@@ -186,7 +196,21 @@ async function main() {
     });
 
     console.log(`✓ Email enviado a ${email} (${n} indicador${n > 1 ? 'es' : ''})`);
+
+    // Registrar notificación en el log
+    notificaciones.push({
+      email,
+      nombre,
+      fecha:       fechaHoy,
+      asunto,
+      tipo:        hayVencidos ? 'urgente' : 'recordatorio',
+      indicadores: indicadores.map(i => ({ id: i.id, nombre: i.nombre, estado: i.estado, diasRestantes: i.diasRestantes })),
+    });
   }
+
+  // Guardar log actualizado (el workflow lo comiteará)
+  fs.writeFileSync(NOTIF_PATH, JSON.stringify(notificaciones, null, 2));
+  console.log(`📝 Log de notificaciones actualizado (${notificaciones.length} total).`);
 }
 
 main().catch(err => {

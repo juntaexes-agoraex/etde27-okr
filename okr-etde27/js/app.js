@@ -2877,11 +2877,23 @@ function refreshSidebarAuth() {
 }
 
 // ═══ MI PANEL (vista personal del responsable) ═══════════════════
-function renderMiPanel() {
+async function renderMiPanel() {
   const el = document.getElementById('v-mi-panel-inner');
   if (!el) return;
   const s = getSession();
   if (!s) { el.innerHTML = '<p>No has iniciado sesión.</p>'; return; }
+
+  // Cargar notificaciones desde GitHub (o caché local)
+  let notificaciones = [];
+  try {
+    const url = `https://raw.githubusercontent.com/${GH.owner}/${GH.repo}/${GH.branch}/data/notificaciones.json?t=${Date.now()}`;
+    const r = await fetch(url);
+    if (r.ok) notificaciones = await r.json();
+  } catch { /* sin conexión — se muestra vacío */ }
+  const misNotifs = (Array.isArray(notificaciones) ? notificaciones : [])
+    .filter(n => n.email === s.email)
+    .sort((a, b) => b.fecha.localeCompare(a.fecha))
+    .slice(0, 10);
 
   const updates   = loadUpdates();
   const hoy       = new Date();
@@ -2940,7 +2952,32 @@ function renderMiPanel() {
     <table class="data-table">
       <thead><tr><th>ID</th><th>Indicador</th><th>Estado</th><th>Último dato</th><th></th></tr></thead>
       <tbody>${filas.join('') || '<tr><td colspan="5" style="text-align:center;color:var(--muted)">No tienes indicadores asignados</td></tr>'}</tbody>
-    </table>`;
+    </table>
+
+    <div style="margin-top:2rem">
+      <div style="font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:.75rem">
+        🔔 Notificaciones recibidas
+      </div>
+      ${misNotifs.length === 0
+        ? `<div style="padding:1.2rem;background:var(--surface-alt);border-radius:8px;color:var(--muted);font-size:.85rem;text-align:center">
+            No hay notificaciones registradas todavía.<br>
+            <span style="font-size:.78rem">Los recordatorios por email quedarán registrados aquí automáticamente.</span>
+           </div>`
+        : misNotifs.map(n => {
+            const icono = n.tipo === 'urgente' ? '⚠️' : '📅';
+            const color = n.tipo === 'urgente' ? 'var(--crit)' : 'var(--risk)';
+            const indsTexto = n.indicadores.map(i => i.id).join(', ');
+            return `<div style="display:flex;gap:12px;padding:12px 14px;background:var(--surface-alt);border-radius:8px;margin-bottom:8px;border-left:3px solid ${color}">
+              <div style="font-size:1.3rem;flex-shrink:0">${icono}</div>
+              <div style="flex:1">
+                <div style="font-size:.85rem;font-weight:600;color:var(--ink)">${n.asunto.replace(/^[⚠️📅]+\s*/, '')}</div>
+                <div style="font-size:.78rem;color:var(--muted);margin-top:3px">Indicadores: <strong>${indsTexto}</strong></div>
+              </div>
+              <div style="font-size:.78rem;color:var(--muted);white-space:nowrap;flex-shrink:0">${n.fecha}</div>
+            </div>`;
+          }).join('')
+      }
+    </div>`;
 }
 
 // ═══ ADMINISTRACIÓN: gestión de usuarios ═════════════════════════
