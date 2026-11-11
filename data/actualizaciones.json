@@ -6,11 +6,32 @@
     "_prev": 7.9,
     "_at": "2026-11-04T10:10:26.600Z"
   },
+  "E2-01": {
+    "v": 96.5,
+    "fecha": "2025-12-31",
+    "obs": "Dato actualizado automáticamente desde la API pública del INE.",
+    "_prev": 96.5,
+    "_at": "2026-11-04T16:07:13.479Z"
+  },
   "E1-04": {
     "v": 51,
     "fecha": "2026-11-04",
     "obs": "Dato actualizado automáticamente desde la API pública del INE.",
     "_prev": 51,
-    "_at": "2026-11-04T16:04:05.460Z"
+    "_at": "2026-11-04T16:06:43.117Z"
+  },
+  "E4-01": {
+    "v": 79,
+    "fecha": "2026-12-31",
+    "obs": "Dato actualizado automáticamente desde la API pública del INE.",
+    "_prev": 73.5,
+    "_at": "2026-11-04T16:41:25.471Z"
+  },
+  "E1-02": {
+    "v": 69,
+    "fecha": "2026-03-25",
+    "obs": "Incluye 543 procedimientos en TRAMITA y 47 en ARADO. Más de 1.2 millones de trámites ciudadanos realizados desde julio 2024.",
+    "_prev": 91,
+    "_at": "2026-11-11T10:49:51.633Z"
   }
 }
