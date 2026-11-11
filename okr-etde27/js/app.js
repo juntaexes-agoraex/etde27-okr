@@ -3014,7 +3014,23 @@ function renderAdmin(tab) {
         <td style="font-size:.8rem;color:var(--muted)">PIN: ${u.pin}</td>
       </tr>`;
     });
+    const patActual = ghGetPat();
+    const patEstado = patActual
+      ? `<span style="color:#059669;font-weight:600">✅ Token configurado</span>`
+      : `<span style="color:#DC2626;font-weight:600">⚠️ Token no configurado — el envío manual de recordatorios no funcionará</span>`;
+
     el.innerHTML = tabs + `
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+        <div style="flex:1;min-width:200px">
+          <div style="font-weight:600;margin-bottom:4px">🔑 Token de GitHub (PAT)</div>
+          <div style="font-size:.82rem">${patEstado}</div>
+          <div style="font-size:.75rem;color:var(--muted);margin-top:2px">Necesario para enviar recordatorios manuales y sincronizar datos con GitHub.</div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="openPATModal()" style="white-space:nowrap">
+          ${patActual ? '🔄 Actualizar token' : '🔑 Introducir token'}
+        </button>
+        ${patActual ? `<button class="btn btn-sm" onclick="ghClearPat();renderAdmin('usuarios')" style="color:#DC2626;border-color:#DC2626;white-space:nowrap">🗑 Borrar token</button>` : ''}
+      </div>
       <p style="color:var(--muted);font-size:.85rem;margin-bottom:16px">
         Para añadir o modificar usuarios, edita el array <code>USUARIOS</code> en <code>js/data.js</code> y sube los cambios al repositorio.
       </p>
@@ -3025,6 +3041,47 @@ function renderAdmin(tab) {
   } else {
     el.innerHTML = tabs + renderNotificacionesPrevistas();
   }
+}
+
+function openPATModal() {
+  const existing = document.getElementById('pat-modal-overlay');
+  if (existing) existing.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'pat-modal-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9000;display:flex;align-items:center;justify-content:center';
+  overlay.innerHTML = `
+    <div style="background:var(--bg);border-radius:12px;padding:28px 32px;width:min(480px,92vw);box-shadow:0 8px 32px rgba(0,0,0,.3)">
+      <h3 style="margin:0 0 6px;font-size:1.1rem">🔑 Token de GitHub (PAT)</h3>
+      <p style="font-size:.82rem;color:var(--muted);margin:0 0 20px">
+        El token permite enviar recordatorios manuales y guardar datos en GitHub.<br>
+        Se almacena solo en <strong>este navegador</strong>, nunca en el código.
+      </p>
+      <label style="font-size:.8rem;color:var(--muted);display:block;margin-bottom:4px">Personal Access Token</label>
+      <input id="pat-input" type="password" placeholder="github_pat_…"
+        style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--border);border-radius:6px;font-size:.9rem;background:var(--bg2);color:var(--fg);margin-bottom:6px"
+        value="${ghGetPat()}"
+        autocomplete="off">
+      <p style="font-size:.73rem;color:var(--muted);margin:0 0 20px">
+        Crea un token en <strong>github.com → Settings → Developer settings → Personal access tokens → Fine-grained</strong>
+        con permisos: <em>Contents (write)</em> y <em>Actions (write)</em> sobre el repositorio etde27-okr.
+      </p>
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button class="btn btn-sm" onclick="document.getElementById('pat-modal-overlay').remove()">Cancelar</button>
+        <button class="btn btn-primary" onclick="
+          const v = document.getElementById('pat-input').value.trim();
+          if (!v) { return; }
+          ghSavePat(v);
+          document.getElementById('pat-modal-overlay').remove();
+          toast('Token guardado correctamente en este navegador.', 'success');
+          renderAdmin('usuarios');
+        ">Guardar token</button>
+      </div>
+    </div>`;
+
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  setTimeout(() => document.getElementById('pat-input')?.focus(), 50);
 }
 
 function renderNotificacionesPrevistas() {
