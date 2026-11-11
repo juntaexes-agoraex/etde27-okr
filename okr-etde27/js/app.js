@@ -660,7 +660,7 @@ function renderActualizar() {
       <div class="card" style="overflow:hidden">
         <div class="table-toolbar">
           ${chips.map(([k, l, n]) => `<button class="fchip${updFilter === k ? ' active' : ''}" onclick="updFilter='${k}';renderActualizar()">${l} <span>${n}</span></button>`).join('')}
-          ${modified.length ? `<button class="btn btn-danger btn-sm" onclick="if(confirm('¿Restaurar TODOS los indicadores a sus valores originales?')){resetAll();updFilter='todos';navigate('actualizar')}">↺ Restaurar todos los originales</button>` : ''}
+          ${modified.length && isAdmin() ? `<button class="btn btn-danger btn-sm" onclick="if(confirm('¿Restaurar TODOS los indicadores a sus valores originales?')){resetAll();updFilter='todos';navigate('actualizar')}">↺ Restaurar todos los originales</button>` : ''}
           <div class="toolbar-count">${rows.length} de ${DATA.length} indicadores</div>
         </div>
         <div class="update-list" style="padding:.5rem">
@@ -2900,13 +2900,13 @@ function renderMiPanel() {
     const rest = per - dias;
     let estadoBadge, estadoCls;
     if (dias === Infinity) {
-      estadoBadge = '⚠ Sin datos'; estadoCls = 'badge-riesgo';
+      estadoBadge = '⚠ Sin datos'; estadoCls = 'badge-critical';
     } else if (rest <= 0) {
-      estadoBadge = '⚠ Vencido'; estadoCls = 'badge-riesgo';
+      estadoBadge = '⚠ Vencido'; estadoCls = 'badge-critical';
     } else if (rest <= 7) {
-      estadoBadge = `⏰ Vence en ${rest}d`; estadoCls = 'badge-warning';
+      estadoBadge = `⏰ Vence en ${rest}d`; estadoCls = 'badge-at_risk';
     } else {
-      estadoBadge = '✓ Al día'; estadoCls = 'badge-ok';
+      estadoBadge = '✓ Al día'; estadoCls = 'badge-achieved';
     }
     return `<tr>
       <td><strong style="color:var(--accent)">${ind.id}</strong></td>
@@ -2931,11 +2931,11 @@ function renderMiPanel() {
         <div style="font-size:.8rem;color:var(--muted)">${s.rol === 'admin' ? 'Administrador' : 'Responsable OKR'} · ${s.email}</div>
       </div>
     </div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-bottom:20px">
-      <div class="kpi-card"><div class="kpi-label">Mis indicadores</div><div class="kpi-val">${misInds.length}</div></div>
-      <div class="kpi-card kpi-ok"><div class="kpi-label">Al día</div><div class="kpi-val">${nOk}</div></div>
-      <div class="kpi-card kpi-warn"><div class="kpi-label">Próximos</div><div class="kpi-val">${nProximos}</div></div>
-      <div class="kpi-card kpi-risk"><div class="kpi-label">Vencidos</div><div class="kpi-val">${nVencidos}</div></div>
+    <div class="kpi-grid" style="margin-bottom:20px">
+      <div class="kpi"><div class="kpi-val">${misInds.length}</div><div class="kpi-label">Mis indicadores</div></div>
+      <div class="kpi" style="border-top:3px solid var(--track)"><div class="kpi-val" style="color:var(--track)">${nOk}</div><div class="kpi-label">Al día</div></div>
+      <div class="kpi" style="border-top:3px solid var(--risk)"><div class="kpi-val" style="color:var(--risk)">${nProximos}</div><div class="kpi-label">Próximos</div></div>
+      <div class="kpi" style="border-top:3px solid var(--crit)"><div class="kpi-val" style="color:var(--crit)">${nVencidos}</div><div class="kpi-label">Vencidos</div></div>
     </div>
     <table class="data-table">
       <thead><tr><th>ID</th><th>Indicador</th><th>Estado</th><th>Último dato</th><th></th></tr></thead>
@@ -2951,8 +2951,8 @@ function renderAdmin() {
 
   const filas = USUARIOS.map(u => {
     const rolBadge = u.rol === 'admin'
-      ? `<span class="badge badge-info">Admin</span>`
-      : `<span class="badge badge-ok">Responsable</span>`;
+      ? `<span class="badge badge-updated">Admin</span>`
+      : `<span class="badge badge-achieved">Responsable</span>`;
     const inds = u.indicadores.length ? u.indicadores.join(', ') : '—';
     return `<tr>
       <td><strong>${u.nombre}</strong><div style="font-size:.75rem;color:var(--muted)">${u.email}</div></td>
