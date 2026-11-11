@@ -1106,6 +1106,9 @@ function sessionLogin(email, pin) {
   return true;
 }
 function sessionLogout() {
+  const s = getSession();
+  const nombre = s ? s.nombre.split(' ')[0] : 'tu sesión';
+  if (!confirm(`¿Cerrar la sesión de ${nombre}?`)) return;
   clearSession();
   ghEditorMode = false;
   ghUpdateBadge();

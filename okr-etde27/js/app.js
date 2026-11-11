@@ -158,7 +158,7 @@ function indCard(ind, colorAccent = null) {
     <div class="ind-actions">
       <button class="btn btn-ghost btn-sm" onclick="openFicha('${ind.id}')">Ficha 360°</button>
       ${INE_SERIES[ind.id] ? `<button class="btn btn-ine btn-sm" id="ine-btn-${ind.id}" onclick="fetchFromINE('${ind.id}')" title="Obtener dato actualizado">${INE_SERIES[ind.id].btnLabel || '📊 INE'}</button>` : ''}
-      <button class="btn btn-primary btn-sm" onclick="openQuickUpdate('${ind.id}')">⚡ Actualizar</button>
+      ${canEditIndicador(ind.id) ? `<button class="btn btn-primary btn-sm" onclick="openQuickUpdate('${ind.id}')">⚡ Actualizar</button>` : ''}
     </div>
   </div>`;
 }
@@ -716,6 +716,7 @@ function closeModal() {
 function saveModal() {
   try {
     if (!modalEditId) return;
+    if (!canEditIndicador(modalEditId)) { toast('No tienes permiso para editar este indicador.', 'error'); return; }
     const i = DATA.find(x => x.id === modalEditId);
     if (!i) { closeModal(); return; }
     const v      = document.getElementById('m-val')?.value;
@@ -843,6 +844,10 @@ function proyBadgeHTML(ind) {
 
 // ── ACTUALIZACIÓN RÁPIDA ─────────────────────────────────────
 function openQuickUpdate(id) {
+  if (!canEditIndicador(id)) {
+    toast('No tienes permiso para editar este indicador.', 'error');
+    return;
+  }
   const ind = DATA.find(i => i.id === id);
   if (!ind) return;
   document.getElementById('qupd-overlay')?.remove();
@@ -893,6 +898,7 @@ function openQuickUpdate(id) {
 }
 
 function submitQuickUpdate(id) {
+  if (!canEditIndicador(id)) { toast('No tienes permiso para editar este indicador.', 'error'); return; }
   const v     = document.getElementById('qupd-val')?.value?.trim();
   const fecha = document.getElementById('qupd-fecha')?.value || todayISO();
   const obs   = document.getElementById('qupd-obs')?.value?.trim() || '';
@@ -1136,7 +1142,7 @@ function setFichaTab(tab) {
   document.querySelectorAll('#modal-body .ficha-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
   document.querySelectorAll('#modal-body .ficha-panel').forEach(p => p.classList.toggle('active', p.dataset.panel === tab));
   const saveBtn = document.getElementById('modal-save-btn');
-  if (saveBtn) saveBtn.style.display = tab === 'actualizar' ? '' : 'none';
+  if (saveBtn) saveBtn.style.display = (tab === 'actualizar' && canEditIndicador(fichaState.id)) ? '' : 'none';
   if (tab === 'historico') {
     const i = indById(fichaState.id);
     if (i) setTimeout(() => { try { renderFichaHistChart(i); } catch (e) { console.error('chart ficha', e); } }, 30);
