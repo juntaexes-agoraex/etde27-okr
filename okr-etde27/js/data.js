@@ -1079,10 +1079,16 @@ const USUARIOS = [
 ];
 
 // Usuarios adicionales creados desde el panel de admin (se suman a USUARIOS)
-const LS_USERS_EXTRA = 'okr-etde27-users-extra';
-function loadExtraUsers() { try { return JSON.parse(localStorage.getItem(LS_USERS_EXTRA) || '[]'); } catch { return []; } }
+const LS_USERS_EXTRA    = 'okr-etde27-users-extra';
+const LS_USERS_DISABLED = 'okr-etde27-users-disabled';
+function loadExtraUsers()    { try { return JSON.parse(localStorage.getItem(LS_USERS_EXTRA)    || '[]'); } catch { return []; } }
 function saveExtraUsers(arr) { localStorage.setItem(LS_USERS_EXTRA, JSON.stringify(arr)); }
-function getAllUsers() { return [...USUARIOS, ...loadExtraUsers()]; }
+function loadDisabledUsers()    { try { return JSON.parse(localStorage.getItem(LS_USERS_DISABLED) || '[]'); } catch { return []; } }
+function saveDisabledUsers(arr) { localStorage.setItem(LS_USERS_DISABLED, JSON.stringify(arr)); }
+function getAllUsers() {
+  const disabled = loadDisabledUsers();
+  return [...USUARIOS, ...loadExtraUsers()].filter(u => !disabled.includes(u.email));
+}
 
 const LS_SESSION = 'okr-etde27-session';
 

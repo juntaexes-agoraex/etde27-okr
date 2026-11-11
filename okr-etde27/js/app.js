@@ -1129,6 +1129,7 @@ function openFicha(id, tab = 'situacion') {
   try {
     const i = indById(id);
     if (!i) return;
+    if (tab === 'actualizar' && !canEditIndicador(id)) tab = 'situacion';
     const keepDirty = fichaState.id === id && fichaState.dirty;
     destroyChart('ch-ficha-hist');
     modalEditId = id;
@@ -1185,13 +1186,13 @@ function fichaHTML(i) {
       </div>
     </div>
     <div class="ficha-tabs" role="tablist">
-      ${FICHA_TABS.map(([k, l]) => `<div class="ficha-tab" role="tab" data-tab="${k}" onclick="setFichaTab('${k}')">${l}${counts[k] ? ` <span class="ficha-tab-n">${counts[k]}</span>` : ''}</div>`).join('')}
+      ${FICHA_TABS.filter(([k]) => k !== 'actualizar' || canEditIndicador(i.id)).map(([k, l]) => `<div class="ficha-tab" role="tab" data-tab="${k}" onclick="setFichaTab('${k}')">${l}${counts[k] ? ` <span class="ficha-tab-n">${counts[k]}</span>` : ''}</div>`).join('')}
     </div>
     <div class="ficha-panel" data-panel="situacion">${fichaSituacion(i)}</div>
     <div class="ficha-panel" data-panel="historico">${fichaHistorico(i)}</div>
     <div class="ficha-panel" data-panel="seguimiento">${fichaSeguimiento(i)}</div>
     <div class="ficha-panel" data-panel="evidencias">${fichaEvidencias(i)}</div>
-    <div class="ficha-panel" data-panel="actualizar">${fichaActualizar(i)}</div>`;
+    ${canEditIndicador(i.id) ? `<div class="ficha-panel" data-panel="actualizar">${fichaActualizar(i)}</div>` : ''}`;
 }
 
 function fichaSituacion(i) {
@@ -3041,22 +3042,24 @@ function renderAdmin(tab) {
 
   if (adminTab === 'usuarios') {
     const todosUsuarios = getAllUsers();
-    const extraUsers = loadExtraUsers();
+    const sessionEmail = getSession()?.email || '';
     const filas = todosUsuarios.map(u => {
       const rolBadge = u.rol === 'admin'
         ? `<span class="badge badge-updated">Admin</span>`
         : `<span class="badge badge-achieved">Responsable</span>`;
       const inds = u.indicadores.length ? u.indicadores.join(', ') : '—';
-      const isExtra = extraUsers.some(e => e.email === u.email);
-      const deleteBtn = isExtra
-        ? `<button onclick="deleteExtraUser('${u.email}')" style="background:none;border:none;cursor:pointer;color:#DC2626;font-size:.8rem;padding:0 4px" title="Eliminar usuario">🗑</button>`
-        : '';
+      const esSesionActual = u.email === sessionEmail;
+      const deleteBtn = esSesionActual
+        ? `<span style="font-size:.72rem;color:var(--muted)" title="No puedes eliminar tu propia cuenta">—</span>`
+        : `<button onclick="eliminarUsuario('${u.email}','${u.nombre.replace(/'/g,"\\'")}','${USUARIOS.some(x=>x.email===u.email)?'base':'extra'}')"
+             style="background:none;border:1px solid #DC2626;border-radius:5px;cursor:pointer;color:#DC2626;font-size:.75rem;padding:3px 8px;white-space:nowrap"
+             title="Eliminar usuario">🗑 Eliminar</button>`;
       return `<tr>
         <td><strong>${u.nombre}</strong><div style="font-size:.75rem;color:var(--muted)">${u.email}</div></td>
         <td>${rolBadge}</td>
         <td style="font-size:.8rem">${inds}</td>
         <td style="font-size:.8rem;color:var(--muted)">PIN: <strong>${u.pin}</strong></td>
-        <td>${deleteBtn}</td>
+        <td style="text-align:center">${deleteBtn}</td>
       </tr>`;
     });
     const patActual = ghGetPat();
@@ -3122,6 +3125,22 @@ function renderAdmin(tab) {
   }
 }
 
+function eliminarUsuario(email, nombre, tipo) {
+  if (!confirm(`¿Eliminar el acceso de ${nombre} (${email})?\n\nEsta acción se puede deshacer volviendo a añadir el usuario.`)) return;
+
+  if (tipo === 'extra') {
+    // Usuario añadido desde el formulario: borrar directamente
+    saveExtraUsers(loadExtraUsers().filter(u => u.email !== email));
+  } else {
+    // Usuario base (hardcodeado): añadir a lista de desactivados
+    const disabled = loadDisabledUsers();
+    if (!disabled.includes(email)) { disabled.push(email); saveDisabledUsers(disabled); }
+  }
+
+  toast(`Acceso de ${nombre} eliminado.`, 'success');
+  renderAdmin('usuarios');
+}
+
 function addExtraUser() {
   const nombre = document.getElementById('nu-nombre')?.value.trim();
   const email  = document.getElementById('nu-email')?.value.trim().toLowerCase();
@@ -3148,16 +3167,6 @@ function addExtraUser() {
 
   if (errEl) errEl.style.display = 'none';
   toast(`Usuario ${nombre} añadido correctamente. PIN: ${pin}`, 'success');
-  renderAdmin('usuarios');
-}
-
-function deleteExtraUser(email) {
-  const u = loadExtraUsers().find(x => x.email === email);
-  if (!u) return;
-  if (!confirm(`¿Eliminar el usuario ${u.nombre} (${u.email})?`)) return;
-  const extras = loadExtraUsers().filter(x => x.email !== email);
-  saveExtraUsers(extras);
-  toast(`Usuario ${u.nombre} eliminado.`, 'success');
   renderAdmin('usuarios');
 }
 
