@@ -19,7 +19,7 @@ const VIEW_ALIASES = {
   calendario:  ['prioridades', 'calendario'],
   decisiones:  ['tareas', 'decisiones'],
   comparar:    ['snapshots', 'comparar'],
-  metodologia: ['config', 'metodologia'],
+  config_metodologia: ['config', 'metodologia'],
   informe:     ['comite', null],
   evolucion:   ['indicadores', null]
 };
@@ -57,6 +57,7 @@ function navigate(view, tab) {
       case 'actualizar':  renderActualizar();  break;
       case 'snapshots':   renderHistorico();   break;
       case 'config':      renderConfig();      break;
+      case 'metodologia': /* contenido estático, no requiere render */ break;
     }
   } catch (e) {
     console.error('Error al renderizar la vista', view, e);

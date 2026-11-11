@@ -82,6 +82,12 @@
           <span>Comité e informe</span>
         </a>
       </li>
+      <li>
+        <a href="#" data-view="metodologia">
+          <span class="sb-icon">📐</span>
+          <span>Metodología</span>
+        </a>
+      </li>
     </ul>
 
     <div class="sb-section">Administración</div>
@@ -420,6 +426,66 @@
 
         </div>
     </template>
+
+    <!-- ── METODOLOGÍA ─────────────────────────────────────── -->
+    <div id="v-metodologia" class="view">
+      <div class="page-hd">
+        <div class="page-hd-left">
+          <h1>Metodología de indicadores</h1>
+          <p>Cómo se calcula cada uno de los 28 indicadores del ETDE27</p>
+        </div>
+      </div>
+      <div class="view-inner">
+        <table class="metodo-ind-table">
+          <thead>
+            <tr>
+              <th style="width:3rem">ID</th>
+              <th style="width:30%">Indicador</th>
+              <th>Metodología de cálculo</th>
+              <th style="width:12%">Fuente</th>
+              <th style="width:9%">Periodicidad</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="metodo-eje-row"><td colspan="5">EJE 1 · Administración al servicio de la ciudadanía</td></tr>
+            <tr><td>E1-01</td><td>Nivel de satisfacción de la ciudadanía con los servicios públicos digitales</td><td>Encuesta de satisfacción escala 1–10. Media de respuestas de ciudadanía sobre la calidad percibida de servicios digitales de la Administración extremeña.</td><td>DGDA (encuesta interna)</td><td>Semestral</td></tr>
+            <tr><td>E1-02</td><td>Procedimientos administrativos realizables digitalmente</td><td>(Nº procedimientos digitales ÷ Nº total procedimientos que aplican) × 100. Fuente: Informe CAE de administracionelectronica.gob.es.</td><td>administracionelectronica.gob.es</td><td>Anual</td></tr>
+            <tr><td>E1-03</td><td>Reducción del tiempo de resolución de los procedimientos simplificados</td><td>% de reducción del tiempo medio de resolución antes y después de la simplificación, recogido mediante la herramienta de simplificación de DGDA.</td><td>DGDA</td><td>Semestral</td></tr>
+            <tr><td>E1-04</td><td>Número de conjuntos de datos publicados en el portal de datos abiertos</td><td>Conteo directo de datasets publicados por la Junta de Extremadura en datos.gob.es. <strong>Dato automatizado</strong> vía consulta SPARQL.</td><td>datos.gob.es</td><td>Semestral</td></tr>
+            <tr><td>E1-05</td><td>Procedimientos integrados para la interoperabilidad</td><td>Conteo de procedimientos que consultan datos automáticamente a través de la plataforma de intermediación de datos.</td><td>DGDA</td><td>Anual</td></tr>
+            <tr><td>E1-06</td><td>Puesta en marcha del CPD (Data Center)</td><td>Suma ponderada de hitos: Diseños aprobados 15% + Obra civil iniciada 10% + Obra civil finalizada 30% + Infraestructura interior 10% + Energía y cableado 5% + Entrega final 30%.</td><td>DGDA / DGDR</td><td>Semestral</td></tr>
+            <tr><td>E1-07</td><td>Integración de tecnologías innovadoras para la mejora del servicio público</td><td>Conteo de casos de uso activos en producción que emplean tecnologías innovadoras (IA, RPA, Blockchain, Realidad Virtual, etc.).</td><td>DGDA</td><td>Semestral</td></tr>
+            <tr><td>E1-08</td><td>Laboratorio de Innovación (AgoraEx) en marcha</td><td>% de avance respecto a la planificación inicial, calculado sobre los hitos formalmente alcanzados del proyecto.</td><td>DGDA</td><td>N/A</td></tr>
+            <tr><td>E1-09</td><td>Empleados públicos con certificación de competencia digital</td><td>(Nº empleados certificados acumulados sin duplicados ÷ Nº total empleados públicos) × 100. Excluye docentes de Educación y personal del SES.</td><td>EAP · Escuela de Administración Pública</td><td>Anual</td></tr>
+
+            <tr class="metodo-eje-row"><td colspan="5">EJE 2 · Conectividad para un territorio más inteligente y seguro</td></tr>
+            <tr><td>E2-01</td><td>Porcentaje de viviendas con conexión a internet</td><td>Dato directo INE: "% viviendas que tienen acceso a internet" para Extremadura. <strong>Dato automatizado</strong> vía API INE serie DCS448.</td><td>INE · Encuesta TIC Hogares</td><td>Anual</td></tr>
+            <tr><td>E2-02</td><td>Empresas con acceso a internet por cable y fibra óptica</td><td>Dato directo INE: "D.3.1.2 % empresas con conexión fija y redes de cable y fibra (FTTH)" para Extremadura, Total Empresas.</td><td>INE ETICCE / ONTSI</td><td>Anual</td></tr>
+            <tr><td>E2-03</td><td>Cobertura de redes móviles 5G</td><td>Dato del Excel del Ministerio de Transformación Digital, hoja "CCAA_%hogar", columna "5G", fila Extremadura.</td><td>Ministerio de Transformación Digital</td><td>Anual</td></tr>
+            <tr><td>E2-04</td><td>Actuaciones en el marco de pueblos inteligentes (Smart villages)</td><td>Conteo de actuaciones financiadas en convocatorias: Smart village + Subvenciones nominativas + Coworking rural + Triruraltech.</td><td>DGDR</td><td>Semestral</td></tr>
+            <tr><td>E2-05</td><td>Creación del Centro Regional de Operaciones de Ciberseguridad (SOC)</td><td>% de avance por hitos del proyecto. Se considera creado cuando el SOC empieza a prestar servicios operativos.</td><td>DGDA</td><td>Semestral</td></tr>
+            <tr><td>E2-06</td><td>Creación de la Comisión de Seguimiento Interinstitucional sobre Ciberseguridad</td><td>Suma ponderada de hitos: Definición de estructura 30% + Identificación de instituciones participantes 20% + Celebración de la primera reunión 50%.</td><td>DGDA</td><td>Semestral</td></tr>
+            <tr><td>E2-07</td><td>Campañas de sensibilización en ciberseguridad</td><td>Conteo acumulado de cursos, actividades y campañas de sensibilización en ciberseguridad dirigidas a la ciudadanía.</td><td>DGDA</td><td>Semestral</td></tr>
+            <tr><td>E2-08</td><td>Empresas beneficiadas por la plataforma demostrativa de ciberseguridad</td><td>Conteo de empresas registradas y activas en la Plataforma Demostrativa de Ciberseguridad de Extremadura (desde septiembre 2025).</td><td>DGDR</td><td>Semestral</td></tr>
+
+            <tr class="metodo-eje-row"><td colspan="5">EJE 3 · Hacia una sociedad digital</td></tr>
+            <tr><td>E3-01</td><td>Población con competencias digitales al menos básicas</td><td>INE tabla 76631: suma "Habilidades Digitales Básicas" + "Habilidades Digitales Superiores" para Extremadura, Total Personas. <strong>Dato automatizado</strong> vía API INE.</td><td>INE · Encuesta TIC Hogares</td><td>Anual</td></tr>
+            <tr><td>E3-02</td><td>Mujeres matriculadas en carreras STEM</td><td>(Nº mujeres matriculadas en Ingeniería y Arquitectura en Extremadura ÷ Total matriculados en la misma rama) × 100.</td><td>SIIU · Ministerio de Universidades</td><td>Anual</td></tr>
+            <tr><td>E3-03</td><td>Egresados en especialidades tecnológicas (informática)</td><td>(Nº egresados en "Total informática" en Extremadura ÷ Total egresados en Extremadura) × 100.</td><td>SIIU · Ministerio de Universidades</td><td>Anual</td></tr>
+            <tr><td>E3-04</td><td>Estudiantes que eligen ingenierías informáticas (1ª opción)</td><td>Conteo en Excel OBIN, pestaña DU-001, filtrado por tipo Grado e ingenierías informáticas en Extremadura.</td><td>OBIN · UEx</td><td>Anual</td></tr>
+            <tr><td>E3-05</td><td>Campañas de atracción de nómadas digitales al entorno rural</td><td>Conteo acumulado de campañas implementadas para atraer teletrabajadores y nómadas digitales a entornos rurales de Extremadura.</td><td>DGDR</td><td>Anual</td></tr>
+
+            <tr class="metodo-eje-row"><td colspan="5">EJE 4 · Construyendo una región competitiva e innovadora</td></tr>
+            <tr><td>E4-01</td><td>Empresas con sitio web y conexión a internet de banda ancha</td><td>Dato INE ETICCE: "D.7 % empresas con conexión a internet y sitio/página web", Total empresas, Extremadura. <strong>Dato automatizado</strong> vía API INE.</td><td>INE ETICCE</td><td>Anual</td></tr>
+            <tr><td>E4-02</td><td>Empresas que utilizan servicios de cloud computing de pago</td><td>Dato INE ETICCE: "F.1 % empresas que compran servicios de cloud computing", Total empresas, Extremadura. <strong>Dato automatizado</strong> vía API INE.</td><td>INE ETICCE</td><td>Anual</td></tr>
+            <tr><td>E4-03</td><td>Empresas de más de 10 trabajadores que utilizan Inteligencia Artificial</td><td>Dato INE ETICCE: "G.1 % empresas que emplean tecnologías de Inteligencia Artificial", Total empresas, Extremadura. <strong>Dato automatizado</strong> vía API INE.</td><td>INE ETICCE</td><td>Anual</td></tr>
+            <tr><td>E4-04</td><td>Activos digitales del DIH sistematizados</td><td>Conteo de activos digitales disponibles y catalogados en el DIH (Digital Innovation Hub) de Extremadura.</td><td>DIH Extremadura / FUNDECYT</td><td>Semestral</td></tr>
+            <tr><td>E4-05</td><td>Empresas agroindustriales con incorporación de nuevas tecnologías</td><td>(Nº de ayudas y servicios prestados a empresas agroindustriales ÷ Total empresas CNAE div. 10+11 en Extremadura) × 100.</td><td>Observatorio TIC + INE DIRCE</td><td>Anual</td></tr>
+            <tr><td>E4-06</td><td>Iniciativas de Industria 4.0 apoyadas</td><td>Conteo de ayudas concedidas para proyectos de Industria 4.0 (IoT, Cloud, IA, robótica, realidad aumentada, Blockchain, etc.).</td><td>FUNDECYT / Observatorio TIC</td><td>Semestral</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
 
   </main><!-- /#main -->
 

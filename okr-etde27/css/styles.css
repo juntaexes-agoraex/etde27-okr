@@ -1192,6 +1192,16 @@ body.no-scroll { overflow: hidden; }
 .metodo-table td { padding: .5rem .6rem; border-bottom: 1px solid var(--border2); color: var(--ink2); }
 .metodo-ul { margin: .25rem 0 .75rem 1.2rem; font-size: .82rem; color: var(--ink2); line-height: 1.7; }
 
+/* ── TABLA METODOLOGÍA INDICADORES ──────────────────────── */
+.metodo-ind-table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+.metodo-ind-table th { text-align: left; font-size: .65rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); padding: .5rem .75rem; border-bottom: 2px solid var(--border); position: sticky; top: 0; background: var(--bg); z-index: 1; }
+.metodo-ind-table td { padding: .6rem .75rem; border-bottom: 1px solid var(--border2); color: var(--ink2); vertical-align: top; line-height: 1.55; }
+.metodo-ind-table td:first-child { font-weight: 700; color: var(--track); white-space: nowrap; }
+.metodo-ind-table td:nth-child(2) { color: var(--ink1); font-weight: 500; }
+.metodo-ind-table strong { color: var(--track); font-weight: 600; }
+.metodo-ind-table tr:hover td { background: var(--hover); }
+.metodo-eje-row td { background: var(--bar-bg); color: var(--ink1); font-weight: 700; font-size: .72rem; text-transform: uppercase; letter-spacing: .07em; padding: .4rem .75rem; }
+
 /* ── PRINT v2 ────────────────────────────────────────────── */
 @media print {
   .search-overlay, .sb-search-hint, .comite-close { display: none !important; }
