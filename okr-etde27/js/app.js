@@ -3216,9 +3216,9 @@ function renderNotificacionesPrevistas() {
   const hoy = new Date();
   hoy.setHours(0, 0, 0, 0);
 
-  // Construir mapa: indicadorId → usuario responsable
+  // Construir mapa: indicadorId → usuario responsable (incluye usuarios extra añadidos desde la herramienta)
   const indToUser = {};
-  USUARIOS.forEach(u => { u.indicadores.forEach(id => { indToUser[id] = u; }); });
+  getAllUsers().forEach(u => { (u.indicadores || []).forEach(id => { indToUser[id] = u; }); });
 
   // Calcular estado de cada indicador con responsable asignado
   const filas = [];
