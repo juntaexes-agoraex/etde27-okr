@@ -1,0 +1,32 @@
+{
+  "users": [
+    {
+      "nombre": "Sergio García",
+      "email": "sergio.garcia.satli@accenture.com",
+      "pin": "ETDE27SG",
+      "rol": "admin",
+      "indicadores": []
+    },
+    {
+      "nombre": "Abel Contreras",
+      "email": "abel.contreras@juntaex.es",
+      "pin": "ETDE27AC",
+      "rol": "responsable",
+      "indicadores": ["E1-01"]
+    },
+    {
+      "nombre": "Carlos Expósito",
+      "email": "carlos.exposito@juntaex.es",
+      "pin": "ETDE27CE",
+      "rol": "responsable",
+      "indicadores": ["E1-05", "E2-05"]
+    },
+    {
+      "nombre": "Dominga Galán",
+      "email": "dominga.galan@juntaex.es",
+      "pin": "ETDE27DG",
+      "rol": "responsable",
+      "indicadores": ["E1-07"]
+    }
+  ]
+}

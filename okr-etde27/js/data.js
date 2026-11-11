@@ -1068,6 +1068,51 @@ const GH = {
   _pat:     '',          // No se guarda en código — se lee de localStorage tras login
 };
 
+// ── SESIÓN DE USUARIO ────────────────────────────────────────────
+// Los usuarios y sus PINs se definen aquí. Para añadir/modificar usuarios,
+// edita este array y sube los cambios al repositorio.
+const USUARIOS = [
+  { nombre: 'Sergio García',  email: 'sergio.garcia.satli@accenture.com', pin: 'ETDE27SG', rol: 'admin',       indicadores: [] },
+  { nombre: 'Abel Contreras', email: 'abel.contreras@juntaex.es',         pin: 'ETDE27AC', rol: 'responsable', indicadores: ['E1-01'] },
+  { nombre: 'Carlos Expósito',email: 'carlos.exposito@juntaex.es',        pin: 'ETDE27CE', rol: 'responsable', indicadores: ['E1-05', 'E2-05'] },
+  { nombre: 'Dominga Galán',  email: 'dominga.galan@juntaex.es',          pin: 'ETDE27DG', rol: 'responsable', indicadores: ['E1-07'] },
+];
+
+const LS_SESSION = 'okr-etde27-session';
+
+function getSession() {
+  try { return JSON.parse(sessionStorage.getItem(LS_SESSION) || 'null'); } catch { return null; }
+}
+function setSession(user) {
+  sessionStorage.setItem(LS_SESSION, JSON.stringify({ nombre: user.nombre, email: user.email, rol: user.rol, indicadores: user.indicadores }));
+}
+function clearSession() {
+  sessionStorage.removeItem(LS_SESSION);
+}
+function isLoggedIn()  { return !!getSession(); }
+function isAdmin()     { return getSession()?.rol === 'admin'; }
+function canEditIndicador(id) {
+  const s = getSession();
+  if (!s) return false;
+  if (s.rol === 'admin') return true;
+  return s.indicadores.includes(id);
+}
+function sessionLogin(email, pin) {
+  const u = USUARIOS.find(x => x.email.toLowerCase() === email.toLowerCase() && x.pin === pin);
+  if (!u) return false;
+  setSession(u);
+  ghEditorMode = true;
+  ghUpdateBadge();
+  return true;
+}
+function sessionLogout() {
+  clearSession();
+  ghEditorMode = false;
+  ghUpdateBadge();
+  navigate('dashboard');
+  refreshSidebarAuth();
+}
+
 // Estado de la sincronización
 let ghStatus = 'init'; // 'init' | 'synced' | 'offline' | 'error' | 'syncing' | 'disabled'
 let ghEditorMode = false;
@@ -1081,6 +1126,9 @@ function ghConfigured(){ return !!(GH.owner && GH.repo && ghGetPat()); }
 function ghRawUrl() {
   return `https://raw.githubusercontent.com/${GH.owner}/${GH.repo}/${GH.branch}/${GH.dataPath}`;
 }
+
+// Restaurar sesión activa al iniciar (sessionStorage sobrevive F5 pero no cierre de pestaña)
+if (getSession()) ghEditorMode = true;
 
 // Cargar datos remotos al iniciar — fusiona con localStorage (remoto gana en caso de conflicto por fecha)
 async function ghLoad() {
@@ -1181,9 +1229,10 @@ function ghUpdateBadge() {
     disabled: { icon: '',   label: '',                cls: ''              },
   };
   const c = configs[ghStatus] || configs.offline;
+  const session = getSession();
   el.className = 'gh-sync-badge ' + c.cls;
   el.innerHTML = `<span>${c.icon}</span><span>${c.label}</span>` +
-    (ghEditorMode
-      ? `<span class="sync-editor-tag">✎ Editor</span><button class="sync-login-btn" onclick="ghLock()" style="margin-left:.3rem">🔒</button>`
-      : `<button class="sync-login-btn" onclick="openPinModal()">🔑 Editar</button>`);
+    (session
+      ? `<span class="sync-editor-tag">✎ ${session.nombre.split(' ')[0]}</span><button class="sync-login-btn" onclick="sessionLogout()" style="margin-left:.3rem" title="Cerrar sesión">🔒</button>`
+      : `<button class="sync-login-btn" onclick="openLoginModal()">🔑 Acceder</button>`);
 }

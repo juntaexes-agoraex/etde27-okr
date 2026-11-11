@@ -112,6 +112,28 @@
       </li>
     </ul>
 
+    <div id="sb-sec-personal" class="sb-section" style="display:none">Mi cuenta</div>
+    <ul class="sb-nav">
+      <li id="sb-li-mi-panel" style="display:none">
+        <a href="#" data-view="mi-panel" onclick="navigate('mi-panel');return false">
+          <span class="sb-icon">👤</span>
+          <span>Mi panel</span>
+        </a>
+      </li>
+      <li id="sb-li-admin" style="display:none">
+        <a href="#" data-view="admin" onclick="navigate('admin');return false">
+          <span class="sb-icon">👥</span>
+          <span>Gestión de usuarios</span>
+        </a>
+      </li>
+      <li id="sb-li-loginout">
+        <a href="#" onclick="openLoginModal();return false">
+          <span class="sb-icon">🔑</span>
+          <span>Iniciar sesión</span>
+        </a>
+      </li>
+    </ul>
+
     <div class="sb-search-hint" onclick="openSearch()">🔍 Buscar <kbd>Ctrl</kbd>+<kbd>K</kbd></div>
 
     <div id="gh-sync-badge" class="gh-sync-badge" style="display:none"></div>
@@ -247,6 +269,32 @@
       </div>
       <div class="view-inner">
         <div id="v-comite-inner"></div>
+      </div>
+    </div>
+
+    <!-- ── MI PANEL (responsable) ───────────────────────────── -->
+    <div id="v-mi-panel" class="view">
+      <div class="page-hd">
+        <div class="page-hd-left">
+          <h1>Mi panel</h1>
+          <p>Estado de tus indicadores y próximos vencimientos</p>
+        </div>
+      </div>
+      <div class="view-inner">
+        <div id="v-mi-panel-inner"></div>
+      </div>
+    </div>
+
+    <!-- ── GESTIÓN DE USUARIOS (admin) ──────────────────────── -->
+    <div id="v-admin" class="view">
+      <div class="page-hd">
+        <div class="page-hd-left">
+          <h1>Gestión de usuarios</h1>
+          <p>Usuarios con acceso al sistema y sus indicadores asignados</p>
+        </div>
+      </div>
+      <div class="view-inner">
+        <div id="v-admin-inner"></div>
       </div>
     </div>
 
@@ -526,9 +574,9 @@
 </div>
 
 <!-- ══ SCRIPTS ══════════════════════════════════════════════ -->
-<script src="js/data.js?v=2.6"></script>
+<script src="js/data.js?v=2.7"></script>
 <script src="js/charts.js?v=2.5"></script>
-<script src="js/app.js?v=2.6"></script>
+<script src="js/app.js?v=2.7"></script>
 
 </body>
 </html>

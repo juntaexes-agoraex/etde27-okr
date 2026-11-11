@@ -58,6 +58,8 @@ function navigate(view, tab) {
       case 'snapshots':   renderHistorico();   break;
       case 'config':      renderConfig();      break;
       case 'metodologia': /* contenido estático, no requiere render */ break;
+      case 'mi-panel':  renderMiPanel();  break;
+      case 'admin':     renderAdmin();    break;
     }
   } catch (e) {
     console.error('Error al renderizar la vista', view, e);
@@ -638,6 +640,16 @@ let updFilter = 'todos';
 function renderActualizar() {
   const el = document.getElementById('v-actualizar-inner');
   if (!el) return;
+
+  if (!isLoggedIn()) {
+    el.innerHTML = `<div style="text-align:center;padding:3rem 1rem">
+      <div style="font-size:2.5rem;margin-bottom:1rem">🔑</div>
+      <p style="margin-bottom:1.2rem;color:var(--muted)">Inicia sesión para actualizar tus indicadores.</p>
+      <button class="btn btn-primary" onclick="openLoginModal()">Iniciar sesión</button>
+    </div>`;
+    return;
+  }
+
   const modified = DATA.filter(i => i._mod);
   if (updFilter === 'modificados' && !modified.length) updFilter = 'todos';
   const rows = updFilter === 'modificados' ? modified : DATA;
@@ -660,8 +672,8 @@ function renderActualizar() {
               </div>
               <div class="update-item-actions">
                 ${badge(getStatus(i))}${updBadge(updateStatus(i))}
-                <button class="btn btn-primary btn-sm" onclick="openQuickUpdate('${i.id}')">⚡ Actualizar</button>
-                ${i._mod ? `<button class="btn btn-danger btn-sm" title="Restaurar el valor original" onclick="resetOne('${i.id}');navigate('actualizar')">↺</button>` : ''}
+                ${canEditIndicador(i.id) ? `<button class="btn btn-primary btn-sm" onclick="openQuickUpdate('${i.id}')">⚡ Actualizar</button>` : ''}
+                ${i._mod && canEditIndicador(i.id) ? `<button class="btn btn-danger btn-sm" title="Restaurar el valor original" onclick="resetOne('${i.id}');navigate('actualizar')">↺</button>` : ''}
               </div>
             </div>`).join('')}
         </div>
@@ -769,6 +781,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Vista inicial
   navigate('dashboard');
+
+  // Restaurar estado del sidebar según sesión previa
+  refreshSidebarAuth();
 
   // Sincronización GitHub — carga datos remotos al inicio
   ghLoad().then(() => {
@@ -2767,8 +2782,8 @@ function portalCard(ind) {
     </div>`;
 }
 
-// ═══ MODAL DE PIN / ACCESO EDITOR ═══════════════════════════════
-function openPinModal() {
+// ═══ MODAL DE LOGIN (email + PIN) ═══════════════════════════════
+function openLoginModal() {
   const existing = document.getElementById('pin-modal-overlay');
   if (existing) existing.remove();
 
@@ -2777,52 +2792,182 @@ function openPinModal() {
   overlay.id = 'pin-modal-overlay';
   overlay.className = 'pin-overlay';
   overlay.innerHTML = `
-    <div class="pin-box" role="dialog" aria-modal="true" aria-label="Acceso modo editor">
+    <div class="pin-box" role="dialog" aria-modal="true" aria-label="Inicio de sesión">
       <div class="pin-hd">
         <span class="pin-icon">🔑</span>
         <div>
-          <div class="pin-title">Modo editor</div>
-          <div class="pin-sub">Introduce la contraseña para activar la edición y sincronización con GitHub.</div>
+          <div class="pin-title">Iniciar sesión</div>
+          <div class="pin-sub">Accede con tu correo y PIN para editar tus indicadores.</div>
         </div>
       </div>
-      <input type="password" id="pin-input" class="pin-input" placeholder="Contraseña…" autocomplete="off">
+      <div style="margin-bottom:.6rem">
+        <label style="font-size:.75rem;color:var(--muted);display:block;margin-bottom:.3rem">Correo</label>
+        <input type="email" id="login-email-input" class="pin-input" style="letter-spacing:0;font-size:.85rem" placeholder="tu.nombre@juntaex.es" autocomplete="email">
+      </div>
+      <div>
+        <label style="font-size:.75rem;color:var(--muted);display:block;margin-bottom:.3rem">PIN de acceso</label>
+        <input type="password" id="pin-input" class="pin-input" placeholder="••••••••" autocomplete="off" maxlength="20">
+      </div>
       ${!hasPat ? `
       <div style="margin-top:.75rem">
         <label style="font-size:.75rem;color:var(--muted);display:block;margin-bottom:.3rem">Token de GitHub (solo la primera vez)</label>
         <input type="password" id="pin-pat" class="pin-input" style="letter-spacing:0;font-size:.8rem" placeholder="github_pat_…" autocomplete="off">
         <div style="font-size:.7rem;color:var(--muted);margin-top:.3rem">Se guarda en este navegador. No se sube al repositorio.</div>
       </div>` : ''}
-      <div id="pin-error" class="pin-error" style="display:none">Contraseña incorrecta. Inténtalo de nuevo.</div>
+      <div id="pin-error" class="pin-error" style="display:none">Correo o PIN incorrecto. Inténtalo de nuevo.</div>
       <div class="pin-actions">
-        <button class="btn btn-ghost" onclick="closePinModal()">Cancelar</button>
-        <button class="btn btn-primary" onclick="submitPin()">Acceder</button>
+        <button class="btn btn-ghost" onclick="closeLoginModal()">Cancelar</button>
+        <button class="btn btn-primary" onclick="submitLogin()">Entrar</button>
       </div>
     </div>`;
   document.body.appendChild(overlay);
-  overlay.addEventListener('click', e => { if (e.target === overlay) closePinModal(); });
-  setTimeout(() => document.getElementById('pin-input')?.focus(), 50);
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeLoginModal(); });
+  setTimeout(() => document.getElementById('login-email-input')?.focus(), 50);
   document.getElementById('pin-input')?.addEventListener('keydown', e => {
-    if (e.key === 'Enter') submitPin();
-    if (e.key === 'Escape') closePinModal();
+    if (e.key === 'Enter') submitLogin();
+    if (e.key === 'Escape') closeLoginModal();
   });
 }
 
-function closePinModal() {
+// Alias para compatibilidad con llamadas existentes en ghUpdateBadge
+const openPinModal = openLoginModal;
+
+function closeLoginModal() {
   document.getElementById('pin-modal-overlay')?.remove();
 }
+const closePinModal = closeLoginModal;
 
-function submitPin() {
-  const val = document.getElementById('pin-input')?.value || '';
-  if (ghCheckPin(val)) {
+function submitLogin() {
+  const email = (document.getElementById('login-email-input')?.value || '').trim();
+  const pin   = document.getElementById('pin-input')?.value || '';
+  const errEl = document.getElementById('pin-error');
+
+  if (sessionLogin(email, pin)) {
     const patInput = document.getElementById('pin-pat');
     if (patInput?.value?.trim()) ghSavePat(patInput.value.trim());
-    closePinModal();
-    toast('Modo editor activado. Los cambios se sincronizarán con GitHub.', 'success');
+    closeLoginModal();
+    const s = getSession();
+    toast(`Bienvenido, ${s.nombre.split(' ')[0]}. Sesión iniciada.`, 'success');
+    refreshSidebarAuth();
     navigate(currentView);
   } else {
-    const errEl = document.getElementById('pin-error');
     if (errEl) errEl.style.display = 'block';
     const inp = document.getElementById('pin-input');
-    if (inp) { inp.value = ''; inp.focus(); }
+    if (inp) { inp.value = ''; }
+    document.getElementById('login-email-input')?.focus();
   }
+}
+
+// ═══ SIDEBAR: actualizar visibilidad de secciones según sesión ══
+function refreshSidebarAuth() {
+  const s = getSession();
+  const liMiPanel   = document.getElementById('sb-li-mi-panel');
+  const liAdmin     = document.getElementById('sb-li-admin');
+  const liLoginOut  = document.getElementById('sb-li-loginout');
+  const secPersonal = document.getElementById('sb-sec-personal');
+
+  if (secPersonal) secPersonal.style.display = s ? '' : 'none';
+  if (liMiPanel)   liMiPanel.style.display   = (s && s.rol === 'responsable') ? '' : 'none';
+  if (liAdmin)     liAdmin.style.display     = (s && s.rol === 'admin') ? '' : 'none';
+  if (liLoginOut) {
+    liLoginOut.innerHTML = s
+      ? `<a href="#" onclick="sessionLogout();return false"><span class="sb-icon">🔒</span><span>Cerrar sesión (${s.nombre.split(' ')[0]})</span></a>`
+      : `<a href="#" onclick="openLoginModal();return false"><span class="sb-icon">🔑</span><span>Iniciar sesión</span></a>`;
+  }
+}
+
+// ═══ MI PANEL (vista personal del responsable) ═══════════════════
+function renderMiPanel() {
+  const el = document.getElementById('v-mi-panel-inner');
+  if (!el) return;
+  const s = getSession();
+  if (!s) { el.innerHTML = '<p>No has iniciado sesión.</p>'; return; }
+
+  const updates   = loadUpdates();
+  const hoy       = new Date();
+  const PER_DAYS  = { Mensual: 30, Trimestral: 90, Semestral: 180, Anual: 365 };
+
+  function diasDesde(fechaStr) {
+    if (!fechaStr) return Infinity;
+    return Math.floor((hoy - new Date(fechaStr)) / 86_400_000);
+  }
+
+  const misInds = INDICADORES_ORIGINAL.filter(i => s.indicadores.includes(i.id));
+  const filas = misInds.map(ind => {
+    const upd  = updates[ind.id];
+    const per  = PER_DAYS[ind.per] || 180;
+    const dias = diasDesde(upd?.fecha);
+    const rest = per - dias;
+    let estadoBadge, estadoCls;
+    if (dias === Infinity) {
+      estadoBadge = '⚠ Sin datos'; estadoCls = 'badge-riesgo';
+    } else if (rest <= 0) {
+      estadoBadge = '⚠ Vencido'; estadoCls = 'badge-riesgo';
+    } else if (rest <= 7) {
+      estadoBadge = `⏰ Vence en ${rest}d`; estadoCls = 'badge-warning';
+    } else {
+      estadoBadge = '✓ Al día'; estadoCls = 'badge-ok';
+    }
+    return `<tr>
+      <td><strong style="color:var(--accent)">${ind.id}</strong></td>
+      <td>${ind.nombre}</td>
+      <td><span class="badge ${estadoCls}">${estadoBadge}</span></td>
+      <td>${upd?.fecha ?? '—'}</td>
+      <td><button class="btn btn-sm btn-primary" onclick="navigate('actualizar')">Actualizar</button></td>
+    </tr>`;
+  });
+
+  const nVencidos = misInds.filter(i => { const u=updates[i.id]; const p=PER_DAYS[i.per]||180; return !u || diasDesde(u?.fecha)>=p; }).length;
+  const nProximos = misInds.filter(i => { const u=updates[i.id]; const p=PER_DAYS[i.per]||180; const r=p-diasDesde(u?.fecha); return r>0&&r<=7; }).length;
+  const nOk       = misInds.length - nVencidos - nProximos;
+
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;gap:14px;padding:16px;background:var(--surface-alt);border-radius:10px;margin-bottom:20px">
+      <div style="width:48px;height:48px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;color:white;font-size:18px;font-weight:600;flex-shrink:0">
+        ${s.nombre.split(' ').map(w=>w[0]).join('').slice(0,2)}
+      </div>
+      <div>
+        <div style="font-size:1rem;font-weight:600">${s.nombre}</div>
+        <div style="font-size:.8rem;color:var(--muted)">${s.rol === 'admin' ? 'Administrador' : 'Responsable OKR'} · ${s.email}</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-bottom:20px">
+      <div class="kpi-card"><div class="kpi-label">Mis indicadores</div><div class="kpi-val">${misInds.length}</div></div>
+      <div class="kpi-card kpi-ok"><div class="kpi-label">Al día</div><div class="kpi-val">${nOk}</div></div>
+      <div class="kpi-card kpi-warn"><div class="kpi-label">Próximos</div><div class="kpi-val">${nProximos}</div></div>
+      <div class="kpi-card kpi-risk"><div class="kpi-label">Vencidos</div><div class="kpi-val">${nVencidos}</div></div>
+    </div>
+    <table class="data-table">
+      <thead><tr><th>ID</th><th>Indicador</th><th>Estado</th><th>Último dato</th><th></th></tr></thead>
+      <tbody>${filas.join('') || '<tr><td colspan="5" style="text-align:center;color:var(--muted)">No tienes indicadores asignados</td></tr>'}</tbody>
+    </table>`;
+}
+
+// ═══ ADMINISTRACIÓN: gestión de usuarios ═════════════════════════
+function renderAdmin() {
+  const el = document.getElementById('v-admin-inner');
+  if (!el) return;
+  if (!isAdmin()) { el.innerHTML = '<p>Acceso restringido a administradores.</p>'; return; }
+
+  const filas = USUARIOS.map(u => {
+    const rolBadge = u.rol === 'admin'
+      ? `<span class="badge badge-info">Admin</span>`
+      : `<span class="badge badge-ok">Responsable</span>`;
+    const inds = u.indicadores.length ? u.indicadores.join(', ') : '—';
+    return `<tr>
+      <td><strong>${u.nombre}</strong><div style="font-size:.75rem;color:var(--muted)">${u.email}</div></td>
+      <td>${rolBadge}</td>
+      <td style="font-size:.8rem">${inds}</td>
+      <td style="font-size:.8rem;color:var(--muted)">PIN: ${u.pin}</td>
+    </tr>`;
+  });
+
+  el.innerHTML = `
+    <p style="color:var(--muted);font-size:.85rem;margin-bottom:16px">
+      Para añadir o modificar usuarios, edita el array <code>USUARIOS</code> en <code>js/data.js</code> y sube los cambios al repositorio.
+    </p>
+    <table class="data-table">
+      <thead><tr><th>Usuario</th><th>Rol</th><th>Indicadores</th><th>Acceso</th></tr></thead>
+      <tbody>${filas.join('')}</tbody>
+    </table>`;
 }
