@@ -43,6 +43,13 @@ function navigate(view, tab) {
 
   destroyAllCharts();
 
+  // Vistas restringidas a admin — redirigir a responsables
+  const ADMIN_ONLY_VIEWS = ['actualizar', 'snapshots', 'config', 'admin'];
+  if (ADMIN_ONLY_VIEWS.includes(view) && getSession()?.rol === 'responsable') {
+    navigate('dashboard');
+    return;
+  }
+
   try {
     switch (view) {
       case 'dashboard':   renderDashboard();   break;
@@ -2867,19 +2874,37 @@ function submitLogin() {
 // ═══ SIDEBAR: actualizar visibilidad de secciones según sesión ══
 function refreshSidebarAuth() {
   const s = getSession();
+  const admin = s?.rol === 'admin';
+  const resp  = s?.rol === 'responsable';
+
+  // Sección "Mi cuenta"
+  const secPersonal = document.getElementById('sb-sec-personal');
   const liMiPanel   = document.getElementById('sb-li-mi-panel');
   const liAdmin     = document.getElementById('sb-li-admin');
   const liLoginOut  = document.getElementById('sb-li-loginout');
-  const secPersonal = document.getElementById('sb-sec-personal');
-
   if (secPersonal) secPersonal.style.display = s ? '' : 'none';
-  if (liMiPanel)   liMiPanel.style.display   = (s && s.rol === 'responsable') ? '' : 'none';
-  if (liAdmin)     liAdmin.style.display     = (s && s.rol === 'admin') ? '' : 'none';
+  if (liMiPanel)   liMiPanel.style.display   = resp  ? '' : 'none';
+  if (liAdmin)     liAdmin.style.display     = admin ? '' : 'none';
   if (liLoginOut) {
     liLoginOut.innerHTML = s
       ? `<a href="#" onclick="sessionLogout();return false"><span class="sb-icon">🔒</span><span>Cerrar sesión (${s.nombre.split(' ')[0]})</span></a>`
       : `<a href="#" onclick="openLoginModal();return false"><span class="sb-icon">🔑</span><span>Iniciar sesión</span></a>`;
   }
+
+  // Sección "Administración" — solo visible para admin (o sin sesión, para acceso libre)
+  // Si hay sesión de responsable, ocultamos las opciones de administración
+  const hide = resp; // responsables no ven Actualizar datos, Histórico, Configuración
+  const sbSecAdmin    = document.getElementById('sb-sec-admin');
+  const sbUlAdmin     = document.getElementById('sb-ul-admin');
+  const liActualizar  = document.getElementById('sb-li-actualizar');
+  const liHistorico   = document.getElementById('sb-li-historico');
+  const liConfig      = document.getElementById('sb-li-config');
+
+  if (sbSecAdmin)   sbSecAdmin.style.display   = hide ? 'none' : '';
+  if (sbUlAdmin)    sbUlAdmin.style.display     = hide ? 'none' : '';
+  if (liActualizar) liActualizar.style.display  = hide ? 'none' : '';
+  if (liHistorico)  liHistorico.style.display   = hide ? 'none' : '';
+  if (liConfig)     liConfig.style.display      = hide ? 'none' : '';
 }
 
 // ═══ MI PANEL (vista personal del responsable) ═══════════════════
