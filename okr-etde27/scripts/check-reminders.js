@@ -34,6 +34,14 @@ const INDICADORES = [
     responsable: 'Dominga',
     email:       'dominga.galan@juntaex.es',
   },
+  // ── PRUEBA — eliminar tras confirmar que el email llega ──────────────────
+  {
+    id:          'TEST',
+    nombre:      'Prueba del sistema de recordatorios automáticos OKR ETDE27',
+    per:         1,     // 1 día → siempre vencido → siempre envía
+    responsable: 'Sergio',
+    email:       'sergio.garcia.satli@accenture.com',
+  },
 ];
 
 // ── Configuración ─────────────────────────────────────────────────────────
