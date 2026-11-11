@@ -2987,30 +2987,176 @@ async function renderMiPanel() {
 }
 
 // ═══ ADMINISTRACIÓN: gestión de usuarios ═════════════════════════
-function renderAdmin() {
+let adminTab = 'usuarios';
+
+function renderAdmin(tab) {
+  if (tab) adminTab = tab;
   const el = document.getElementById('v-admin-inner');
   if (!el) return;
   if (!isAdmin()) { el.innerHTML = '<p>Acceso restringido a administradores.</p>'; return; }
 
-  const filas = USUARIOS.map(u => {
-    const rolBadge = u.rol === 'admin'
-      ? `<span class="badge badge-updated">Admin</span>`
-      : `<span class="badge badge-achieved">Responsable</span>`;
-    const inds = u.indicadores.length ? u.indicadores.join(', ') : '—';
-    return `<tr>
-      <td><strong>${u.nombre}</strong><div style="font-size:.75rem;color:var(--muted)">${u.email}</div></td>
-      <td>${rolBadge}</td>
-      <td style="font-size:.8rem">${inds}</td>
-      <td style="font-size:.8rem;color:var(--muted)">PIN: ${u.pin}</td>
-    </tr>`;
+  const tabs = `
+    <div class="vtabs" role="tablist" style="margin-bottom:20px">
+      <button class="vtab${adminTab === 'usuarios' ? ' active' : ''}" onclick="renderAdmin('usuarios')">👥 Usuarios</button>
+      <button class="vtab${adminTab === 'notificaciones' ? ' active' : ''}" onclick="renderAdmin('notificaciones')">📅 Notificaciones previstas</button>
+    </div>`;
+
+  if (adminTab === 'usuarios') {
+    const filas = USUARIOS.map(u => {
+      const rolBadge = u.rol === 'admin'
+        ? `<span class="badge badge-updated">Admin</span>`
+        : `<span class="badge badge-achieved">Responsable</span>`;
+      const inds = u.indicadores.length ? u.indicadores.join(', ') : '—';
+      return `<tr>
+        <td><strong>${u.nombre}</strong><div style="font-size:.75rem;color:var(--muted)">${u.email}</div></td>
+        <td>${rolBadge}</td>
+        <td style="font-size:.8rem">${inds}</td>
+        <td style="font-size:.8rem;color:var(--muted)">PIN: ${u.pin}</td>
+      </tr>`;
+    });
+    el.innerHTML = tabs + `
+      <p style="color:var(--muted);font-size:.85rem;margin-bottom:16px">
+        Para añadir o modificar usuarios, edita el array <code>USUARIOS</code> en <code>js/data.js</code> y sube los cambios al repositorio.
+      </p>
+      <table class="data-table">
+        <thead><tr><th>Usuario</th><th>Rol</th><th>Indicadores</th><th>Acceso</th></tr></thead>
+        <tbody>${filas.join('')}</tbody>
+      </table>`;
+  } else {
+    el.innerHTML = tabs + renderNotificacionesPrevistas();
+  }
+}
+
+function renderNotificacionesPrevistas() {
+  const ALERT_DAYS = 7;
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+
+  // Construir mapa: indicadorId → usuario responsable
+  const indToUser = {};
+  USUARIOS.forEach(u => { u.indicadores.forEach(id => { indToUser[id] = u; }); });
+
+  // Calcular estado de cada indicador con responsable asignado
+  const filas = [];
+  DATA.forEach(ind => {
+    const user = indToUser[ind.id];
+    if (!user) return;
+
+    const perDias = PER_DAYS[ind.per];
+    if (!perDias) return;
+
+    const ultimaFecha = ind.actual?.fecha;
+    const diasTranscurridos = ultimaFecha
+      ? Math.floor((hoy - new Date(ultimaFecha)) / 86_400_000)
+      : Infinity;
+    const diasRestantes = perDias - diasTranscurridos;
+
+    // Fecha en que vence (necesita actualización)
+    const fechaVencimiento = ultimaFecha
+      ? new Date(new Date(ultimaFecha).getTime() + perDias * 86_400_000)
+      : null;
+
+    // Fecha en que se enviará el próximo recordatorio (vencimiento - ALERT_DAYS)
+    const fechaRecordatorio = fechaVencimiento
+      ? new Date(fechaVencimiento.getTime() - ALERT_DAYS * 86_400_000)
+      : null;
+
+    const fmtDate = d => d ? d.toLocaleDateString('es-ES', { day:'numeric', month:'long', year:'numeric' }) : '—';
+
+    // Estado
+    let estadoHtml, urgencia;
+    if (diasTranscurridos >= perDias) {
+      estadoHtml = `<span class="badge badge-critical">Vencido (${Math.abs(diasRestantes)} días)</span>`;
+      urgencia = 0;
+    } else if (diasRestantes <= ALERT_DAYS) {
+      estadoHtml = `<span class="badge badge-at_risk">Próximo (${diasRestantes} días)</span>`;
+      urgencia = 1;
+    } else {
+      estadoHtml = `<span class="badge badge-achieved">Al día (${diasRestantes} días)</span>`;
+      urgencia = 2;
+    }
+
+    // Motivo del próximo recordatorio
+    let motivoHtml;
+    if (diasTranscurridos >= perDias) {
+      motivoHtml = `Actualización vencida — necesita nuevo dato (periodicidad ${ind.per.toLowerCase()}: cada ${perDias} días)`;
+    } else if (diasRestantes <= ALERT_DAYS) {
+      motivoHtml = `Vence en ${diasRestantes} días — aviso previo de ${ALERT_DAYS} días`;
+    } else {
+      motivoHtml = `Próximo recordatorio el <strong>${fmtDate(fechaRecordatorio)}</strong>`;
+    }
+
+    filas.push({ ind, user, diasRestantes, urgencia, estadoHtml, motivoHtml, fechaVencimiento, fechaRecordatorio, ultimaFecha, fmtDate });
   });
 
-  el.innerHTML = `
-    <p style="color:var(--muted);font-size:.85rem;margin-bottom:16px">
-      Para añadir o modificar usuarios, edita el array <code>USUARIOS</code> en <code>js/data.js</code> y sube los cambios al repositorio.
-    </p>
-    <table class="data-table">
-      <thead><tr><th>Usuario</th><th>Rol</th><th>Indicadores</th><th>Acceso</th></tr></thead>
-      <tbody>${filas.join('')}</tbody>
-    </table>`;
+  // Ordenar: vencidos primero, luego por días restantes ascendente
+  filas.sort((a, b) => a.urgencia - b.urgencia || a.diasRestantes - b.diasRestantes);
+
+  if (filas.length === 0) {
+    return `<p style="color:var(--muted)">No hay indicadores con responsable asignado.</p>`;
+  }
+
+  // Agrupar por urgencia para mostrar sección de "próximo envío"
+  const proximos = filas.filter(f => f.urgencia <= 1);
+  const alDia    = filas.filter(f => f.urgencia === 2);
+
+  let html = '';
+
+  if (proximos.length > 0) {
+    html += `<div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:14px 16px;margin-bottom:20px">
+      <div style="font-weight:600;color:#DC2626;margin-bottom:4px">⚠️ ${proximos.length} indicador${proximos.length > 1 ? 'es' : ''} con recordatorio activo esta semana</div>
+      <div style="font-size:.82rem;color:#991B1B">El script de recordatorios enviará email el próximo lunes a las 7:00 UTC (8:00h invierno / 9:00h verano).</div>
+    </div>`;
+  } else {
+    html += `<div style="background:#ECFDF5;border:1px solid #A7F3D0;border-radius:8px;padding:14px 16px;margin-bottom:20px">
+      <div style="font-weight:600;color:#059669">✅ Ningún recordatorio activo esta semana</div>
+      <div style="font-size:.82rem;color:#065F46">Todos los indicadores con responsable están al día o no alcanzan aún el umbral de aviso (${ALERT_DAYS} días antes del vencimiento).</div>
+    </div>`;
+  }
+
+  const filaHTML = f => `
+    <tr>
+      <td>
+        <div style="font-weight:600;font-size:.82rem;color:var(--accent)">${f.ind.id}</div>
+        <div style="font-size:.8rem;line-height:1.4">${f.ind.nombre}</div>
+      </td>
+      <td>
+        <div style="font-weight:600">${f.user.nombre}</div>
+        <div style="font-size:.75rem;color:var(--muted)">${f.user.email}</div>
+      </td>
+      <td style="font-size:.78rem;color:var(--muted)">${f.ind.per}</td>
+      <td>${f.estadoHtml}</td>
+      <td style="font-size:.8rem">
+        ${f.ultimaFecha ? `<div>Último dato: <strong>${f.fmtDate(new Date(f.ultimaFecha))}</strong></div>` : '<div style="color:var(--muted)">Sin datos</div>'}
+        ${f.fechaVencimiento ? `<div style="color:var(--muted);font-size:.75rem">Necesita actualización antes del ${f.fmtDate(f.fechaVencimiento)}</div>` : ''}
+      </td>
+      <td style="font-size:.8rem;color:var(--muted)">${f.motivoHtml}</td>
+    </tr>`;
+
+  html += `<table class="data-table">
+    <thead><tr>
+      <th>Indicador</th>
+      <th>Responsable</th>
+      <th>Periodicidad</th>
+      <th>Estado</th>
+      <th>Último dato / Vencimiento</th>
+      <th>Próximo recordatorio</th>
+    </tr></thead>
+    <tbody>`;
+
+  if (proximos.length > 0) {
+    html += proximos.map(filaHTML).join('');
+  }
+  if (alDia.length > 0) {
+    if (proximos.length > 0) html += `<tr><td colspan="6" style="background:var(--bg2);font-size:.75rem;color:var(--muted);padding:6px 12px;font-weight:600">AL DÍA — sin recordatorio activo</td></tr>`;
+    html += alDia.map(filaHTML).join('');
+  }
+
+  html += `</tbody></table>
+    <p style="font-size:.78rem;color:var(--muted);margin-top:12px">
+      ⏰ Los recordatorios se envían automáticamente cada lunes a las 7:00 UTC cuando un indicador está vencido o faltan ≤${ALERT_DAYS} días para su vencimiento.
+      El cálculo se basa en los datos actualmente cargados en la herramienta.
+    </p>`;
+
+  return html;
 }
