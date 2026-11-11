@@ -46,7 +46,7 @@ const INDICADORES = [
 
 // ── Configuración ─────────────────────────────────────────────────────────
 const APP_URL    = 'https://juntaexes-agoraex.github.io/etde27-okr/';
-const ALERT_DAYS = 30;   // Enviar aviso cuando queden ≤30 días o ya haya vencido
+const ALERT_DAYS = 7;    // Enviar aviso cuando queden ≤7 días (1 semana antes de vencer)
 const DATA_PATH  = path.join(__dirname, '..', 'data', 'actualizaciones.json');
 
 // ── Leer datos actuales del repo ──────────────────────────────────────────
