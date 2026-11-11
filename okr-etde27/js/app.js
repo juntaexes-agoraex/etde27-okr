@@ -3105,7 +3105,7 @@ function renderNotificacionesPrevistas() {
   if (proximos.length > 0) {
     html += `<div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:14px 16px;margin-bottom:20px">
       <div style="font-weight:600;color:#DC2626;margin-bottom:4px">⚠️ ${proximos.length} indicador${proximos.length > 1 ? 'es' : ''} con recordatorio activo esta semana</div>
-      <div style="font-size:.82rem;color:#991B1B">El script de recordatorios enviará email el próximo lunes a las 7:00 UTC (8:00h invierno / 9:00h verano).</div>
+      <div style="font-size:.82rem;color:#991B1B">Se enviará recordatorio automático 1 semana antes del vencimiento de cada indicador. Puedes adelantarlo ahora con el botón de cada fila.</div>
     </div>`;
   } else {
     html += `<div style="background:#ECFDF5;border:1px solid #A7F3D0;border-radius:8px;padding:14px 16px;margin-bottom:20px">
@@ -3114,21 +3114,14 @@ function renderNotificacionesPrevistas() {
     </div>`;
   }
 
-  const hasPat = !!localStorage.getItem('okr-etde27-pat');
-
   const filaHTML = f => {
     const btnStyle = f.urgencia <= 1
       ? 'background:#DC2626;color:white'
       : 'background:var(--accent);color:white';
-    const btnTitle = f.urgencia <= 1
-      ? 'Enviar recordatorio ahora'
-      : 'Forzar envío aunque no esté vencido';
-    const btnHtml = hasPat
-      ? `<button class="btn btn-sm" style="${btnStyle};border:none;padding:5px 10px;border-radius:5px;cursor:pointer;font-size:.75rem;white-space:nowrap"
-           onclick="enviarRecordatorio('${f.ind.id}','${f.user.nombre}','${f.user.email}')">
-           📧 Enviar recordatorio
-         </button>`
-      : `<span style="font-size:.72rem;color:var(--muted)" title="Configura el PAT en Sincronización GitHub para usar esta función">🔒 Requiere PAT</span>`;
+    const btnHtml = `<button class="btn btn-sm" style="${btnStyle};border:none;padding:5px 10px;border-radius:5px;cursor:pointer;font-size:.75rem;white-space:nowrap"
+         onclick="enviarRecordatorio('${f.ind.id}','${f.user.nombre}','${f.user.email}')">
+         📧 Enviar recordatorio
+       </button>`;
 
     return `<tr>
       <td>
@@ -3173,16 +3166,19 @@ function renderNotificacionesPrevistas() {
 
   html += `</tbody></table>
     <p style="font-size:.78rem;color:var(--muted);margin-top:12px">
-      ⏰ Los recordatorios automáticos se envían cada lunes a las 7:00 UTC cuando un indicador está vencido o faltan ≤${ALERT_DAYS} días para su vencimiento.
-      El botón "Enviar recordatorio" lanza el workflow de GitHub Actions al instante para ese indicador concreto — el email llega en 1-2 minutos.
+      ⏰ Los recordatorios se envían automáticamente <strong>7 días antes del vencimiento</strong> de cada indicador según su periodicidad.
+      El botón "📧 Enviar recordatorio" lanza el aviso al instante para ese responsable concreto — el email llega en 1-2 minutos.
     </p>`;
 
   return html;
 }
 
 async function enviarRecordatorio(indicadorId, nombre, email) {
-  const pat = localStorage.getItem('okr-etde27-pat');
-  if (!pat) { toast('Necesitas configurar el PAT en Sincronización GitHub para usar esta función.', 'error'); return; }
+  const pat = ghGetPat();
+  if (!pat) {
+    toast('Necesitas configurar el Token GitHub (PAT). Ve a Actualizar datos → botón de sincronización → introduce el token.', 'error');
+    return;
+  }
 
   if (!confirm(`¿Enviar recordatorio a ${nombre} (${email}) para el indicador ${indicadorId}?\n\nEl email llegará en 1-2 minutos.`)) return;
 
