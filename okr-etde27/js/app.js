@@ -2891,20 +2891,33 @@ function refreshSidebarAuth() {
       : `<a href="#" onclick="openLoginModal();return false"><span class="sb-icon">🔑</span><span>Iniciar sesión</span></a>`;
   }
 
-  // Sección "Administración" — solo visible para admin (o sin sesión, para acceso libre)
-  // Si hay sesión de responsable, ocultamos las opciones de administración
-  const hide = resp; // responsables no ven Actualizar datos, Histórico, Configuración
-  const sbSecAdmin    = document.getElementById('sb-sec-admin');
-  const sbUlAdmin     = document.getElementById('sb-ul-admin');
-  const liActualizar  = document.getElementById('sb-li-actualizar');
-  const liHistorico   = document.getElementById('sb-li-historico');
-  const liConfig      = document.getElementById('sb-li-config');
+  // Sección "Administración" — ocultar para responsables
+  // Usamos data-view para no depender de IDs que pueden estar cacheados
+  const adminViews = ['actualizar', 'snapshots', 'config'];
+  adminViews.forEach(v => {
+    const a = document.querySelector(`#sidebar a[data-view="${v}"], aside a[data-view="${v}"]`);
+    const li = a?.closest('li');
+    if (li) li.style.display = resp ? 'none' : '';
+  });
 
-  if (sbSecAdmin)   sbSecAdmin.style.display   = hide ? 'none' : '';
-  if (sbUlAdmin)    sbUlAdmin.style.display     = hide ? 'none' : '';
-  if (liActualizar) liActualizar.style.display  = hide ? 'none' : '';
-  if (liHistorico)  liHistorico.style.display   = hide ? 'none' : '';
-  if (liConfig)     liConfig.style.display      = hide ? 'none' : '';
+  // Ocultar también por ID (nuevo HTML) y por texto (HTML antiguo cacheado)
+  ['sb-li-actualizar','sb-li-historico','sb-li-config'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = resp ? 'none' : '';
+  });
+
+  // Cabecera y ul de la sección Administración
+  const sbSecAdmin = document.getElementById('sb-sec-admin');
+  const sbUlAdmin  = document.getElementById('sb-ul-admin');
+  if (sbSecAdmin) sbSecAdmin.style.display = resp ? 'none' : '';
+  if (sbUlAdmin)  sbUlAdmin.style.display  = resp ? 'none' : '';
+
+  // Fallback: buscar la cabecera por texto si aún no tiene ID
+  if (!sbSecAdmin) {
+    document.querySelectorAll('.sb-section').forEach(el => {
+      if (el.textContent.trim() === 'Administración') el.style.display = resp ? 'none' : '';
+    });
+  }
 }
 
 // ═══ MI PANEL (vista personal del responsable) ═══════════════════
@@ -3027,16 +3040,23 @@ function renderAdmin(tab) {
     </div>`;
 
   if (adminTab === 'usuarios') {
-    const filas = USUARIOS.map(u => {
+    const todosUsuarios = getAllUsers();
+    const extraUsers = loadExtraUsers();
+    const filas = todosUsuarios.map(u => {
       const rolBadge = u.rol === 'admin'
         ? `<span class="badge badge-updated">Admin</span>`
         : `<span class="badge badge-achieved">Responsable</span>`;
       const inds = u.indicadores.length ? u.indicadores.join(', ') : '—';
+      const isExtra = extraUsers.some(e => e.email === u.email);
+      const deleteBtn = isExtra
+        ? `<button onclick="deleteExtraUser('${u.email}')" style="background:none;border:none;cursor:pointer;color:#DC2626;font-size:.8rem;padding:0 4px" title="Eliminar usuario">🗑</button>`
+        : '';
       return `<tr>
         <td><strong>${u.nombre}</strong><div style="font-size:.75rem;color:var(--muted)">${u.email}</div></td>
         <td>${rolBadge}</td>
         <td style="font-size:.8rem">${inds}</td>
-        <td style="font-size:.8rem;color:var(--muted)">PIN: ${u.pin}</td>
+        <td style="font-size:.8rem;color:var(--muted)">PIN: <strong>${u.pin}</strong></td>
+        <td>${deleteBtn}</td>
       </tr>`;
     });
     const patActual = ghGetPat();
@@ -3060,12 +3080,85 @@ function renderAdmin(tab) {
         Para añadir o modificar usuarios, edita el array <code>USUARIOS</code> en <code>js/data.js</code> y sube los cambios al repositorio.
       </p>
       <table class="data-table">
-        <thead><tr><th>Usuario</th><th>Rol</th><th>Indicadores</th><th>Acceso</th></tr></thead>
+        <thead><tr><th>Usuario</th><th>Rol</th><th>Indicadores</th><th>Acceso</th><th></th></tr></thead>
         <tbody>${filas.join('')}</tbody>
-      </table>`;
+      </table>
+
+      <div style="margin-top:24px;border-top:1px solid var(--border);padding-top:20px">
+        <h4 style="margin:0 0 14px;font-size:.95rem">➕ Añadir usuario</h4>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:600px">
+          <div>
+            <label style="font-size:.75rem;color:var(--muted);display:block;margin-bottom:3px">Nombre completo *</label>
+            <input id="nu-nombre" type="text" placeholder="Ej: María López"
+              style="width:100%;box-sizing:border-box;padding:7px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg2);color:var(--fg);font-size:.85rem">
+          </div>
+          <div>
+            <label style="font-size:.75rem;color:var(--muted);display:block;margin-bottom:3px">Email *</label>
+            <input id="nu-email" type="email" placeholder="maria.lopez@juntaex.es"
+              style="width:100%;box-sizing:border-box;padding:7px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg2);color:var(--fg);font-size:.85rem">
+          </div>
+          <div>
+            <label style="font-size:.75rem;color:var(--muted);display:block;margin-bottom:3px">PIN de acceso *</label>
+            <input id="nu-pin" type="text" placeholder="Ej: ETDE27ML"
+              style="width:100%;box-sizing:border-box;padding:7px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg2);color:var(--fg);font-size:.85rem;text-transform:uppercase"
+              oninput="this.value=this.value.toUpperCase()">
+          </div>
+          <div>
+            <label style="font-size:.75rem;color:var(--muted);display:block;margin-bottom:3px">Indicadores asignados</label>
+            <input id="nu-inds" type="text" placeholder="Ej: E3-01, E3-02"
+              style="width:100%;box-sizing:border-box;padding:7px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg2);color:var(--fg);font-size:.85rem">
+          </div>
+        </div>
+        <div style="margin-top:12px;display:flex;align-items:center;gap:10px">
+          <button class="btn btn-primary" onclick="addExtraUser()" style="font-size:.85rem">➕ Añadir usuario</button>
+          <span id="nu-error" style="color:#DC2626;font-size:.8rem;display:none"></span>
+        </div>
+        <p style="font-size:.73rem;color:var(--muted);margin:10px 0 0">
+          Los usuarios añadidos aquí se guardan en este navegador. Para que sean permanentes y funcionen en todos los dispositivos, actualiza el array <code>USUARIOS</code> en <code>js/data.js</code>.
+        </p>
+      </div>`;
   } else {
     el.innerHTML = tabs + renderNotificacionesPrevistas();
   }
+}
+
+function addExtraUser() {
+  const nombre = document.getElementById('nu-nombre')?.value.trim();
+  const email  = document.getElementById('nu-email')?.value.trim().toLowerCase();
+  const pin    = document.getElementById('nu-pin')?.value.trim().toUpperCase();
+  const indsRaw = document.getElementById('nu-inds')?.value.trim();
+  const errEl  = document.getElementById('nu-error');
+
+  const showErr = msg => { if (errEl) { errEl.textContent = msg; errEl.style.display = 'inline'; } };
+
+  if (!nombre) return showErr('El nombre es obligatorio.');
+  if (!email || !email.includes('@')) return showErr('Introduce un email válido.');
+  if (!pin || pin.length < 4) return showErr('El PIN debe tener al menos 4 caracteres.');
+
+  if (getAllUsers().some(u => u.email === email)) return showErr('Ya existe un usuario con ese email.');
+
+  const indicadores = indsRaw
+    ? indsRaw.split(',').map(s => s.trim().toUpperCase()).filter(Boolean)
+    : [];
+
+  const nuevo = { nombre, email, pin, rol: 'responsable', indicadores };
+  const extras = loadExtraUsers();
+  extras.push(nuevo);
+  saveExtraUsers(extras);
+
+  if (errEl) errEl.style.display = 'none';
+  toast(`Usuario ${nombre} añadido correctamente. PIN: ${pin}`, 'success');
+  renderAdmin('usuarios');
+}
+
+function deleteExtraUser(email) {
+  const u = loadExtraUsers().find(x => x.email === email);
+  if (!u) return;
+  if (!confirm(`¿Eliminar el usuario ${u.nombre} (${u.email})?`)) return;
+  const extras = loadExtraUsers().filter(x => x.email !== email);
+  saveExtraUsers(extras);
+  toast(`Usuario ${u.nombre} eliminado.`, 'success');
+  renderAdmin('usuarios');
 }
 
 function openPATModal() {

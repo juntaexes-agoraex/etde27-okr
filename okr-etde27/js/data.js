@@ -1078,6 +1078,12 @@ const USUARIOS = [
   { nombre: 'Dominga Galán',  email: 'dominga.galan@juntaex.es',          pin: 'ETDE27DG', rol: 'responsable', indicadores: ['E1-07'] },
 ];
 
+// Usuarios adicionales creados desde el panel de admin (se suman a USUARIOS)
+const LS_USERS_EXTRA = 'okr-etde27-users-extra';
+function loadExtraUsers() { try { return JSON.parse(localStorage.getItem(LS_USERS_EXTRA) || '[]'); } catch { return []; } }
+function saveExtraUsers(arr) { localStorage.setItem(LS_USERS_EXTRA, JSON.stringify(arr)); }
+function getAllUsers() { return [...USUARIOS, ...loadExtraUsers()]; }
+
 const LS_SESSION = 'okr-etde27-session';
 
 function getSession() {
@@ -1098,7 +1104,7 @@ function canEditIndicador(id) {
   return s.indicadores.includes(id);
 }
 function sessionLogin(email, pin) {
-  const u = USUARIOS.find(x => x.email.toLowerCase() === email.toLowerCase() && x.pin === pin);
+  const u = getAllUsers().find(x => x.email.toLowerCase() === email.toLowerCase() && x.pin === pin);
   if (!u) return false;
   setSession(u);
   ghEditorMode = true;
