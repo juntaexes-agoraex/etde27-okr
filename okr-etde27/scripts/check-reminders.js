@@ -49,6 +49,10 @@ const APP_URL    = 'https://juntaexes-agoraex.github.io/etde27-okr/';
 const ALERT_DAYS = 7;    // Enviar aviso cuando queden ≤7 días (1 semana antes de vencer)
 const DATA_PATH  = path.join(__dirname, '..', 'data', 'actualizaciones.json');
 
+// IDs forzados desde workflow_dispatch (envío manual desde la herramienta)
+const FORZAR = (process.env.FORZAR_INDICADORES || '')
+  .split(',').map(s => s.trim()).filter(Boolean);
+
 // ── Leer datos actuales del repo ──────────────────────────────────────────
 let actualizaciones = {};
 try {
@@ -72,7 +76,8 @@ for (const ind of INDICADORES) {
   const diasTranscurridos = actual?.fecha ? diasDesde(actual.fecha) : Infinity;
   const diasRestantes    = ind.per - diasTranscurridos;
 
-  if (diasTranscurridos < (ind.per - ALERT_DAYS)) continue;   // Aún no es momento de avisar
+  const esForzado = FORZAR.includes(ind.id);
+  if (diasTranscurridos < (ind.per - ALERT_DAYS) && !esForzado) continue;   // Aún no es momento de avisar
 
   const estado = diasTranscurridos >= ind.per ? 'VENCIDO' : 'PROXIMO';
 

@@ -3,7 +3,12 @@ name: Recordatorio OKR ETDE27
 on:
   schedule:
     - cron: '0 7 * * 1'   # Cada lunes a las 7:00 UTC = 8:00h (invierno) / 9:00h (verano)
-  workflow_dispatch:        # Permite ejecutar manualmente desde GitHub para pruebas
+  workflow_dispatch:        # Permite ejecutar manualmente desde GitHub o desde la herramienta
+    inputs:
+      forzar_indicadores:
+        description: 'IDs de indicadores a forzar aunque no estén vencidos (ej: E1-01,E2-05). Vacío = comportamiento normal.'
+        required: false
+        default: ''
 
 jobs:
   recordatorio:
@@ -25,6 +30,7 @@ jobs:
           SMTP_PORT: ${{ secrets.SMTP_PORT }}
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          FORZAR_INDICADORES: ${{ github.event.inputs.forzar_indicadores }}
         run: node okr-etde27/scripts/check-reminders.js
 
       - name: Guardar log de notificaciones en el repositorio

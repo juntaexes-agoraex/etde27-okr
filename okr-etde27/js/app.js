@@ -3114,8 +3114,23 @@ function renderNotificacionesPrevistas() {
     </div>`;
   }
 
-  const filaHTML = f => `
-    <tr>
+  const hasPat = !!localStorage.getItem('okr-etde27-pat');
+
+  const filaHTML = f => {
+    const btnStyle = f.urgencia <= 1
+      ? 'background:#DC2626;color:white'
+      : 'background:var(--accent);color:white';
+    const btnTitle = f.urgencia <= 1
+      ? 'Enviar recordatorio ahora'
+      : 'Forzar envío aunque no esté vencido';
+    const btnHtml = hasPat
+      ? `<button class="btn btn-sm" style="${btnStyle};border:none;padding:5px 10px;border-radius:5px;cursor:pointer;font-size:.75rem;white-space:nowrap"
+           onclick="enviarRecordatorio('${f.ind.id}','${f.user.nombre}','${f.user.email}')">
+           📧 Enviar recordatorio
+         </button>`
+      : `<span style="font-size:.72rem;color:var(--muted)" title="Configura el PAT en Sincronización GitHub para usar esta función">🔒 Requiere PAT</span>`;
+
+    return `<tr>
       <td>
         <div style="font-weight:600;font-size:.82rem;color:var(--accent)">${f.ind.id}</div>
         <div style="font-size:.8rem;line-height:1.4">${f.ind.nombre}</div>
@@ -3128,10 +3143,14 @@ function renderNotificacionesPrevistas() {
       <td>${f.estadoHtml}</td>
       <td style="font-size:.8rem">
         ${f.ultimaFecha ? `<div>Último dato: <strong>${f.fmtDate(new Date(f.ultimaFecha))}</strong></div>` : '<div style="color:var(--muted)">Sin datos</div>'}
-        ${f.fechaVencimiento ? `<div style="color:var(--muted);font-size:.75rem">Necesita actualización antes del ${f.fmtDate(f.fechaVencimiento)}</div>` : ''}
+        ${f.fechaVencimiento ? `<div style="color:var(--muted);font-size:.75rem">Vence: ${f.fmtDate(f.fechaVencimiento)}</div>` : ''}
       </td>
-      <td style="font-size:.8rem;color:var(--muted)">${f.motivoHtml}</td>
+      <td style="font-size:.8rem">
+        <div style="color:var(--muted);margin-bottom:6px">${f.motivoHtml}</div>
+        ${btnHtml}
+      </td>
     </tr>`;
+  };
 
   html += `<table class="data-table">
     <thead><tr>
@@ -3154,9 +3173,37 @@ function renderNotificacionesPrevistas() {
 
   html += `</tbody></table>
     <p style="font-size:.78rem;color:var(--muted);margin-top:12px">
-      ⏰ Los recordatorios se envían automáticamente cada lunes a las 7:00 UTC cuando un indicador está vencido o faltan ≤${ALERT_DAYS} días para su vencimiento.
-      El cálculo se basa en los datos actualmente cargados en la herramienta.
+      ⏰ Los recordatorios automáticos se envían cada lunes a las 7:00 UTC cuando un indicador está vencido o faltan ≤${ALERT_DAYS} días para su vencimiento.
+      El botón "Enviar recordatorio" lanza el workflow de GitHub Actions al instante para ese indicador concreto — el email llega en 1-2 minutos.
     </p>`;
 
   return html;
+}
+
+async function enviarRecordatorio(indicadorId, nombre, email) {
+  const pat = localStorage.getItem('okr-etde27-pat');
+  if (!pat) { toast('Necesitas configurar el PAT en Sincronización GitHub para usar esta función.', 'error'); return; }
+
+  if (!confirm(`¿Enviar recordatorio a ${nombre} (${email}) para el indicador ${indicadorId}?\n\nEl email llegará en 1-2 minutos.`)) return;
+
+  try {
+    const r = await fetch(`https://api.github.com/repos/${GH.owner}/${GH.repo}/actions/workflows/recordatorio-okr.yml/dispatches`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${pat}`,
+        'Accept': 'application/vnd.github+json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ ref: GH.branch, inputs: { forzar_indicadores: indicadorId } }),
+    });
+
+    if (r.ok || r.status === 204) {
+      toast(`✅ Recordatorio para ${indicadorId} enviado. ${nombre} recibirá el email en 1-2 minutos.`, 'success');
+    } else {
+      const err = await r.json().catch(() => ({}));
+      toast(`Error al lanzar el workflow: ${err.message || r.status}`, 'error');
+    }
+  } catch (e) {
+    toast(`Error de red: ${e.message}`, 'error');
+  }
 }
