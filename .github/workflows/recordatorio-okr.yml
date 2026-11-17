@@ -1,8 +1,9 @@
 name: Recordatorio OKR ETDE27
 
 on:
-  schedule:
-    - cron: '0 7 * * 1'   # Cada lunes a las 7:00 UTC = 8:00h (invierno) / 9:00h (verano)
+  # RECORDATORIOS AUTOMÁTICOS PAUSADOS — descomentar la sección schedule para reactivar
+  # schedule:
+  #   - cron: '0 7 * * 1'   # Cada lunes a las 7:00 UTC = 8:00h (invierno) / 9:00h (verano)
   workflow_dispatch:        # Permite ejecutar manualmente desde GitHub o desde la herramienta
     inputs:
       forzar_indicadores:
